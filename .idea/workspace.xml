@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="27b0ceaf-6061-4cb0-8562-f3a7cdd339ae" name="Changes" comment="chore : initial commit">
+      <change afterPath="$PROJECT_DIR$/backend/.editorconfig" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/.env.example" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/LICENSE" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/ace.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/adonisrc.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/pnpm-lock.yaml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/start/env.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/start/kernel.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/start/routes.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/tests/bootstrap.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/tsconfig.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.editorconfig" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/LICENSE" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ace.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/adonisrc.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/exceptions/handler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/exceptions/handler.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/middleware/auth_middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/middleware/auth_middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/middleware/container_bindings_middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/middleware/container_bindings_middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/middleware/force_json_response_middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/middleware/force_json_response_middleware.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/models/user.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/models/user.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/console.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/bin/console.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/server.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/bin/server.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/bin/test.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/app.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/bodyparser.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/bodyparser.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/cors.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/cors.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/database.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/database.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/hash.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/hash.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/logger.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config/logger.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/1713960156367_create_users_table.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/database/migrations/1713960156367_create_users_table.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/database/migrations/1713960156368_create_access_tokens_table.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/database/migrations/1713960156368_create_access_tokens_table.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/start/env.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/start/kernel.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/start/routes.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/bootstrap.ts" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2fXs6k5b2qXDUctx4Q5U3OwTplH" />
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "develop",
+    "last_opened_file_path": "/Users/tchoune/Documents/dev/js/coffeeStream",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "ts.external.directory.path": "/Users/tchoune/Documents/dev/js/coffeeStream/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/backend" />
+      <recent name="$PROJECT_DIR$/Documentations/planification" />
+      <recent name="$PROJECT_DIR$/Documentations/UML" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-WS-241.14494.235" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="27b0ceaf-6061-4cb0-8562-f3a7cdd339ae" name="Changes" comment="" />
+      <created>1711493045226</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1711493045226</updated>
+      <workItem from="1711493046405" duration="39000" />
+      <workItem from="1713958584965" duration="1684000" />
+      <workItem from="1713960272010" duration="1087000" />
+    </task>
+    <task id="LOCAL-00001" summary="chore : initial commit">
+      <option name="closed" value="true" />
+      <created>1713960465043</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1713960465043</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="chore : initial commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="chore : initial commit" />
+  </component>
+</project>
