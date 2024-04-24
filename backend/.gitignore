@@ -11,10 +11,6 @@ tmp
 
 # Frontend assets compiled code
 public/assets
-public/images
-public/videos
-
-resources/assets/playlists
 
 # Build tools specific
 npm-debug.log
@@ -27,6 +23,3 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
-
-# Sentry Config File
-.env.sentry-build-plugin
