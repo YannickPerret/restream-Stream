@@ -42,10 +42,12 @@ router
 
 router
   .group(() => {
-    router.post('register', [AuthController, 'register'])
-    router.post('login', [AuthController, 'login'])
-    router.post('logout', [AuthController, 'logout']).use(middleware.auth())
+    router
+      .group(() => {
+        router.post('register', [AuthController, 'register'])
+        router.post('login', [AuthController, 'login'])
+        router.post('logout', [AuthController, 'logout']).use(middleware.auth())
+      })
+      .prefix('auth')
   })
-  .prefix('user')
-
-
+  .prefix('api')
