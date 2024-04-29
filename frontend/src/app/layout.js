@@ -1,5 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
+import BaseLayout from "../../layers/baseLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,14 +12,19 @@ export const metadata = {
 export default function RootLayout({ children, error }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+    <body className={inter.className}>
+
+    <div className="flex min-h-screen">
+      <BaseLayout />
+      <main className="flex-1 p-6 bg-white">
         <div>
           <p>{error}</p>
         </div>
-        <main className='flex min-h-screen flex-col items-center justify-between p-24'>
-          {children}
-        </main>
-      </body>
+        {children}
+      </main>
+    </div>
+
+    </body>
     </html>
   );
 }
