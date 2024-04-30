@@ -20,10 +20,9 @@ export default function Page() {
       const data = await response.json();
 
       if (response.ok) {
-        // Stocker le token dans un cookie serait effectué côté serveur dans une application réelle
+        localStorage.setItem('token', data.token.token);
         router.push('/dashboard');
       } else {
-        // Gérer les erreurs de connexion ici
         setError(data.message || 'Erreur de connexion');
       }
     } catch (error) {
