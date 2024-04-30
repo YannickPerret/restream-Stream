@@ -10,16 +10,14 @@ export default class extends BaseSeeder {
 
     const adminUser = await Users.create({
       fullName: 'Admin',
-      email: 'admin@coffeestream.ch',
+      email: 'admin@coffeestream.com',
       password: 'admin',
-      lastLoginAt: DateTime.now(),
     })
 
     const devUser = await Users.create({
       fullName: 'Yannick Perret',
-      email: 'dev@coffeestream.ch',
+      email: 'dev@coffeestream.com',
       password: '12345678',
-      lastLoginAt: DateTime.now(),
     })
     users.push(adminUser)
     users.push(devUser)

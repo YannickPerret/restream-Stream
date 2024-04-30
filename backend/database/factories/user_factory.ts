@@ -8,7 +8,6 @@ export const UserFactory = factory
       fullName: faker.internet.displayName(),
       email: faker.internet.email(),
       password: faker.internet.password(),
-      lastLoginAt: DateTime.now(),
     }
   })
   .build()
