@@ -1,6 +1,6 @@
 import Navigator from "../components/Navigator";
 
-export default function BaseLayout({ children }) {
+export default function BaseGuestLayout({ children }) {
   return (
     <div className="flex min-h-screen">
       <div className="w-64 bg-gray-800 flex flex-col">
