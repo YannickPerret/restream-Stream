@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
-import BaseLayout from "../../layers/baseLayout";
+import BaseGuestLayout from "../../layers/BaseGuestLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,20 +10,16 @@ export const metadata = {
 };
 
 export default function RootLayout({ children, error }) {
+
+
   return (
     <html lang="en">
     <body className={inter.className}>
-
-    <div className="flex min-h-screen">
-      <BaseLayout />
+    <BaseGuestLayout>
       <main className="flex-1 p-6 bg-white">
-        <div>
-          <p>{error}</p>
-        </div>
         {children}
       </main>
-    </div>
-
+    </BaseGuestLayout>
     </body>
     </html>
   );

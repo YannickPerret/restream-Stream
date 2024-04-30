@@ -1,6 +1,6 @@
 import { Home, ListVideo, SquareGanttChart, Tv2, Video } from "lucide-react";
 
-export default function Navigateur() {
+export default function Navigator() {
   return (
     <nav className="flex-1 p-5 space-y-2">
       <a href="#" className="flex items-center p-2 text-white hover:bg-gray-700 rounded-md align-baseline">
