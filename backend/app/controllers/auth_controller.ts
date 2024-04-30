@@ -11,18 +11,18 @@ export default class AuthController {
     return response.created(user)
   }
 
-  async login({request, response} : HttpContext) {
+  async login({ request, response }: HttpContext) {
+    console.log('login')
     const { email, password } = await request.validateUsing(loginValidator)
     const user = await User.verifyCredentials(email, password)
     const token = await User.accessTokens.create(user)
-
     return response.ok({
       token: token,
       ...user.serialize(),
     })
   }
 
-  async logout({ auth, response}: HttpContext) {
+  async logout({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
     const token = auth.user?.currentAccessToken.identifier
     if (!token) {
