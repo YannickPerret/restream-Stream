@@ -1,12 +1,21 @@
 "use client";
 import { useRouter } from 'next/navigation'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import useSessionStore from "../../../../stores/useSessionStore";
 
 export default function Page() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');  // Pour stocker et afficher les messages d'erreur
   const router = useRouter();
+  const { session, isAuthenticated } = useSessionStore();
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +29,7 @@ export default function Page() {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token.token);
+        useSessionStore.setState({ session: { token: data.token.token, user: data.user } });
         router.push('/dashboard');
       } else {
         setError(data.message || 'Erreur de connexion');
