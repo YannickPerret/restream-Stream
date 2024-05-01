@@ -1,31 +1,38 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useFetcher } from 'next/navigation';
-const AuthContext = createContext({ isAuthenticated: false, setIsAuthenticated: () => {} });
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+const AuthContext = createContext(null);
 
-export default function RootLayout({ children }) {
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const fetcher = useFetcher();
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/status');
+      const userData = await response.json();
+      if (response.ok) {
+        setIsAuthenticated(true);
+        setUser(userData);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Failed to check auth status:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+    }
+  };
 
   useEffect(() => {
-    fetcher.load('/api/check-auth')
-      .then(res => {
-        if (res.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      });
-  }, [fetcher]);
+    checkAuthStatus();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
-  <div className="layout">
-    {children}
-    </div>
+    <AuthContext.Provider value={{ user, isAuthenticated }}>
+      {children}
     </AuthContext.Provider>
-);
-}
+  );
+};
+
+export const useAuth = () => useContext(AuthContext);
