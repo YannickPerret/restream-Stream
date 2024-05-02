@@ -37,31 +37,47 @@ export default class Stream extends BaseModel {
   declare instance: any
   declare isOnLive: boolean
 
-  async startStream(playlist: any): Promise<void> {
+  async startStream(playlist: any = undefined): Promise<void> {
     logger.info('Starting streams...')
 
     const parameters = [
       '-nostdin', // Disable stdin interaction
       '-re', // Read file at normal speed
-      '-f concat', // Concatenate input files
-      '-safe 0', // Allow unsafe file paths
+      '-f',
+      'concat',
+      '-safe',
+      '0',
       '-i',
-      `concat: `, // Specify input path
-      '-vsync cfr', // Constant Frame Rate
+      `concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlist.m3u8`, // Specify input path
+      '-vsync',
+      'cfr', // Constant Frame Rate
       '-copyts', // Copy timestamps
-      '-pix_fmt yuv420p', // Pixel format needed for compatibility
-      '-s 1920x1080', // Output resolution
-      '-c:v libx264', // H.264 video codec
-      '-profile:v high', // H.264 profile
-      '-preset veryfast', // Encoder preset to reduce CPU load
-      '-b:v 6000k', // Video bitrate
-      '-maxrate 7000k', // Maximum rate
-      '-minrate 5000k', // Minimum rate
-      '-bufsize 9000k', // Buffer size
-      '-g 120', // Interval between key frames
-      '-r 60', // Frame rate
-      '-c:a aac', // Audio codec
-      '-f flv', // Output format Flash Video
+      '-pix_fmt',
+      'yuv420p', // Pixel format needed for compatibility
+      '-s',
+      '1920x1080', // Output resolution
+      '-c:v',
+      'libx264', // H.264 video codec
+      '-profile:v',
+      'high', // H.264 profile
+      '-preset',
+      'veryfast', // Encoder preset to reduce CPU load
+      '-b:v',
+      '6000k', // Video bitrate
+      '-maxrate',
+      '7000k', // Maximum rate
+      '-minrate',
+      '5000k', // Minimum rate
+      '-bufsize',
+      '9000k', // Buffer size
+      '-g',
+      '120', // Interval between key frames
+      '-r',
+      '60', // Frame rate
+      '-c:a',
+      'aac', // Audio codec
+      '-f',
+      'flv', // Output format Flash Video
       `rtmp://live.twitch.tv/app/${env.get('STREAM_KEY')}`, // Streaming URL
     ]
 
@@ -90,5 +106,20 @@ export default class Stream extends BaseModel {
     this.startTime = DateTime.now()
     this.status = 'active'
     this.isOnLive = true
+
+    await this.save()
+  }
+
+  async stopStream(): Promise<void> {
+    logger.info('Stopping streams...')
+
+    if (!this.instance) {
+      this.instance.kill()
+      this.endTime = DateTime.now()
+      this.status = 'inactive'
+      this.isOnLive = false
+
+      await this.save()
+    }
   }
 }

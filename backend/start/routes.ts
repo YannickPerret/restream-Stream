@@ -9,6 +9,7 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import StreamsController from '#controllers/streams_controller'
 const AuthController = () => import('#controllers/auth_controller')
 
 router.get('/', async () => {
@@ -37,5 +38,13 @@ router
         router.post('logout', [AuthController, 'logout'])
       })
       .prefix('auth')
+
+    router
+      .group(() => {
+        router.post('create', [StreamsController, 'create'])
+        router.post(':id/start', [StreamsController, 'start'])
+        router.post(':id/stop', [StreamsController, 'stop'])
+      })
+      .prefix('streams')
   })
   .prefix('api')
