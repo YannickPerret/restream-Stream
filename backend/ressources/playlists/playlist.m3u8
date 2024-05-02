@@ -1,0 +1,6 @@
+#EXTINF:-1, Starting
+file://Users/tchoune/Documents/dev/js/coffeeStream/backend/public/assets/videos/starting.mp4
+#EXTINF:-1, Pause 10min
+file://Users/tchoune/Documents/dev/js/coffeeStream/backend/public/assets/videos/10.mp4
+#EXTINF:-1, Pause 15min
+file://Users/tchoune/Documents/dev/js/coffeeStream/backend/public/assets/videos/15.mp4
