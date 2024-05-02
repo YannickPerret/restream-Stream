@@ -14,7 +14,6 @@
       }
     }, [isAuthenticated, router]);
 
-
     return (
        <LoginForm />
     );
