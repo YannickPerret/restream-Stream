@@ -19,6 +19,9 @@ export default class Stream extends BaseModel {
   @column()
   declare status: 'active' | 'inactive'
 
+  @column()
+  declare userId: number
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -37,7 +40,7 @@ export default class Stream extends BaseModel {
   declare instance: any
   declare isOnLive: boolean
 
-  async startStream(playlist: any = undefined): Promise<void> {
+  async start(playlist: any = undefined): Promise<void> {
     logger.info('Starting streams...')
 
     const parameters = [
@@ -110,14 +113,16 @@ export default class Stream extends BaseModel {
     await this.save()
   }
 
-  async stopStream(): Promise<void> {
+  async stop(): Promise<void> {
     logger.info('Stopping streams...')
 
-    if (!this.instance) {
-      this.instance.kill()
+    if (this.pid && this.pid > 0 && this.status === 'active') {
+      logger.info(`Killing process with PID: ${this.pid}`)
+      process.kill(this.pid, 'SIGKILL')
       this.endTime = DateTime.now()
       this.status = 'inactive'
       this.isOnLive = false
+      this.pid = 0
 
       await this.save()
     }
