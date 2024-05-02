@@ -1,4 +1,6 @@
 import Navigator from "../components/Navigator";
+import Logo from "../public/coffeeStream.png";
+import Image from "next/image";
 
 export default function BaseGuestLayout({ children }) {
   return (
@@ -6,7 +8,7 @@ export default function BaseGuestLayout({ children }) {
       <div className="w-64 bg-gray-800 flex flex-col">
 
         <div className="bg-blue-500 text-white p-5 text-lg font-bold">
-          Coffee-Stream
+          <Image src={Logo} alt={"Logo de CoffeeStream"} />
         </div>
 
         <Navigator />

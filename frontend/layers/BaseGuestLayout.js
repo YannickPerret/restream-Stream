@@ -1,4 +1,6 @@
 import Navigator from "../components/Navigator";
+import Image from "next/image";
+import Logo from "../public/coffeeStream.png";
 
 export default function BaseGuestLayout({ children }) {
   return (
@@ -6,7 +8,7 @@ export default function BaseGuestLayout({ children }) {
       <aside className="flex flex-col w-64 h-screen">
         <div className="flex flex-col h-full shadow-lg">
           <div className="bg-blue-500 p-5 border-b border-gray-200">
-            <span className="text-black font-bold uppercase">Coffee-Stream</span>
+            <Image src={Logo} alt={"Logo de CoffeeStream"} />
           </div>
           <div className="flex-1 px-5 py-2 bg-blue-900">
             <Navigator />
