@@ -9,7 +9,7 @@ export default class StreamsController {
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-    await stream.startStream('')
+    await stream.start('')
     return response.ok({ message: 'Stream started' })
   }
 
@@ -19,7 +19,20 @@ export default class StreamsController {
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-    await stream.stopStream()
+    await stream.stop()
     return response.ok({ message: 'Stream stopped' })
+  }
+
+  async store({ auth, request, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const stream = await Stream.create({
+      name: request.input('name'),
+      pid: 0,
+      status: 'inactive',
+      startTime: null,
+      endTime: null,
+      user_id: user.id,
+    })
+    return response.created(stream)
   }
 }
