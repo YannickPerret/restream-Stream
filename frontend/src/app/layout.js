@@ -1,6 +1,8 @@
 import { Inter } from "next/font/google";
 import "../../styles/globals.css";
 import Navigator from "../../components/Navigator";
+import Image from "next/image";
+import Logo from "../../public/coffeeStream.png";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,7 +19,7 @@ export default function RootLayout({ children, error }) {
       <aside className="flex flex-col w-64 h-screen bg-gray-800">
         <div className="flex flex-col h-full shadow-lg">
           <div className="bg-blue-500 text-white p-5 text-lg font-bold">
-            Coffee-Stream
+            <Image src={Logo} alt={"Logo de coffeestream"} />
           </div>
           <div className="flex-1 px-5 py-2 bg-blue-900">
             <Navigator />
