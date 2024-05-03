@@ -1,12 +1,17 @@
+'use client';
 import Api from "./api";
 
-export default class AuthApi extends Api {
+export class StreamApi extends Api {
+
     static async getAll() {
+        console.log(this.getHeaders())
         const response = await fetch(`${this.baseUrl}/api/streams`, {
             method: 'GET',
             headers: this.getHeaders(),
         });
-        if(!response.ok) {
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error('Error status:', response.status, 'Error body:', errorBody);
             throw new Error('Error while fetching streams');
         }
         return await response.json();
