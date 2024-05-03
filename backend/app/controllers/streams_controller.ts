@@ -2,6 +2,11 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
 
 export default class StreamsController {
+  async index({ response, auth }: HttpContext) {
+    const streams = await Stream.query().where('userId', auth.user!.id)
+    return response.ok({ streams })
+  }
+
   async create({ request, response }: HttpContext) {}
 
   async start({ params, response }: HttpContext) {
@@ -31,7 +36,7 @@ export default class StreamsController {
       status: 'inactive',
       startTime: null,
       endTime: null,
-      user_id: user.id,
+      userId: user.id,
     })
     return response.created(stream)
   }
