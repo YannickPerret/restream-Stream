@@ -18,7 +18,6 @@ export default function LoginForm() {
           setSession(data)
           router.push('/dashboard')
         });
-
     } catch (error) {
       setError('Error logging in. Please try again.');
     }
