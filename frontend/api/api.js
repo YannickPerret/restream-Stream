@@ -1,3 +1,4 @@
+'use client'
 import {useSessionStore} from "../stores/useSessionStore";
 
 export default class Api {
@@ -6,8 +7,10 @@ export default class Api {
   static getHeaders() {
     const session = useSessionStore.getState().session;
     return {
-      "Content-Type": "application/json",
-      "Authorization": session ? `${session.token.type} ${session.token.token}` : "",
+      'Content-Type': "application/json",
+      'Accept': "application/json",
+      "Authorization": session ? `Bearer ${session.token.token}` : ''
     }
   }
 }
+
