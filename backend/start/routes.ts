@@ -30,6 +30,7 @@ router
         router.post('/', [StreamsController, 'store'])
         router.post(':id/start', [StreamsController, 'start'])
         router.post(':id/stop', [StreamsController, 'stop'])
+        router.delete(':id', [StreamsController, 'delete'])
       })
       .prefix('streams')
       .use(middleware.auth())

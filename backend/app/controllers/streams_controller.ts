@@ -46,7 +46,17 @@ export default class StreamsController {
       type: request.input('type'),
     })
     streamManager.addStream(stream.id.toString(), stream)
-
     return response.created(stream)
+  }
+
+  async delete({ params, response }: HttpContext) {
+    const stream = await Stream.findOrFail(params.id)
+    const streamManager = Stream_manager
+    if (!stream) {
+      return response.notFound({ error: 'Stream not found' })
+    }
+    streamManager.removeStream(params.id)
+    await stream.delete()
+    return response.ok({ message: 'Stream deleted' })
   }
 }

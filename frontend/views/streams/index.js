@@ -28,6 +28,11 @@ export default function StreamPageIndex () {
         await StreamApi.restart(id)
     }
 
+    const handleRemove = async (id) => {
+        console.log('remove', id)
+        await StreamApi.delete(id)
+    }
+
     return (
         <div>
             <table>
@@ -49,13 +54,17 @@ export default function StreamPageIndex () {
                         <td>{stream.startTime}</td>
                         <td>
                             {stream.status === 'inactive' ? (
-                                <button onClick={() => handleStart(stream.id)}>Start</button>
+                                <>
+                                    <button onClick={() => handleStart(stream.id)}>Start</button>
+                                    <button onClick={() => router.push(`/streams/${stream.id}`)}>View</button>
+                                </>
                             ) : (
                                 <>
-                                <button onClick={() => handleStop(stream.id)}>Stop</button>
+                                    <button onClick={() => handleStop(stream.id)}>Stop</button>
                                 <button onClick={() => handleRestart(stream.id)}>Restart</button>
                                 </>
                             )}
+                            <button onClick={() => handleRemove(stream.id)}>Remove</button>
                         </td>
                     </tr>
                 ))}
