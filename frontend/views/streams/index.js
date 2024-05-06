@@ -1,8 +1,35 @@
+import {StreamApi} from "../../api/stream";
+import  {useRouter} from "next/navigation";
+import {useStreamStore} from "../../stores/useStreamStore";
 
-export default function StreamPageIndex ({streams}) {
+export default function StreamPageIndex () {
+    const router = useRouter();
+    const streams = useStreamStore.use.streams();
+    const updateStreamStatus = useStreamStore.use.updateStreamStatus();
+
+    console.log('streamStore', streams)
+
+    const handleStart = async (id) => {
+        console.log('start', id)
+        await StreamApi.start(id).then(() => {
+            updateStreamStatus(id, 'active')
+        })
+    }
+
+    const handleStop = async(id) => {
+        console.log('stop', id)
+        await StreamApi.stop(id).then(() => {
+            updateStreamStatus(id, 'inactive')
+        })
+    }
+
+    const handleRestart = async (id) => {
+        console.log('restart', id)
+        await StreamApi.restart(id)
+    }
+
     return (
         <div>
-            <h1>Your streams</h1>
             <table>
                 <thead>
                 <tr>
@@ -21,9 +48,14 @@ export default function StreamPageIndex ({streams}) {
                         <td>{stream.name}</td>
                         <td>{stream.startTime}</td>
                         <td>
-                            <button>Stop</button>
-                            <button>Restart</button>
-                            <button>Remove</button>
+                            {stream.status === 'inactive' ? (
+                                <button onClick={() => handleStart(stream.id)}>Start</button>
+                            ) : (
+                                <>
+                                <button onClick={() => handleStop(stream.id)}>Stop</button>
+                                <button onClick={() => handleRestart(stream.id)}>Restart</button>
+                                </>
+                            )}
                         </td>
                     </tr>
                 ))}

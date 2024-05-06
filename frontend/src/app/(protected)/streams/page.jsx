@@ -1,30 +1,28 @@
-'use client'
-import {StreamApi} from "../../../../api/stream";
-import StreamPageIndex from "../../../../views/streams";
-import {useEffect, useState} from "react";
+'use client';
+import { StreamApi } from '../../../../api/stream';
+import StreamPageIndex from '../../../../views/streams';
+import { useState, useEffect } from 'react';
+import {useStreamStore} from "../../../../stores/useStreamStore";
 
 const StreamsPage = () => {
-    const [streams, setStreams] = useState([]);
+    //const [streams, setStreams] = useState([]);
 
     useEffect(() => {
         const fetchStreams = async () => {
-            try {
-                const data = await StreamApi.getAll();
-                setStreams(data.streams);
-            } catch (error) {
-                console.error("Error while fetching streams:", error);
-            }
+            const data = await StreamApi.getAll();
+            //setStreams(data.streams);
+            useStreamStore.setState({streams: data.streams});
         };
 
         fetchStreams();
     }, []);
 
     return (
-        <>
-            <h1>Streams</h1>
-            <StreamPageIndex streams={streams}/>
-        </>
-    )
-}
+        <div className="bg-white text-black">
+            <h1>Your streams</h1>
+            <StreamPageIndex />
+        </div>
+    );
+};
 
 export default StreamsPage;
