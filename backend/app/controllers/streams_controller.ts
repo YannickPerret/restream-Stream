@@ -14,7 +14,7 @@ export default class StreamsController {
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-    await stream.start('')
+    await stream.start('', 'ffmpeg')
     return response.ok({ message: 'Stream started' })
   }
 
