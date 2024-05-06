@@ -1,4 +1,3 @@
-'use client'
 import {useSessionStore} from "../stores/useSessionStore";
 
 export default class Api {

@@ -1,10 +1,8 @@
-'use client';
 import Api from "./api";
 
 export class StreamApi extends Api {
 
     static async getAll() {
-        console.log(this.getHeaders())
         const response = await fetch(`${this.baseUrl}/api/streams`, {
             method: 'GET',
             headers: this.getHeaders(),
@@ -59,6 +57,39 @@ export class StreamApi extends Api {
         });
         if(!response.ok) {
             throw new Error('Error while deleting stream');
+        }
+        return await response.json();
+    }
+
+    static async start(id) {
+        const response = await fetch(`${this.baseUrl}/api/streams/${id}/start`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while starting stream');
+        }
+        return await response.json();
+    }
+
+    static async stop(id) {
+        const response = await fetch(`${this.baseUrl}/api/streams/${id}/stop`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while stopping stream');
+        }
+        return await response.json();
+    }
+
+    static async restart(id) {
+        const response = await fetch(`${this.baseUrl}/api/streams/${id}/restart`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while restarting stream');
         }
         return await response.json();
     }
