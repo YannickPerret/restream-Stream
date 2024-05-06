@@ -27,8 +27,7 @@ router
     router
       .group(() => {
         router.get('/', [StreamsController, 'index'])
-        router.get('create', [StreamsController, 'create'])
-        router.post('store', [StreamsController, 'store'])
+        router.post('/', [StreamsController, 'store'])
         router.post(':id/start', [StreamsController, 'start'])
         router.post(':id/stop', [StreamsController, 'stop'])
       })
