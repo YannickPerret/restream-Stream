@@ -5,7 +5,8 @@ import {useStreamStore} from "../../stores/useStreamStore";
 export default function StreamPageIndex () {
     const router = useRouter();
     const streams = useStreamStore.use.streams();
-    const updateStreamStatus = useStreamStore.use.updateStreamStatus();
+    const updateStreamStatus = useStreamStore.use.updateStreamStatus()
+    const removeStream = useStreamStore.use.removeStream()
 
     console.log('streamStore', streams)
 
@@ -30,7 +31,9 @@ export default function StreamPageIndex () {
 
     const handleRemove = async (id) => {
         console.log('remove', id)
-        await StreamApi.delete(id)
+        await StreamApi.delete(id).then(() => {
+            removeStream(id)
+        })
     }
 
     return (
