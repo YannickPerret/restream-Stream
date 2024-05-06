@@ -1,5 +1,7 @@
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, manyToMany } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
+import Stream from '#models/stream'
+import type { ManyToMany } from '@adonisjs/lucid/types/relations'
 
 export default class Provider extends BaseModel {
   @column({ isPrimary: true })
@@ -31,6 +33,12 @@ export default class Provider extends BaseModel {
 
   @column()
   declare broadcasterId: string
+
+  @manyToMany(() => Stream, {
+    pivotTable: 'stream_providers',
+    pivotColumns: ['on_primary'],
+  })
+  declare streams: ManyToMany<typeof Stream>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

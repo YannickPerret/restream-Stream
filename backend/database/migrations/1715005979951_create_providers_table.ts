@@ -18,6 +18,7 @@ export default class extends BaseSchema {
       table.string('broadcaster_id').nullable()
       table.string('auth_bearer').nullable()
       table.string('stream_key').nullable()
+      table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE')
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

@@ -5,12 +5,10 @@ import { useState, useEffect } from 'react';
 import {useStreamStore} from "../../../../stores/useStreamStore";
 
 const StreamsPage = () => {
-    //const [streams, setStreams] = useState([]);
 
     useEffect(() => {
         const fetchStreams = async () => {
             const data = await StreamApi.getAll();
-            //setStreams(data.streams);
             useStreamStore.setState({streams: data.streams});
         };
 

@@ -1,10 +1,11 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import { spawn } from 'node:child_process'
 import env from '#start/env'
+import Provider from '#models/provider'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -40,6 +41,12 @@ export default class Stream extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  @manyToMany(() => Provider, {
+    pivotTable: 'stream_providers',
+    pivotColumns: ['on_primary'],
+  })
+  declare providers: ManyToMany<typeof Provider>
+
   instance: any
 
   declare isOnLive: boolean
@@ -53,7 +60,8 @@ export default class Stream extends BaseModel {
       '-safe',
       '0',
       '-i',
-      'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlist.m3u8', // Specify input path
+      playlist ||
+        'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlist.m3u8', // Specify input path
       '-vsync',
       'cfr', // Constant Frame Rate
       '-copyts', // Copy timestamps

@@ -8,8 +8,6 @@ export default function StreamPageIndex () {
     const updateStreamStatus = useStreamStore.use.updateStreamStatus()
     const removeStream = useStreamStore.use.removeStream()
 
-    console.log('streamStore', streams)
-
     const handleStart = async (id) => {
         console.log('start', id)
         await StreamApi.start(id).then(() => {

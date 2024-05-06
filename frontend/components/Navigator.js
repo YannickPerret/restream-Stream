@@ -34,6 +34,9 @@ export default function Navigator() {
           <Link href="/streams" className="flex items-center p-2 text-white hover:bg-gray-700 rounded-md align-baseline">
             <span>Streams</span>
           </Link>
+          <Link href="/providers" className="flex items-center p-2 text-white hover:bg-gray-700 rounded-md align-baseline">
+            <span>Providers</span>
+          </Link>
           <Link href="/timelines" className="flex items-center p-2 text-white hover:bg-gray-700 rounded-md align-baseline">
             <span>Timelines</span>
           </Link>
