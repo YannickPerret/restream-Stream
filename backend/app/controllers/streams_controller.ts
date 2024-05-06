@@ -12,7 +12,7 @@ export default class StreamsController {
   async start({ params, response }: HttpContext) {
     const stream = await Stream.findOrFail(params.id)
     const streamManager = Stream_manager
-    const streamInstance = streamManager.getOrCreateStream(params.id, stream)
+    const streamInstance = streamManager.getOrAddStream(params.id, stream)
 
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
@@ -24,7 +24,7 @@ export default class StreamsController {
   async stop({ params, response }: HttpContext) {
     const stream = await Stream.findOrFail(params.id)
     const streamManager = Stream_manager
-    const streamInstance = streamManager.getOrCreateStream(params.id, stream)
+    const streamInstance = streamManager.getOrAddStream(params.id, stream)
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
