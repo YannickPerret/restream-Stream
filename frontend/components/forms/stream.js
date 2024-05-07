@@ -1,12 +1,13 @@
 'use client'
 import React, {useState} from 'react'
 import {StreamApi} from "../../api/stream";
+import SearchForm from "../search/searchForm";
 export default function StreamForm({onSubmit}) {
     const [title, setTitle] = useState('')
-    const [provider, setProvider] = useState('ffmpeg')
+    const [providers, setProviders] = useState([])
 
     const handleSubmit = async () => {
-        await StreamApi.create({title, provider});
+        await StreamApi.create({title, providers});
     }
 
     return(
@@ -15,13 +16,16 @@ export default function StreamForm({onSubmit}) {
                 Title
             </label>
             <input type="text" placeholder="Enter Title" value={title} onChange={(e) => setTitle(e.target.value)}/>
-            <label>
-                Provider
-            </label>
-            <select value={provider} onChange={(e) => setProvider(e.target.value)}>
-                <option value="ffmpeg">FFMPEG</option>
-                <option value="gstreamer">GStreamer</option>
-            </select>
+
+            <div>
+                providers selected: {providers.map(provider => provider.name).join(', ')}
+            </div>
+
+            <div>
+                <label>Provider</label>
+                <SearchForm searchUrl="providers" multiple="true" updateSelectedItems={setProviders}/>
+
+            </div>
 
             <button>Submit</button>
         </form>
