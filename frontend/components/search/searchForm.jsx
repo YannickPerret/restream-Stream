@@ -6,12 +6,16 @@ import { SearchApi } from '../../api/search';
 export default function SearchForm({ searchUrl, multiple = false, updateSelectedItems }) {
     const [form, setForm] = useState({ query: '', domain: searchUrl });
     const [items, setItems] = useState([]);
-    const [selectedItems, setSelectedItems] = useState([]);
+    const [selectedItems, setSelectedItems] = useState(multiple ? [] : null);
 
     const handleUpdateSelectedItems = newItems => {
-        const updatedItems = multiple ? newItems : [newItems[0]];
-        setSelectedItems(updatedItems);
-        updateSelectedItems(updatedItems)
+        if (multiple) {
+            setSelectedItems(newItems);
+            updateSelectedItems(newItems);
+        } else {
+            setSelectedItems(newItems[0] || null);
+            updateSelectedItems(newItems[0] || {});
+        }
     };
 
     useEffect(() => {

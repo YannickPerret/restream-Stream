@@ -2,7 +2,7 @@ import React from 'react';
 import SearchFormProvider from './SearchFormProvider';
 
 export default function SearchInput({ items, domain, selectedItems, multiple, updateSelectedItems }) {
-    function toggleItem(item) {
+    const toggleItem = item => {
         if (multiple) {
             const index = selectedItems.findIndex(selected => selected.id === item.id);
             const updatedItems = [...selectedItems];
@@ -12,11 +12,12 @@ export default function SearchInput({ items, domain, selectedItems, multiple, up
             } else {
                 updatedItems.push(item);
             }
+
             updateSelectedItems(updatedItems);
         } else {
             updateSelectedItems([item]);
         }
-    }
+    };
 
     return (
         <ul>

@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
+import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
 import stream_manager from '#models/stream_manager'
 
@@ -35,7 +36,24 @@ export default class StreamsController {
 
   async store({ auth, request, response }: HttpContext) {
     const user = await auth.authenticate()
-    const streamManager = Stream_manager
+    const { title, timeline, runLive } = request.all()
+    const providersForm = request.input('providers') || []
+
+    if (!title || !providersForm || !timeline) {
+      return response.badRequest({ error: 'Missing required fields' })
+    }
+
+    const providerPromises = providersForm.map((provider: any) => Provider.findOrFail(provider.id))
+    await Promise.all(providerPromises)
+
+    const primaryProvider = providersForm.filter((item) => item.onPrimary === true).length
+
+    if (!primaryProvider) {
+      return response.badRequest({ error: 'Primary provider is required' })
+    } else if (primaryProvider > 1) {
+      return response.badRequest({ error: 'Only one primary provider is allowed' })
+    }
+
     const stream = await Stream.create({
       name: request.input('title'),
       pid: 0,
@@ -45,11 +63,27 @@ export default class StreamsController {
       userId: user.id,
       type: request.input('type'),
     })
-    streamManager.addStream(stream.id.toString(), stream)
+
+    if (stream && providersForm) {
+      for (const provider of providersForm) {
+        await stream.related('providers').attach({
+          [provider.id]: {
+            on_primary: provider.onPrimary,
+          },
+        })
+      }
+    }
+
+    if (runLive) {
+      const streamManager = Stream_manager
+
+      const streamInstance = streamManager.getOrAddStream(stream.id.toString(), stream)
+      await streamInstance.start()
+    }
     return response.created(stream)
   }
 
-  async delete({ params, response }: HttpContext) {
+  async destroy({ params, response }: HttpContext) {
     const stream = await Stream.findOrFail(params.id)
     const streamManager = Stream_manager
     if (!stream) {
