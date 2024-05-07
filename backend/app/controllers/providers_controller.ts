@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Provider from '#models/provider'
+import logger from '@adonisjs/core/services/logger'
 
 export default class ProvidersController {
   /**
@@ -14,7 +15,40 @@ export default class ProvidersController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request }: HttpContext) {}
+  async store({ request, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const {
+      name,
+      providerType,
+      clientId,
+      clientSecret,
+      refreshToken,
+      broadcasterId,
+      authToken,
+      streamKey,
+    } = request.all()
+
+    if (!name || !providerType) {
+      return response.badRequest({ error: 'Missing required fields' })
+    }
+    const provider = await Provider.create({
+      name,
+      type: providerType,
+      clientId,
+      clientSecret,
+      refreshToken,
+      broadcasterId,
+      authBearer: authToken,
+      streamKey,
+      user_id: user.id,
+    })
+
+    if (provider) {
+      return response.created(provider)
+    } else {
+      return response.badRequest({ error: 'Failed to create provider' })
+    }
+  }
 
   /**
    * Show individual record
