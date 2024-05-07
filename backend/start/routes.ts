@@ -10,6 +10,7 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
+const SearchesController = () => import('#controllers/searches_controller')
 const ProviderController = () => import('#controllers/providers_controller')
 const StreamsController = () => import('#controllers/streams_controller')
 const AuthController = () => import('#controllers/auth_controller')
@@ -53,5 +54,11 @@ router
         return response.ok({ streams: streamManager.getAllStreams() })
       })
     })
+
+    router
+      .group(() => {
+        router.get('/search', [SearchesController, 'index'])
+      })
+      .use(middleware.auth())
   })
   .prefix('api')

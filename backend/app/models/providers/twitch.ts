@@ -19,7 +19,6 @@ export default class Twitch extends Provider {
       this.refreshToken = providerRecord.refreshToken
       this.accessToken = providerRecord.accessToken
       this.broadcasterId = providerRecord.broadcasterId
-      this.onPrimary = providerRecord.onPrimary
     }
     this.baseUrl = 'rtmp://live.twitch.tv/app/'
 
