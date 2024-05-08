@@ -32,14 +32,15 @@ export default class StreamsController {
   }
 
   async stop({ params, response }: HttpContext) {
-    const stream = await Stream.findOrFail(params.id)
     const streamManager = Stream_manager
-    const streamInstance = streamManager.getOrAddStream(params.id, stream)
+    const stream = streamManager.getStream(params.id)
+
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-    await streamInstance.stop()
-    stream_manager.removeStream(params.id)
+
+    await stream.stop()
+    streamManager.removeStream(params.id)
     return response.ok({ message: 'Stream stopped' })
   }
 
