@@ -2,13 +2,27 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
 import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
-import stream_manager from '#models/stream_manager'
 import logger from '@adonisjs/core/services/logger'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
-    const streams = await Stream.query().where('userId', auth.user!.id)
-    return response.ok({ streams })
+    const streams = await Stream.query()
+      .where('userId', auth.user!.id)
+      .preload('providers', (query) => {
+        query.pivotColumns(['on_primary'])
+      })
+
+    const streamsWithPrimaryProvider = await Promise.all(
+      streams.map(async (stream) => {
+        const primaryProvider = await stream.getPrimaryProvider()
+        return {
+          ...stream.serialize(),
+          primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
+        }
+      })
+    )
+
+    return response.ok({ streams: streamsWithPrimaryProvider })
   }
 
   async start({ params, response }: HttpContext) {

@@ -1,6 +1,7 @@
 import {StreamApi} from "../../api/stream";
 import  {useRouter} from "next/navigation";
 import {useStreamStore} from "../../stores/useStreamStore";
+import Link from "next/link";
 
 export default function StreamPageIndex () {
     const router = useRouter();
@@ -40,8 +41,8 @@ export default function StreamPageIndex () {
                 <thead>
                 <tr>
                     <th>Status</th>
-                    <th>Pid</th>
                     <th>Name</th>
+                    <th>Primary Provider</th>
                     <th>Start Time</th>
                     <th>Actions</th>
                 </tr>
@@ -50,8 +51,13 @@ export default function StreamPageIndex () {
                 {streams.map(stream => (
                     <tr key={stream.id}>
                         <td>{stream.status}</td>
-                        <td>{stream.pid}</td>
                         <td>{stream.name}</td>
+                        <td>{stream.primaryProvider ? (
+                            <Link href={`/providers/${stream.primaryProvider.id}`}>{stream.primaryProvider?.name}</Link>
+                            ) : (
+                            'None'
+                            )}
+                        </td>
                         <td>{stream.startTime}</td>
                         <td>
                             {stream.status === 'inactive' ? (

@@ -152,6 +152,12 @@ export default class Stream extends BaseModel {
     }
   }
 
+  async getPrimaryProvider() {
+    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
+    const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1)
+    return primary ?? null
+  }
+
   private handleProcessOutputs(instance: any) {
     if (instance?.stderr) {
       instance.stderr.on('data', (data: any) => {
