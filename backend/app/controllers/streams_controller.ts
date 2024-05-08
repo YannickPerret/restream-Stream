@@ -3,6 +3,7 @@ import Stream from '#models/stream'
 import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
 import stream_manager from '#models/stream_manager'
+import logger from '@adonisjs/core/services/logger'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
@@ -11,14 +12,22 @@ export default class StreamsController {
   }
 
   async start({ params, response }: HttpContext) {
-    const stream = await Stream.findOrFail(params.id)
+    const stream = await Stream.query()
+      .preload('providers', (query) => {
+        query.pivotColumns(['on_primary'])
+      })
+      .where('id', params.id)
+      .firstOrFail()
+
+    logger.info(`Providers associés: ${JSON.stringify(stream.providers)}`)
+
     const streamManager = Stream_manager
     const streamInstance = streamManager.getOrAddStream(params.id, stream)
 
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-    await streamInstance.start()
+    await streamInstance.run()
     return response.ok({ message: 'Stream started' })
   }
 
@@ -78,7 +87,7 @@ export default class StreamsController {
       const streamManager = Stream_manager
 
       const streamInstance = streamManager.getOrAddStream(stream.id.toString(), stream)
-      await streamInstance.start()
+      await streamInstance.run()
     }
     return response.created(stream)
   }

@@ -26,6 +26,9 @@ export default class Stream extends BaseModel {
   @column()
   declare userId: number
 
+  @column()
+  declare providerId: number
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -47,14 +50,40 @@ export default class Stream extends BaseModel {
   })
   declare providers: ManyToMany<typeof Provider>
 
-  instance: any
-
+  declare instance: any
   declare isOnLive: boolean
+  declare canNextVideo: boolean
+  declare providersInstance: Provider[]
+  declare primaryProvider: Provider | null
+
+  async run() {
+    logger.info('Starting stream...')
+
+    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
+    this.providersInstance = await Promise.all(
+      providers.map((provider) => Provider.createProvider(provider))
+    )
+    const primary = this.providersInstance.find(
+      (provider) => provider.$extras.pivot_on_primary === 1
+    )
+    this.primaryProvider = primary ?? null
+
+    if (this.primaryProvider) {
+      logger.info(`Primary provider found: ${this.primaryProvider.name}`)
+    } else {
+      logger.warn('No primary provider found')
+    }
+
+    await this.start()
+    this.canNextVideo = true
+
+    await this.save()
+  }
 
   async start(playlist: any = undefined): Promise<void> {
     const parameters = [
-      '-nostdin', // Disable stdin interaction
-      '-re', // Read file at normal speed
+      '-nostdin',
+      '-re',
       '-f',
       'concat',
       '-safe',
@@ -63,35 +92,35 @@ export default class Stream extends BaseModel {
       playlist ||
         'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlist.m3u8', // Specify input path
       '-vsync',
-      'cfr', // Constant Frame Rate
-      '-copyts', // Copy timestamps
+      'cfr',
+      '-copyts',
       '-pix_fmt',
-      'yuv420p', // Pixel format needed for compatibility
+      'yuv420p',
       '-s',
-      '1920x1080', // Output resolution
+      '1920x1080',
       '-c:v',
-      'libx264', // H.264 video codec
+      'libx264',
       '-profile:v',
-      'high', // H.264 profile
+      'high',
       '-preset',
-      'veryfast', // Encoder preset to reduce CPU load
+      'veryfast',
       '-b:v',
-      '6000k', // Video bitrate
+      '6000k',
       '-maxrate',
-      '7000k', // Maximum rate
+      '7000k',
       '-minrate',
-      '5000k', // Minimum rate
+      '5000k',
       '-bufsize',
-      '9000k', // Buffer size
+      '9000k',
       '-g',
-      '120', // Interval between key frames
+      '120',
       '-r',
-      '60', // Frame rate
+      '60',
       '-c:a',
-      'aac', // Audio codec
+      'aac',
       '-f',
-      'flv', // Output format Flash Video
-      `rtmp://live.twitch.tv/app/${env.get('STREAM_KEY')}`, // Streaming URL
+      'flv',
+      `${this.primaryProvider?.baseUrl}/${this.primaryProvider?.streamKey}`, // Streaming URL
     ]
 
     this.instance = spawn('ffmpeg', parameters, {
@@ -105,8 +134,6 @@ export default class Stream extends BaseModel {
     this.startTime = DateTime.now()
     this.status = 'active'
     this.isOnLive = true
-
-    await this.save()
   }
 
   async stop(): Promise<void> {
