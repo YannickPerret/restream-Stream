@@ -1,4 +1,3 @@
-import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/provider'
 
 export default class Twitch extends Provider {

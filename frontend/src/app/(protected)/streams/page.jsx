@@ -11,7 +11,6 @@ const StreamsPage = () => {
             const data = await StreamApi.getAll();
             useStreamStore.setState({streams: data.streams});
         };
-
         fetchStreams();
     }, []);
 

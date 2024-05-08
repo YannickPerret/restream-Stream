@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Provider from '#models/provider'
-import logger from '@adonisjs/core/services/logger'
 
 export default class ProvidersController {
   /**

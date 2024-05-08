@@ -100,7 +100,6 @@ export default class StreamsController {
 
     if (runLive) {
       const streamManager = Stream_manager
-
       const streamInstance = streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()
     }
