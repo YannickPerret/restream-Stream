@@ -1,4 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import Playlist from '#models/playlist'
+import logger from '@adonisjs/core/services/logger'
+import Video from '#models/video'
 
 export default class PlaylistsController {
   /**
@@ -9,7 +12,35 @@ export default class PlaylistsController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request }: HttpContext) {}
+  async store({ request, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const { title, description, videos } = request.all()
+
+    const playlist = await Playlist.create({
+      title,
+      description,
+      isPublished: true,
+      userId: user.id,
+    })
+
+    if (videos) {
+      for (const [index, videoId] of videos.entries()) {
+        const video = await Video.find(videoId)
+
+        if (video) {
+          await playlist.related('videos').attach({
+            [videoId]: {
+              order: index + 1,
+            },
+          })
+        } else {
+          logger.warn(`Video not found: ${videoId}`)
+        }
+      }
+    }
+
+    return response.created(playlist)
+  }
 
   /**
    * Show individual record

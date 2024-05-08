@@ -23,7 +23,10 @@ export default class Playlist extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @manyToMany(() => Video)
+  @manyToMany(() => Video, {
+    pivotTable: 'playlist_videos',
+    pivotColumns: ['order'],
+  })
   declare videos: ManyToMany<typeof Video>
 
   @column.dateTime({ autoCreate: true })

@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Timeline from '#models/timeline'
 import TimelineItem from '#models/timeline_item'
+import logger from '@adonisjs/core/services/logger'
 
 export default class TimelinesController {
   /**
