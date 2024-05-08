@@ -9,6 +9,9 @@
 
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import Stream_manager from '#models/stream_manager'
+const SearchesController = () => import('#controllers/searches_controller')
+const ProviderController = () => import('#controllers/providers_controller')
 const StreamsController = () => import('#controllers/streams_controller')
 const AuthController = () => import('#controllers/auth_controller')
 
@@ -27,12 +30,35 @@ router
     router
       .group(() => {
         router.get('/', [StreamsController, 'index'])
-        router.get('create', [StreamsController, 'create'])
-        router.post('store', [StreamsController, 'store'])
+        router.post('/', [StreamsController, 'store'])
         router.post(':id/start', [StreamsController, 'start'])
         router.post(':id/stop', [StreamsController, 'stop'])
+        router.delete(':id', [StreamsController, 'destroy'])
       })
       .prefix('streams')
+      .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.get('/', [ProviderController, 'index'])
+        router.post('/', [ProviderController, 'store'])
+        router.delete(':id', [ProviderController, 'destroy'])
+        router.get(':id', [ProviderController, 'show'])
+      })
+      .prefix('providers')
+      .use(middleware.auth())
+
+    router.group(() => {
+      router.get('streamManager', ({ response }) => {
+        const streamManager = Stream_manager
+        return response.ok({ streams: streamManager.getAllStreams() })
+      })
+    })
+
+    router
+      .group(() => {
+        router.get('/search', [SearchesController, 'index'])
+      })
       .use(middleware.auth())
   })
   .prefix('api')
