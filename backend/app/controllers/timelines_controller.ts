@@ -1,4 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import Timeline from '#models/timeline'
+import TimelineItem from '#models/timeline_item'
 
 export default class TimelinesController {
   /**
@@ -9,7 +11,33 @@ export default class TimelinesController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request }: HttpContext) {}
+  async store({ request, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const { title, description, items } = request.all()
+
+    const timeline = await Timeline.create({
+      title,
+      description,
+      userId: user.id,
+    })
+
+    if (items) {
+      for (const [index, { type, itemId }] of items.entries()) {
+        if (type === 'video' || type === 'playlist') {
+          await TimelineItem.create({
+            id: timeline.id,
+            type: type,
+            itemId,
+            order: index + 1,
+          })
+        } else {
+          logger.warn(`Invalid item type: ${type}`)
+        }
+      }
+    }
+
+    return response.created(timeline)
+  }
 
   /**
    * Show individual record

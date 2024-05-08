@@ -31,4 +31,18 @@ export default class Playlist extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  async getTotalDuration(): Promise<number> {
+    const videos = await this.related('videos').query()
+    let totalDuration = 0
+    for (const video of videos) {
+      totalDuration += video.duration
+    }
+    return totalDuration
+  }
+
+  async getVideoCount(): Promise<number> {
+    const videos = await this.related('videos').query()
+    return videos.length
+  }
 }
