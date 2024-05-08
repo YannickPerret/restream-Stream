@@ -10,6 +10,9 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
+const TimelinesController = () => import('#controllers/timelines_controller')
+const PlaylistsController = () => import('#controllers/playlists_controller')
+const VideosController = () => import('#controllers/videos_controller')
 const SearchesController = () => import('#controllers/searches_controller')
 const ProviderController = () => import('#controllers/providers_controller')
 const StreamsController = () => import('#controllers/streams_controller')
@@ -29,35 +32,67 @@ router
 
     router
       .group(() => {
-        router.get('/', [StreamsController, 'index'])
-        router.post('/', [StreamsController, 'store'])
-        router.post(':id/start', [StreamsController, 'start'])
-        router.post(':id/stop', [StreamsController, 'stop'])
-        router.delete(':id', [StreamsController, 'destroy'])
-      })
-      .prefix('streams')
-      .use(middleware.auth())
+        router
+          .group(() => {
+            router.get('/', [StreamsController, 'index'])
+            router.post('/', [StreamsController, 'store'])
+            router.post(':id/start', [StreamsController, 'start'])
+            router.post(':id/stop', [StreamsController, 'stop'])
+            router.delete(':id', [StreamsController, 'destroy'])
+          })
+          .prefix('streams')
 
-    router
-      .group(() => {
-        router.get('/', [ProviderController, 'index'])
-        router.post('/', [ProviderController, 'store'])
-        router.delete(':id', [ProviderController, 'destroy'])
-        router.get(':id', [ProviderController, 'show'])
-      })
-      .prefix('providers')
-      .use(middleware.auth())
+        router
+          .group(() => {
+            router.get('/', [ProviderController, 'index'])
+            router.post('/', [ProviderController, 'store'])
+            router.delete(':id', [ProviderController, 'destroy'])
+            router.get(':id', [ProviderController, 'show'])
+          })
+          .prefix('providers')
 
-    router.group(() => {
-      router.get('streamManager', ({ response }) => {
-        const streamManager = Stream_manager
-        return response.ok({ streams: streamManager.getAllStreams() })
-      })
-    })
+        router
+          .group(() => {
+            router.get('/', [VideosController, 'index'])
+            router.post('/', [VideosController, 'store'])
+            router.get(':id', [VideosController, 'show'])
+            router.put(':id', [VideosController, 'update'])
+            router.delete(':id', [VideosController, 'destroy'])
+          })
+          .prefix('videos')
 
-    router
-      .group(() => {
-        router.get('/search', [SearchesController, 'index'])
+        router
+          .group(() => {
+            router.get('/', [PlaylistsController, 'index'])
+            router.post('/', [PlaylistsController, 'store'])
+            router.get(':id', [PlaylistsController, 'show'])
+            router.put(':id', [PlaylistsController, 'update'])
+            router.delete(':id', [PlaylistsController, 'destroy'])
+          })
+          .prefix('playlists')
+
+        router
+          .group(() => {
+            router.get('/', [TimelinesController, 'index'])
+            router.post('/', [TimelinesController, 'store'])
+            router.get(':id', [TimelinesController, 'show'])
+            router.put(':id', [TimelinesController, 'update'])
+            router.delete(':id', [TimelinesController, 'destroy'])
+          })
+          .prefix('timelines')
+
+        router
+          .group(() => {
+            router.get('streamManager', ({ response }) => {
+              const streamManager = Stream_manager
+              return response.ok({ streams: streamManager.getAllStreams() })
+            })
+          })
+          .prefix('admin')
+
+        router.group(() => {
+          router.get('/search', [SearchesController, 'index'])
+        })
       })
       .use(middleware.auth())
   })
