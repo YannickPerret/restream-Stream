@@ -7,7 +7,11 @@ export default class TimelinesController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ auth, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const timelines = await Timeline.query().preload('items').where('user_id', user.id)
+    return response.json(timelines)
+  }
 
   /**
    * Handle form submission for the create action
@@ -18,23 +22,27 @@ export default class TimelinesController {
 
     const timeline = await Timeline.create({
       title,
+      filePath: '',
       description,
       userId: user.id,
     })
 
     if (items) {
-      for (const [index, { type, itemId }] of items.entries()) {
-        if (type === 'video' || type === 'playlist') {
+      for (const [index, item] of items.entries()) {
+        if (item.type === 'video' || item.type === 'playlist') {
           await TimelineItem.create({
-            id: timeline.id,
-            type: type,
-            itemId,
+            timelineId: timeline.id,
+            type: item.type,
+            itemId: item.itemId,
             order: index + 1,
           })
         } else {
-          logger.warn(`Invalid item type: ${type}`)
+          logger.warn(`Invalid item type: ${item.type}`)
         }
       }
+
+      await timeline.generatePlaylistFile('m3u8')
+      await timeline.save()
     }
 
     return response.created(timeline)
