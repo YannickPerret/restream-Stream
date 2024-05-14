@@ -18,9 +18,7 @@ export default function Navigator() {
     }, []);
 
     if (!isAuthChecked) {
-        return (
-            null
-        );
+        return null;
     }
 
     return (
@@ -45,7 +43,7 @@ export default function Navigator() {
                     <div className="relative group">
                         <Link href="/timelines" className="flex gap-2 p-2 text-xl text-white hover:bg-gray-700 rounded-md"><SquareGanttChart />Timelines</Link>
                         <div className="absolute left-0 hidden group-hover:block flex flex-col text-white z-10 bg-sky-600 w-full">
-                            <Link href="/timeline/create" className="flex px-4 py-2 hover:bg-gray-700 rounded-t-md text-l"><Plus/>Create</Link>
+                            <Link href="/timelines/create" className="flex px-4 py-2 hover:bg-gray-700 rounded-t-md text-l"><Plus/>Create</Link>
                         </div>
                     </div>
                     <div className="relative group">
