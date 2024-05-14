@@ -1,7 +1,8 @@
 'use client';
-import AuthApi from "../../api/auth";
-import { useSessionStore } from "../../stores/useSessionStore";
+import AuthApi from "../../../api/auth";
+import { useSessionStore } from "../../../stores/useSessionStore";
 import {useRouter} from "next/navigation";
+import {LogOut} from "lucide-react";
 
 export default function LogoutForm() {
   const { logout } = useSessionStore.getState()
@@ -23,10 +24,10 @@ export default function LogoutForm() {
   return (
     <button
       type="button"
-      className="flex items-center p-2 text-white hover:bg-gray-700 rounded-md align-baseline"
+      className="flex text-xl gap-2 p-2 text-white hover:bg-gray-700 rounded-md align-baseline"
       onClick={handleLogout}
     >
-      <span>Logout</span>
+      <LogOut /> Logout
     </button>
   )
 }

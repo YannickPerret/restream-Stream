@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { StreamApi } from '../../api/stream';
+import { StreamApi } from '../../../api/stream';
 import SearchForm from '../search/searchForm';
 
 export default function StreamForm({ onSubmit }) {

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import SearchInput from './SearchInput';
-import { SearchApi } from '../../api/search';
+import { SearchApi } from '../../../api/search';
 
 export default function SearchForm({ searchUrl, multiple = false, updateSelectedItems }) {
     const [form, setForm] = useState({ query: '', domain: searchUrl });

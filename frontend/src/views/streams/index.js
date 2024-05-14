@@ -1,6 +1,6 @@
-import {StreamApi} from "../../api/stream";
+import {StreamApi} from "../../../api/stream";
 import  {useRouter} from "next/navigation";
-import {useStreamStore} from "../../stores/useStreamStore";
+import {useStreamStore} from "../../../stores/useStreamStore";
 import Link from "next/link";
 
 export default function StreamPageIndex () {

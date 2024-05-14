@@ -1,6 +1,6 @@
 'use client';
 import { useState } from "react";
-import {ProviderApi} from "../../api/provider";
+import {ProviderApi} from "../../../api/provider";
 
 export default function ProvidersCreateForm() {
     const [providerType, setProviderType] = useState("");

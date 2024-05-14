@@ -1,4 +1,4 @@
-import ProvidersCreateForm from "../../../../../components/forms/provider";
+import ProvidersCreateForm from "@/components/forms/provider";
 
 export default function ProvidersCreate () {
     return (
