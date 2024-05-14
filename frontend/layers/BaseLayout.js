@@ -1,4 +1,4 @@
-import Navigator from "../components/Navigator";
+import Navigator from "@/components/Navigator";
 import Logo from "../public/coffeeStream.png";
 import Image from "next/image";
 
