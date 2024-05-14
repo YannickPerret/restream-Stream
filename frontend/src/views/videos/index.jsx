@@ -1,14 +1,14 @@
-import {useStreamStore} from "../../../stores/useStreamStore";
+'use client';
+import {useVideoStore} from "#stores/useVideoStore";
+import Link from "next/link";
 
-export default function VideoIndexViews() {
-    const videos = useStreamStore.use.videos();
-
+export default function VideoIndexView() {
+    const videos = useVideoStore.use.videos();
 
   return (
     <table>
         <thead>
             <tr>
-                <th>Id</th>
                 <th>title</th>
                 <th>Description</th>
                 <th>Duration</th>
@@ -20,8 +20,7 @@ export default function VideoIndexViews() {
         <tbody>
             {videos.map((video) => (
                 <tr key={video.id}>
-                    <td>{video.id}</td>
-                    <td>{video.title}</td>
+                    <td><Link href={`/videos/${video.id}`}>{video.title}</Link></td>
                     <td>{video.description}</td>
                     <td>{video.duration}</td>
                     <td>{video.isPublished ? 'Yes' : 'No'}</td>

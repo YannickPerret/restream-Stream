@@ -10,7 +10,11 @@ export default class VideosController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ auth, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const videos = await Video.findManyBy('user_id', user.id)
+    return response.json(videos)
+  }
 
   /**
    * Handle form submission for the create action

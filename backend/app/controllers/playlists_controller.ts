@@ -7,19 +7,23 @@ export default class PlaylistsController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const playlists = await Playlist.findManyBy('user_id', user.id)
+    return response.json(playlists)
+  }
 
   /**
    * Handle form submission for the create action
    */
   async store({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
-    const { title, description, videos } = request.all()
+    const { title, description, videos, isPublished } = request.all()
 
     const playlist = await Playlist.create({
       title,
       description,
-      isPublished: true,
+      isPublished: isPublished,
       userId: user.id,
     })
 

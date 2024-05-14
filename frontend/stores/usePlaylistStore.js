@@ -10,21 +10,20 @@ const createSelectors = (_store) => {
 };
 
 
-export const useStreamStore = createSelectors(create((set) => ({
-    //multiple streams
-    streams: [],
-    setStreams: (streams) => set({ streams }),
-    addStream: (stream) => set(state => ({ streams: [...state.streams, stream] })),
-    removeStream: (id) => set(state => ({ streams: state.streams.filter(stream => stream.id !== id) })),
-    updateStream: (updatedStream) => set(state => ({
-        streams: state.streams.map(stream => stream.id === updatedStream.id ? updatedStream : stream)
+export const usePlaylistStore = createSelectors(create((set) => ({
+    playlists: [],
+    setPlaylists: (playlists) => set({ playlists }),
+    addPlaylist: (playlist) => set(state => ({ playlists: [...state.playlists, playlist] })),
+    removePlaylist: (id) => set(state => ({ playlists: state.playlists.filter(playlist => playlist.id !== id) })),
+    updatePlaylist: (updatedPlaylist) => set(state => ({
+        playlists: state.playlists.map(playlist => playlist.id === updatedPlaylist.id ? updatedPlaylist : playlist)
     })),
-    getStream: (id) => state => state.streams.find(stream => stream.id === id),
-    setStream: (id, newStream) => set(state => ({
-        streams: state.streams.map(stream => stream.id === id ? newStream : stream)
+    getPlaylist: (id) => state => state.playlists.find(playlist => playlist.id === id),
+    setPlaylist: (id, newPlaylist) => set(state => ({
+        playlists: state.playlists.map(playlist => playlist.id === id ? newPlaylist : playlist)
     })),
     /* custom function*/
-    updateStreamStatus: (id, status) => set(state => ({
-        streams: state.streams.map(stream => stream.id === id ? { ...stream, status } : stream)
+    updatePlaylistStatus: (id, status) => set(state => ({
+        playlists: state.playlists.map(playlist => playlist.id === id ? { ...playlist, status } : playlist)
     })),
 })));
