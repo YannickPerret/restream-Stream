@@ -73,44 +73,48 @@ export default function PlaylistCreatePage() {
                     </div>
                 </div>
 
+                <div className="flex flex-row">
+                    <aside>
+                        <PlaylistForm
+                            name={playlist.name}
+                            isPublished={playlist.isPublished}
+                            setPublished={(value) => setPlaylist((prevPlaylist) => ({...prevPlaylist, value}))}
+                            setName={(name) => setPlaylist((prevPlaylist) => ({...prevPlaylist, name}))}
+                            description={playlist.description}
+                            setDescription={(value) => setPlaylist((prevPlaylist) => ({...prevPlaylist, value}))}
+                            submitPlaylist={submitPlaylist}
+                        />
 
-                <PlaylistForm
-                    name={playlist.name}
-                    isPublished={playlist.isPublished}
-                    setPublished={(value) => setPlaylist((prevPlaylist) => ({...prevPlaylist, value}))}
-                    setName={(name) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, name }))}
-                    description={playlist.description}
-                    setDescription={(value) => setPlaylist((prevPlaylist) => ({...prevPlaylist, value}))}
-                    submitPlaylist={submitPlaylist}
-                />
+                        <h2>Add Videos to Playlist</h2>
 
-                <h2>Add Videos to Playlist</h2>
+                        {videos?.length === 0 && <p>No video available</p>}
+                        {videos?.map((video, index) => (
+                            <div key={index}>
+                                <p>{video.title}</p>
+                                <p>Durée : {video.duration} s</p>
+                                <button onClick={() => addVideoToPlaylist(video)}>Add to Playlist</button>
+                            </div>
+                        ))}
+                    </aside>
 
-                {videos?.length === 0 && <p>No video available</p>}
-                {videos?.map((video, index) => (
-                    <div key={index}>
-                        <p>{video.title}</p>
-                        <p>Durée : {video.duration} s</p>
-                        <button onClick={() => addVideoToPlaylist(video)}>Add to Playlist</button>
+                    <div className="rows">
+                        <h2>Current Playlist</h2>
+                        <div>
+                            <p>Durée totale de la playlist : {totalDuration} s</p>
+                        </div>
+                        <Draggable axis="y" handle=".handle" defaultPosition={{x: 0, y: 0}} position={null}
+                                   grid={[25, 25]}
+                                   scale={1}>
+                            <ul>
+                                {playlist.videos.map((element, index) => (
+                                    <li key={index} className="handle">
+                                        {element.title} - {element.duration}
+                                        <button onClick={() => removeVideoFromPlaylist(index)}>Remove</button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </Draggable>
                     </div>
-                ))}
-
-                <div className="rows">
-                    <h2>Current Playlist</h2>
-                    <div>
-                        <p>Durée totale de la playlist : {totalDuration} s</p>
-                    </div>
-                    <Draggable axis="y" handle=".handle" defaultPosition={{x: 0, y: 0}} position={null} grid={[25, 25]}
-                               scale={1}>
-                        <ul>
-                            {playlist.videos.map((element, index) => (
-                                <li key={index} className="handle">
-                                    {element.title} - {element.duration}
-                                    <button onClick={() => removeVideoFromPlaylist(index)}>Remove</button>
-                                </li>
-                            ))}
-                        </ul>
-                    </Draggable>
                 </div>
             </div>
         </section>

@@ -18,7 +18,7 @@ export class VideoApi extends Api {
     static async getOne(id) {
         const response = await fetch(`${this.baseUrl}/api/videos/${id}`, {
             method: 'GET',
-            headers: this.getHeaders(),
+            headers: this.getHeaders('multipart/form-data'),
         });
         if(!response.ok) {
             throw new Error('Error while fetching stream');
@@ -29,8 +29,8 @@ export class VideoApi extends Api {
     static async create(data) {
         const response = await fetch(`${this.baseUrl}/api/videos`, {
             method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(data),
+            headers: this.getHeaders({}),
+            body: data,
         });
         if(!response.ok) {
             throw new Error('Error while creating stream');

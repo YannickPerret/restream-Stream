@@ -19,9 +19,9 @@ export default function PlaylistForm({ name, setName, isPublished, setPublished,
                 <input id="name" value={localName} onChange={(e) => setLocalName(e.target.value)} type="text" required/>
             </FormGroup>
             <FormGroup>
-                <label htmlFor="description">Description</label>
-                <textarea id={"description"} value={localDescription} onChange={setLocalDescription} rows={10}
-                          cols={10}></textarea>
+                <label htmlFor="description">Description :</label>
+                <textarea id={"description"} value={localDescription} onChange={setLocalDescription} rows={3}
+                          cols={20}></textarea>
             </FormGroup>
             <FormGroup>
                 <label htmlFor="isPublished">Published</label>
