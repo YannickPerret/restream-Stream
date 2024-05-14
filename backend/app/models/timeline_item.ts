@@ -24,10 +24,16 @@ export default class TimelineItem extends BaseModel {
   @column()
   declare itemId: number
 
-  @belongsTo(() => Video, { foreignKey: 'itemId' })
+  @belongsTo(() => Video, {
+    foreignKey: 'itemId',
+    onQuery: (query) => query.where('type', 'video'),
+  })
   declare video: BelongsTo<typeof Video>
 
-  @belongsTo(() => Playlist, { foreignKey: 'itemId' })
+  @belongsTo(() => Playlist, {
+    foreignKey: 'itemId',
+    onQuery: (query) => query.where('type', 'playlist'),
+  })
   declare playlist: BelongsTo<typeof Playlist>
 
   @column.dateTime({ autoCreate: true })

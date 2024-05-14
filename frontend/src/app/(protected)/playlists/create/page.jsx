@@ -12,7 +12,7 @@ export default function PlaylistCreatePage() {
         title: '',
         description: '',
         isPublished: true,
-        videos: []
+        items: []
     });
     const videos = useVideoStore.use.videos();
 
@@ -38,14 +38,14 @@ export default function PlaylistCreatePage() {
     const addVideoToPlaylist = (video) => {
         setPlaylist((prevPlaylist) => ({
             ...prevPlaylist,
-            videos: [...prevPlaylist.videos, { ...video, key: `${video.id}-${prevPlaylist.videos.length}` }]
+            items: [...prevPlaylist.items, { type: 'video', video: video, key: `${video.id}-${prevPlaylist.items.length}` }]
         }));
     };
 
-    const removeVideoFromPlaylist = (key) => {
+    const removeItemFromPlaylist = (key) => {
         setPlaylist((prevPlaylist) => ({
             ...prevPlaylist,
-            videos: prevPlaylist.videos.filter((video) => video.key !== key)
+            items: prevPlaylist.items.filter((item) => item.key !== key)
         }));
     };
 
@@ -54,18 +54,18 @@ export default function PlaylistCreatePage() {
         await PlaylistApi.create(newPlaylist).then((response) => {
             if (response.ok) {
                 console.log('Playlist created successfully');
-                setPlaylist({ title: '', description: '', isPublished: true, videos: [] });
+                setPlaylist({ title: '', description: '', isPublished: true, items: [] });
                 localStorage.removeItem('playlist');
             }
         });
     };
 
-    const totalDuration = playlist.videos.reduce((acc, video) => acc + video.duration, 0);
+    const totalDuration = playlist.items.reduce((acc, item) => acc + item.video.duration, 0);
 
     const onListChange = (newList) => {
         setPlaylist((prevPlaylist) => ({
             ...prevPlaylist,
-            videos: newList
+            items: newList
         }));
     };
 
@@ -110,9 +110,9 @@ export default function PlaylistCreatePage() {
                             <p>Durée totale de la playlist : {totalDuration} s</p>
                         </div>
                         <DraggableList
-                            items={playlist.videos}
+                            items={playlist.items}
                             onListChange={onListChange}
-                            removeVideo={removeVideoFromPlaylist}
+                            remove={removeItemFromPlaylist}
                         />
                     </div>
                 </div>
