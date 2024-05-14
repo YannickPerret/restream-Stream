@@ -1,5 +1,6 @@
 import React from 'react';
 import SearchFormProvider from './SearchFormProvider';
+import SearchFormTimeline from "#components/search/SearchFormTimeline.js";
 
 export default function SearchInput({ items, domain, selectedItems, multiple, updateSelectedItems }) {
     const toggleItem = item => {
@@ -24,6 +25,7 @@ export default function SearchInput({ items, domain, selectedItems, multiple, up
             {items.map(item => (
                 <li key={item.id} onClick={() => toggleItem(item)} className="cursor-pointer">
                     {domain === 'providers' && <SearchFormProvider provider={item} />}
+                    {domain === 'timelines' && <SearchFormTimeline timeline={item} />}
                 </li>
             ))}
         </ul>

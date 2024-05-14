@@ -6,7 +6,7 @@ import SearchForm from '../search/searchForm';
 export default function StreamForm({ onSubmit }) {
     const [title, setTitle] = useState('');
     const [providers, setProviders] = useState([]);
-    const [timeline, setTimeline] = useState({});
+    const [timeline, setTimeline] = useState([]);
     const [primaryProvider, setPrimaryProvider] = useState(null);
     const [runLive, setRunLive] = useState(false);
 
@@ -55,6 +55,12 @@ export default function StreamForm({ onSubmit }) {
                 value={title}
                 onChange={e => setTitle(e.target.value)}
             />
+            <div>
+                Timeline selected:
+                <div>
+                    <label>{timeline?.title}</label>
+                </div>
+            </div>
 
             <div>
                 <label>Timeline</label>
