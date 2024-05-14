@@ -1,6 +1,6 @@
 'use client'
-import {useProviderStore} from "#stores/useProviderStore";
-import {PlaylistApi} from "#api/playlist.js";
+import {usePlaylistStore} from "#stores/usePlaylistStore";
+import {PlaylistApi} from "#api/playlist";
 import PlaylistIndexView from "@/views/playlists/index.js";
 import {useEffect} from "react";
 
@@ -9,8 +9,8 @@ export default function PlaylistIndexPage() {
     useEffect(() => {
         const fetchPlaylists = async () => {
             await PlaylistApi.getAll().then((data) => {
-                useProviderStore.setState({
-                    playlists: data.playlists
+                usePlaylistStore.setState({
+                    playlists: data
                 })
             })
         }

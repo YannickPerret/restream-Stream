@@ -9,7 +9,7 @@ export default class PlaylistsController {
    */
   async index({ response, auth }: HttpContext) {
     const user = await auth.authenticate()
-    const playlists = await Playlist.findManyBy('user_id', user.id)
+    const playlists = await Playlist.query().preload('videos').where('userId', user.id)
     return response.json(playlists)
   }
 
@@ -18,27 +18,29 @@ export default class PlaylistsController {
    */
   async store({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
+
+    logger.info(request.all())
     const { title, description, videos, isPublished } = request.all()
 
     const playlist = await Playlist.create({
       title,
       description,
-      isPublished: isPublished,
+      isPublished,
       userId: user.id,
     })
 
-    if (videos) {
-      for (const [index, videoId] of videos.entries()) {
-        const video = await Video.find(videoId)
+    if (videos && videos.length > 0) {
+      for (const [index, video_] of videos.entries()) {
+        const videoDb = await Video.find(video_.id)
 
-        if (video) {
+        if (videoDb) {
           await playlist.related('videos').attach({
-            [videoId]: {
+            [videoDb.id]: {
               order: index + 1,
             },
           })
         } else {
-          logger.warn(`Video not found: ${videoId}`)
+          logger.warn(`Video not found: ${videos[index].id}`)
         }
       }
     }

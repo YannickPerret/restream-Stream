@@ -7,7 +7,7 @@ export default class ProvidersController {
    */
   async index({ auth, response }: HttpContext) {
     const user = await auth.authenticate()
-    const providers = await Provider.query().where('user_id', user.id)
+    const providers = await Provider.findManyBy('user_id', user.id)
     return response.json({ providers })
   }
 

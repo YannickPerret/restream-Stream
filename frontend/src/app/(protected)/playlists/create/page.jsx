@@ -9,7 +9,7 @@ import DraggableList from '#components/draggable/Draggable';
 
 export default function PlaylistCreatePage() {
     const [playlist, setPlaylist] = useState({
-        name: '',
+        title: '',
         description: '',
         isPublished: true,
         videos: []
@@ -49,11 +49,12 @@ export default function PlaylistCreatePage() {
         }));
     };
 
-    const submitPlaylist = async () => {
-        await PlaylistApi.create(playlist).then((response) => {
+    const submitPlaylist = async (title, description, isPublished) => {
+        const newPlaylist = { ...playlist, title, description, isPublished };
+        await PlaylistApi.create(newPlaylist).then((response) => {
             if (response.ok) {
                 console.log('Playlist created successfully');
-                setPlaylist({ name: '', description: '', isPublished: true, videos: [] });
+                setPlaylist({ title: '', description: '', isPublished: true, videos: [] });
                 localStorage.removeItem('playlist');
             }
         });
@@ -82,16 +83,16 @@ export default function PlaylistCreatePage() {
                 <div className="flex flex-row">
                     <aside>
                         <PlaylistForm
-                            name={playlist.name}
+                            title={playlist.title}
                             isPublished={playlist.isPublished}
                             setPublished={(value) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, isPublished: value }))}
-                            setName={(name) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, name }))}
+                            setTitle={(title) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, title }))}
                             description={playlist.description}
                             setDescription={(value) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, description: value }))}
                             submitPlaylist={submitPlaylist}
                         />
 
-                        <h2>List of videos available</h2>
+                        <h2>Add Videos to Playlist</h2>
 
                         {videos?.length === 0 && <p>No video available</p>}
                         {videos?.map((video, index) => (
