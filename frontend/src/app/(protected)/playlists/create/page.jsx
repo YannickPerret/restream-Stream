@@ -91,7 +91,7 @@ export default function PlaylistCreatePage() {
                             submitPlaylist={submitPlaylist}
                         />
 
-                        <h2>Add Videos to Playlist</h2>
+                        <h2>List of videos available</h2>
 
                         {videos?.length === 0 && <p>No video available</p>}
                         {videos?.map((video, index) => (

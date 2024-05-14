@@ -26,6 +26,7 @@ const DraggableList = ({ items, onListChange, removeVideo }) => {
                             <Draggable key={item.key} draggableId={item.key} index={index}>
                                 {(provided, snapshot) => (
                                     <DraggableItem
+                                        index={index + 1}
                                         ref={provided.innerRef}
                                         provided={provided}
                                         snapshot={snapshot}
