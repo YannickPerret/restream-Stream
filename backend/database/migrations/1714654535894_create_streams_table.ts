@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.enum('status', ['active', 'inactive']).defaultTo('inactive')
       table.dateTime('start_time').nullable()
       table.dateTime('end_time').nullable()
+      table.integer('timeline_id').unsigned().references('timelines.id').onDelete('CASCADE')
       table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE')
       table.timestamp('created_at')
       table.timestamp('updated_at')
