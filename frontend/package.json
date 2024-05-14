@@ -27,6 +27,7 @@
   "imports": {
     "#stores/*": "./stores/*.js",
     "#api/*": "./api/*.js",
-    "#components/*": "./src/components/*.js"
+    "#components/*": "./src/components/*.js",
+    "#helpers/*": "./helpers/*.js"
   }
 }

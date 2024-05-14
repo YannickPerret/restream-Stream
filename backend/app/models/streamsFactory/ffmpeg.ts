@@ -28,7 +28,7 @@ export default class Ffmpeg implements StreamProvider {
       '0',
       '-i',
       playlist ||
-        'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlist.m3u8',
+        'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlists.m3u8',
       '-vsync',
       'cfr',
       '-copyts',

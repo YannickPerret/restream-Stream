@@ -4,7 +4,8 @@
       "@/*": ["./src/*"],
       "#stores/*": ["stores/*"],
       "#api/*": ["api/*"],
-      "#components/*": ["src/components/*"]
+      "#components/*": ["src/components/*"],
+      "#helpers/*": ["helpers/*"]
     }
   }
 }
