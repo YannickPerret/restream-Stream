@@ -2,7 +2,8 @@ import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import DraggableItem from './DraggableItem';
 
-const DraggableList = ({ items, onListChange, removeVideo }) => {
+const DraggableList = ({ items, onListChange, remove }) => {
+
     const onDragEnd = (result) => {
         if (!result.destination) return;
 
@@ -26,12 +27,12 @@ const DraggableList = ({ items, onListChange, removeVideo }) => {
                             <Draggable key={item.key} draggableId={item.key} index={index}>
                                 {(provided, snapshot) => (
                                     <DraggableItem
-                                        index={index + 1}
                                         ref={provided.innerRef}
                                         provided={provided}
                                         snapshot={snapshot}
                                         item={item}
-                                        removeVideo={removeVideo}
+                                        index={index}
+                                        remove={remove}
                                     />
                                 )}
                             </Draggable>
