@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments('id')
       table.string('title').notNullable()
       table.string('description').nullable()
-      table.string('filePath').notNullable()
+      table.string('file_path').notNullable()
       table.boolean('is_published').defaultTo(true)
       table.integer('user_id').unsigned().references('users.id').onDelete('CASCADE')
       table.timestamp('created_at')
