@@ -1,18 +1,26 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import logger from '@adonisjs/core/services/logger'
 import Video from '#models/video'
-
-interface QueueItem {
-  video: Video
-  startTimeCode: string | null
-  endTimeCode: string | null
-  resolve: (value: string | PromiseLike<string>) => void
-  reject: (reason?: any) => void
-}
+import VideoEncoder from '#models/video_encoder'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import QueueItem from '#models/queue_item'
 
 export default class Queue extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
+
+  @column()
+  declare title: string
+
+  @column()
+  declare active: boolean
+
+  @column()
+  declare maxSlots: number
+
+  @column()
+  declare maxConcurrent: number
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -20,33 +28,24 @@ export default class Queue extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  private queue: QueueItem[] = []
+  @hasMany(() => QueueItem)
+  declare items: HasMany<typeof QueueItem>
+
   private isEncoding: boolean = false
+  private currentEncodings: number = 0
   private static instance: Queue
 
-  private constructor() {
-    super()
-  }
-
-  async add(
-    video: Video,
-    startTimeCode: string | null,
-    endTimeCode: string | null
-  ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.queue.push({ video, startTimeCode, endTimeCode, resolve, reject })
-      if (!this.isEncoding) {
-        //run encoding
-      }
-    })
-  }
-
-  private async processQueue(): Promise<void> {
-    this.queue.shift()
-    this.isEncoding = false
-    if (this.queue.length > 0) {
-      //run encoding
+  static async findOrCreateQueue(): Promise<Queue> {
+    let queue = await this.query().where('active', true).first()
+    if (!queue) {
+      queue = await Queue.create({
+        title: 'Default Queue',
+        active: true,
+        maxSlots: 50,
+        maxConcurrent: 1,
+      })
     }
+    return queue
   }
 
   static getInstance(): Queue {
@@ -54,5 +53,92 @@ export default class Queue extends BaseModel {
       Queue.instance = new Queue()
     }
     return Queue.instance
+  }
+
+  async add(
+    video: Video,
+    startTimeCode: string | null,
+    endTimeCode: string | null
+  ): Promise<string> {
+    return new Promise(async (resolve, reject) => {
+      let queue = await Queue.findOrCreateQueue()
+      let activeItemsCount = await QueueItem.query()
+        .where('queueId', queue.id)
+        .andWhere((builder) => {
+          builder.where('status', 'pending').orWhere('status', 'processing')
+        })
+        .count('* as total')
+
+      // Access the total count correctly
+      const totalActiveItems = Number(activeItemsCount[0].$extras.total)
+
+      if (totalActiveItems >= queue.maxSlots) {
+        queue = await Queue.create({
+          title: `Queue ${DateTime.now().toFormat('yyyyLLddHHmmss')}`,
+          active: true,
+          maxSlots: queue.maxSlots,
+          maxConcurrent: queue.maxConcurrent,
+        })
+      }
+
+      const queueItem = new QueueItem()
+      queueItem.queueId = queue.id
+      queueItem.videoId = video.id
+      queueItem.startTimeCode = startTimeCode
+      queueItem.endTimeCode = endTimeCode
+      queueItem.status = 'pending'
+      await queueItem.save()
+
+      if (!this.isEncoding) {
+        await this.runEncoding(queue.id)
+      }
+
+      resolve(queueItem.id.toString())
+    })
+  }
+
+  private async runEncoding(queueId: number): Promise<void> {
+    const queue = await Queue.find(queueId)
+    if (!queue || !queue.active) return
+
+    const queueItems = await QueueItem.query()
+      .where('queueId', queueId)
+      .andWhere('status', 'pending')
+    if (queueItems.length === 0 || this.currentEncodings >= queue.maxConcurrent) return
+    this.isEncoding = true
+    this.currentEncodings += 1
+
+    const { videoId, startTimeCode, endTimeCode } = queueItems[0]
+    const video = await Video.find(videoId)
+
+    try {
+      const outputPath = await VideoEncoder.encode(
+        video,
+        startTimeCode,
+        endTimeCode,
+        queue.items.length
+      )
+      queueItems[0].status = 'completed'
+      await queueItems[0].save()
+      this.currentEncodings -= 1
+      await this.processQueue(queueId)
+    } catch (error) {
+      logger.error(error)
+      queueItems[0].status = 'failed'
+      await queueItems[0].save()
+      this.currentEncodings -= 1
+      await this.processQueue(queueId)
+    }
+  }
+
+  private async processQueue(queueId: number): Promise<void> {
+    this.isEncoding = false
+    const nextItem = await QueueItem.query()
+      .where('queueId', queueId)
+      .andWhere('status', 'pending')
+      .first()
+    if (nextItem) {
+      await this.runEncoding(queueId)
+    }
   }
 }
