@@ -6,6 +6,7 @@ import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/provider'
 import StreamFactory from '#models/streamsFactory/stream_factory'
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
+import Timeline from '#models/timeline'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -29,6 +30,9 @@ export default class Stream extends BaseModel {
   @column()
   declare providerId: number
 
+  @column()
+  declare timelineId: number
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -50,6 +54,9 @@ export default class Stream extends BaseModel {
   })
   declare providers: ManyToMany<typeof Provider>
 
+  @belongsTo(() => Timeline)
+  declare timeline: BelongsTo<typeof Timeline>
+
   declare streamProvider: StreamProvider | null
   declare isOnLive: boolean
   declare canNextVideo: boolean
@@ -69,11 +76,11 @@ export default class Stream extends BaseModel {
     this.primaryProvider = primary ?? null
 
     if (this.primaryProvider) {
-      logger.info(`Primary provider found: ${this.primaryProvider.name}`)
       this.streamProvider = StreamFactory.createProvider(
         'ffmpeg',
         this.primaryProvider.baseUrl,
-        this.primaryProvider.streamKey
+        this.primaryProvider.streamKey,
+        this.timeline.filePath
       )
       await this.start()
     } else {
@@ -84,10 +91,10 @@ export default class Stream extends BaseModel {
     await this.save()
   }
 
-  async start(playlist: any = undefined): Promise<void> {
+  async start(): Promise<void> {
     logger.info(`Using primary provider: ${JSON.stringify(this.primaryProvider)}`)
 
-    this.streamProvider?.startStream(playlist)
+    this.streamProvider?.startStream()
 
     this.startTime = DateTime.now()
     this.status = 'active'

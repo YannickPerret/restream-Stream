@@ -15,10 +15,11 @@ export default class Ffmpeg implements StreamProvider {
 
   constructor(
     private baseUrl: string,
-    private streamKey: string
+    private streamKey: string,
+    private timelinePath: string
   ) {}
 
-  startStream(playlist?: string): void {
+  startStream(): void {
     const parameters = [
       '-nostdin',
       '-re',
@@ -27,7 +28,7 @@ export default class Ffmpeg implements StreamProvider {
       '-safe',
       '0',
       '-i',
-      playlist ||
+      this.timelinePath ||
         'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlists.m3u8',
       '-vsync',
       'cfr',
@@ -92,18 +93,23 @@ export default class Ffmpeg implements StreamProvider {
   private handleProcessOutputs(instance: any) {
     if (instance?.stderr) {
       instance.stderr.on('data', (data: any) => {
-        logger.error(data.toString())
+        logger.info(data.toString())
       })
     }
 
     if (instance?.stdout) {
       instance.stdout.on('data', (data: any) => {
-        logger.info(data.toString())
+        logger.error(data.toString())
       })
     }
 
     instance.on('error', (error: any) => {
       logger.error(error)
+    })
+
+    instance.on('close', (code: any) => {
+      logger.info(`FFmpeg process closed with code: ${code}`)
+      this.stopStream()
     })
   }
 }
