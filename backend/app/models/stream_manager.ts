@@ -25,7 +25,7 @@ export class StreamManager {
     return this.streams.get(id)
   }
 
-  getOrAddStream(id: string, stream: Stream): Stream {
+  getOrAddStream(id: string, stream: Promise<InstanceType<Stream> | null>) {
     if (!this.streams.has(id)) {
       this.streams.set(id, stream)
     }

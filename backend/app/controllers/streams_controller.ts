@@ -30,10 +30,9 @@ export default class StreamsController {
       .preload('providers', (query) => {
         query.pivotColumns(['on_primary'])
       })
+      .preload('timeline')
       .where('id', params.id)
       .firstOrFail()
-
-    logger.info(`Providers associés: ${JSON.stringify(stream.providers)}`)
 
     const streamManager = Stream_manager
     const streamInstance = streamManager.getOrAddStream(params.id, stream)
@@ -47,11 +46,13 @@ export default class StreamsController {
 
   async stop({ params, response }: HttpContext) {
     const streamManager = Stream_manager
-    const stream = streamManager.getStream(params.id)
+    const getStream = Stream.find(params.id)
 
-    if (!stream) {
+    if (!getStream) {
       return response.notFound({ error: 'Stream not found' })
     }
+
+    const stream = streamManager.getOrAddStream(params.id, getStream)
 
     await stream.stop()
     streamManager.removeStream(params.id)
@@ -86,6 +87,7 @@ export default class StreamsController {
       endTime: null,
       userId: user.id,
       type: request.input('type'),
+      timelineId: timeline.id,
     })
 
     if (stream && providersForm) {

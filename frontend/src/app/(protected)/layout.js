@@ -1,17 +1,14 @@
 "use client";
-import { useSessionStore } from "../../../stores/useSessionStore";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useSessionStore } from "#stores/useSessionStore";
+import { redirect } from 'next/navigation'
+
 
 export default function RootLayout({ children, error }) {
   const { isAuthenticated } = useSessionStore();
-  const router = useRouter();
 
-  useEffect(() => {
     if (!isAuthenticated()) {
-      router.push('/');
+      redirect('/login')
     }
-  }, [isAuthenticated, router]);
 
   return (
     children
