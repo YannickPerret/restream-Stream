@@ -1,10 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { cuid } from '@adonisjs/core/helpers'
-
 import Video from '#models/video'
 import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
+import Queue from '#models/queue'
 
 export default class VideosController {
   /**
@@ -21,15 +21,14 @@ export default class VideosController {
    */
 
   async store({ request, auth, response }: HttpContext) {
-    logger.info('Uploading video')
     const user = await auth.authenticate()
-
     const { title, description, isPublished, showInLive } = request.only([
       'title',
       'description',
       'isPublished',
       'showInLive',
     ])
+
     const videoFile = request.file('video', {
       extnames: ['mp4', 'avi', 'mov', 'mts'],
       size: '20gb',
@@ -43,82 +42,53 @@ export default class VideosController {
       return response.badRequest(videoFile.errors)
     }
 
-    // await videoFile.move(env.get('VIDEO_DIRECTORY'))
-
-    await videoFile.move(app.makePath(env.get('VIDEO_DIRECTORY')), {
-      name: `${cuid()}.${videoFile.extname}`,
-    })
+    logger.info(videoFile)
+    const metadata = await Video.getInformation(videoFile.tmpPath as string)
 
     const videoCreated = await Video.create({
       title,
       description,
-      path: videoFile.filePath,
-      duration: await Video.getDuration(videoFile.filePath as string),
+      path: videoFile.tmpPath,
+      duration: await Video.getDuration(videoFile.tmpPath as string),
       showInLive,
       isPublished,
       userId: user.id,
     })
 
+    logger.info(`0: ${videoCreated}`)
+
+    if (
+      metadata.streams[0].codec_name !== 'h264' ||
+      metadata.streams[0].width !== 1920 ||
+      metadata.streams[0].height !== 1080 ||
+      metadata.streams[0].r_frame_rate !== '60/1' ||
+      metadata.streams[1].codec_name !== 'aac' ||
+      metadata.streams[1].sample_rate !== 48000
+    ) {
+      await videoFile.move(app.makePath(env.get('VIDEO_PROCESSING_DIRECTORY')), {
+        name: `${cuid()}.${videoFile.extname}`,
+      })
+      videoCreated.path = videoFile.filePath as string
+      logger.info('Video is not in the correct format, encoding it')
+
+      await videoCreated.save()
+
+      const queue = Queue.getInstance()
+      await queue.add(videoCreated, null, null).then(async (outputPath) => {
+        logger.info('Encoding completed')
+        videoCreated.path = outputPath
+        await videoCreated.save()
+      })
+    } else {
+      await videoFile.move(app.makePath(env.get('VIDEO_DIRECTORY')), {
+        name: `${cuid()}.${videoFile.extname}`,
+      })
+      videoCreated.path = videoFile.filePath as string
+      await videoCreated.save()
+    }
+
     return response.created(videoCreated)
   }
-  /*async store({ request, auth, response }: HttpContext) {
-    logger.info('Uploading video')
-    logger.info(request.all())
-    const user = await auth.authenticate()
-
-    const { title, description, isPublished, showInLive } = request.all()
-    const video = request.file('video', {
-      extnames: ['mp4', 'avi', 'mov', 'mts'],
-    })
-
-    if (!video) {
-      return response.badRequest('No video uploaded')
-    }
-
-    if (video.hasErrors) {
-      return response.badRequest(video.errors)
-    }
-
-    const duration = await Video.getDuration(video.tmpPath as string)
-    const metadata = await Video.getInformation(video.tmpPath as string)
-
-    await video.move(`.${env.get('VIDEO_DIRECTORY')}`)
-
-    const videoCreated = await Video.create({
-      title,
-      description,
-      path: video.filePath,
-      duration,
-      showInLive: showInLive,
-      isPublished: isPublished,
-      userId: user.id,
-    })
-
-    if (videoCreated) {
-      /*if (
-        metadata.streams[0].codec_name !== 'h264' ||
-        metadata.streams[0].width !== 1920 ||
-        metadata.streams[0].height !== 1080 ||
-        metadata.streams[0].r_frame_rate !== '60/1' ||
-        metadata.streams[1].codec_name !== 'aac' ||
-        metadata.streams[1].sample_rate !== 48000
-      ) {
-        await video.move(`.${env.get('STORE_VIDEO_DIRECTORY')}processings`)
-
-        videoCreated.path = video.filePath
-        await videoCreated.save()
-
-        logger.info('Video is not in the correct format, encoding it')
-      } else {
-        await video.move(`.${env.get('STORE_VIDEO_DIRECTORY')}`)
-        videoCreated.path = video.filePath
-        await videoCreated.save()
-      }
-      return response.created(videoCreated)
-    } else {
-      return response.badRequest({ error: 'Failed to create video' })
-    }
-  }*/
 
   /**
    * Show individual record

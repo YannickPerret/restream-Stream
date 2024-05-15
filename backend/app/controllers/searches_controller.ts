@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/provider'
 import Timeline from '#models/timeline'
+import Playlist from '#models/playlist'
 
 export default class SearchesController {
   async index({ request, response }: HttpContext) {
@@ -19,7 +20,7 @@ export default class SearchesController {
         //results = await Game.query().where('name', 'LIKE', `%${searchTerms}%`)
         break
       case 'playlists':
-        //results = await Playlist.query().where('title', 'LIKE', `%${searchTerms}%`)
+        results = await Playlist.query().where('title', 'LIKE', `%${searchTerms}%`)
         break
       case 'timelines':
         results = await Timeline.query().where('title', 'LIKE', `%${searchTerms}%`)
