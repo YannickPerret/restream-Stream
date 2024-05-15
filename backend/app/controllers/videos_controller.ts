@@ -41,17 +41,21 @@ export default class VideosController {
     if (videoFile.hasErrors) {
       return response.badRequest(videoFile.errors)
     }
-    const metadata = await Video.getInformation(videoFile.filePath as string)
+
+    logger.info(videoFile)
+    const metadata = await Video.getInformation(videoFile.tmpPath as string)
 
     const videoCreated = await Video.create({
       title,
       description,
-      path: videoFile.filePath,
-      duration: await Video.getDuration(videoFile.filePath as string),
+      path: videoFile.tmpPath,
+      duration: await Video.getDuration(videoFile.tmpPath as string),
       showInLive,
       isPublished,
       userId: user.id,
     })
+
+    logger.info(`0: ${videoCreated}`)
 
     if (
       metadata.streams[0].codec_name !== 'h264' ||
@@ -61,11 +65,17 @@ export default class VideosController {
       metadata.streams[1].codec_name !== 'aac' ||
       metadata.streams[1].sample_rate !== 48000
     ) {
-      await videoFile.move(`.${env.get('STORE_VIDEO_DIRECTORY')}processings`)
+      await videoFile.move(app.makePath(env.get('VIDEO_PROCESSING_DIRECTORY')), {
+        name: `${cuid()}.${videoFile.extname}`,
+      })
+      videoCreated.path = videoFile.filePath as string
       logger.info('Video is not in the correct format, encoding it')
+
+      await videoCreated.save()
 
       const queue = Queue.getInstance()
       await queue.add(videoCreated, null, null).then(async (outputPath) => {
+        logger.info('Encoding completed')
         videoCreated.path = outputPath
         await videoCreated.save()
       })

@@ -36,7 +36,7 @@ export default class Queue extends BaseModel {
   private static instance: Queue
 
   static async findOrCreateQueue(): Promise<Queue> {
-    let queue = await this.query().where('active', true).first()
+    let queue = await this.query().where('active', true).preload('items').first()
     if (!queue) {
       queue = await Queue.create({
         title: 'Default Queue',
@@ -69,7 +69,6 @@ export default class Queue extends BaseModel {
         })
         .count('* as total')
 
-      // Access the total count correctly
       const totalActiveItems = Number(activeItemsCount[0].$extras.total)
 
       if (totalActiveItems >= queue.maxSlots) {
@@ -87,18 +86,19 @@ export default class Queue extends BaseModel {
       queueItem.startTimeCode = startTimeCode
       queueItem.endTimeCode = endTimeCode
       queueItem.status = 'pending'
+
       await queueItem.save()
 
       if (!this.isEncoding) {
         await this.runEncoding(queue.id)
       }
 
-      resolve(queueItem.id.toString())
+      resolve(video.path)
     })
   }
 
   private async runEncoding(queueId: number): Promise<void> {
-    const queue = await Queue.find(queueId)
+    const queue = await Queue.query().where('id', queueId).preload('items').first()
     if (!queue || !queue.active) return
 
     const queueItems = await QueueItem.query()
@@ -109,7 +109,13 @@ export default class Queue extends BaseModel {
     this.currentEncodings += 1
 
     const { videoId, startTimeCode, endTimeCode } = queueItems[0]
+    queueItems[0].status = 'processing'
+    await queueItems[0].save()
     const video = await Video.find(videoId)
+    if (!video) {
+      logger.error(`Video with ID ${videoId} not found`)
+      return
+    }
 
     try {
       const outputPath = await VideoEncoder.encode(
@@ -118,6 +124,8 @@ export default class Queue extends BaseModel {
         endTimeCode,
         queue.items.length
       )
+      video.path = outputPath
+      await video.save()
       queueItems[0].status = 'completed'
       await queueItems[0].save()
       this.currentEncodings -= 1

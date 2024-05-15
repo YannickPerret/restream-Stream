@@ -5,9 +5,8 @@ import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
 import env from '#start/env'
 import Video from '#models/video'
-import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
-import { inflate } from 'node:zlib'
+import app from '@adonisjs/core/services/app'
 
 export default class VideoEncoder extends BaseModel {
   @column({ isPrimary: true })
@@ -24,8 +23,9 @@ export default class VideoEncoder extends BaseModel {
     startTimeCode: string | null,
     endTimeCode: string | null,
     maxQueueSize: number
-  ): Promise<void> {
+  ): Promise<string> {
     return new Promise((resolve, reject) => {
+      logger.info(`1: Encoding video: ${video.title} with id: ${video.id} started`)
       let encode = ffmpeg(video.path).outputOptions([
         '-fflags +genpts', // Ensures the generation of timestamps
         '-vsync cfr', // Use Constant Frame Rate
@@ -46,24 +46,11 @@ export default class VideoEncoder extends BaseModel {
       if (endTimeCode) {
         encode = encode.outputOptions('-to', endTimeCode)
       }
-
-      const currentDateTime = new Date()
-      const datTime =
-        currentDateTime.getDate() +
-        '_' +
-        (currentDateTime.getMonth() + 1) +
-        '_' +
-        currentDateTime.getFullYear() +
-        '_' +
-        currentDateTime.getHours() +
-        '_' +
-        currentDateTime.getMinutes() +
-        '_' +
-        currentDateTime.getSeconds()
+      const outputPath = `${app.makePath(env.get('VIDEO_DIRECTORY'))}/${cuid()}.mp4`
 
       encode
         .on('start', () => {
-          logger.info('Encoding started for video: ', video.path)
+          logger.info(`2: Encoding started for video: ${video.title}`)
         })
         .on('progress', (progress) => {
           const percentage = progress.percent
@@ -89,16 +76,14 @@ export default class VideoEncoder extends BaseModel {
           )
         })
         .on('end', () => {
-          const outputPath = `${env.get('VIDEO_DIRECTORY')}${video.id}_${datTime}.mp4`
           fs.unlinkSync(video.path)
           resolve(outputPath)
         })
-
-        .save(`./${env.get('VIDEO_DIRECTORY')}${cuid()}.${video.title}.mp4`)
         .on('error', (err) => {
           logger.error(err)
           reject(err)
         })
+        .save(outputPath)
     })
   }
 }
