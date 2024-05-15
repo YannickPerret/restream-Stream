@@ -60,7 +60,7 @@ export default class Queue extends BaseModel {
     startTimeCode: string | null,
     endTimeCode: string | null
   ): Promise<string> {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve) => {
       let queue = await Queue.findOrCreateQueue()
       let activeItemsCount = await QueueItem.query()
         .where('queueId', queue.id)
@@ -118,13 +118,7 @@ export default class Queue extends BaseModel {
     }
 
     try {
-      const outputPath = await VideoEncoder.encode(
-        video,
-        startTimeCode,
-        endTimeCode,
-        queue.items.length
-      )
-      video.path = outputPath
+      video.path = await VideoEncoder.encode(video, startTimeCode, endTimeCode, queue.items.length)
       await video.save()
       queueItems[0].status = 'completed'
       await queueItems[0].save()
