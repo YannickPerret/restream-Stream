@@ -10,9 +10,22 @@ export default class VideosController {
   /**
    * Display a list of resource
    */
-  async index({ auth, response }: HttpContext) {
+  async index({ auth, response, request }: HttpContext) {
     const user = await auth.authenticate()
-    const videos = await Video.findManyBy('user_id', user.id)
+    const filters: { [key: string]: any } = request.only(['status', 'userId'])
+    let query = Video.query().preload('user').preload('guest')
+
+    if (Object.keys(filters).length === 0) {
+      query = query.where('userId', user.id)
+    } else {
+      for (let key in filters) {
+        if (filters[key]) {
+          query = query.where(key, filters[key])
+        }
+      }
+    }
+
+    const videos = await query
     return response.json(videos)
   }
 
@@ -51,7 +64,7 @@ export default class VideosController {
       path: videoFile.tmpPath,
       duration: await Video.getDuration(videoFile.tmpPath as string),
       showInLive,
-      isPublished,
+      status: isPublished === true ? 'published' : 'unpublished',
       userId: user.id,
     })
 
