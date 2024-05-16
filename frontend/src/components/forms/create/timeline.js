@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import FormGroup from "@/components/forms/handleForm/formGroup";
+import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 import {VideoApi} from "#api/video.js";
 import {useVideoStore} from "#stores/useVideoStore.js";
 import {PlaylistApi} from "#api/playlist.js";
@@ -46,7 +46,7 @@ export default function TimelineForm({ title, isPublished, description, submitTi
                 <label htmlFor="isPublished">Published</label>
                 <input type="checkbox" id="isPublished" checked={localIsPublished} onChange={(e) => setLocalIsPublished(e.target.checked)} />
             </FormGroup>
-            <button type="submit">Create Timeline</button>
+            <button type="submit" className="btn btn-success">Create Timeline</button>
         </form>
     );
 };
