@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import FormGroup from "#components/forms/handleForm/formGroup";
+import Form from "#components/forms/handleForm/form.jsx";
 
 export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
     const [formState, setFormState] = useState({
@@ -41,8 +42,9 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <FormGroup>
+        <Form onSubmit={handleSubmit} title={'Send your own video'}>
+
+            <FormGroup title={"Video information"}>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
                 <input
                     type="text"
@@ -53,9 +55,7 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
                     value={formState.title}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 />
-            </FormGroup>
 
-            <FormGroup>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
                 <textarea
                     id="description"
@@ -64,21 +64,19 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
                     value={formState.description}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 />
-            </FormGroup>
 
-            <FormGroup>
                 <label htmlFor="video" className="block text-sm font-medium text-gray-700">Video</label>
                 <input
                     type="file"
                     id="video"
                     name="video"
                     onChange={handleFileChange}
-                    className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                />
+                    className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"/>
             </FormGroup>
 
-            <FormGroup>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+            <FormGroup title={"User information"}>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username (if already
+                    have upload video, make just your username)</label>
                 <input
                     type="text"
                     id="username"
@@ -88,9 +86,6 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
                     value={formState.username}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 />
-            </FormGroup>
-
-            <FormGroup>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                     type="email"
@@ -100,10 +95,9 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
                     value={formState.email}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 />
-            </FormGroup>
 
-            <FormGroup>
-                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display Name</label>
+                <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">Display
+                    Name</label>
                 <input
                     type="text"
                     id="displayName"
@@ -114,27 +108,30 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm }) {
                 />
             </FormGroup>
 
-            {['discordUsername', 'steamUsername', 'twitchUsername', 'twitterUsername', 'youtubeUsername', 'telegramUsername'].map((field) => (
-                <FormGroup key={field}>
-                    <label htmlFor={field} className="block text-sm font-medium text-gray-700">
-                        {field.split('Username').join(' ')}
-                    </label>
-                    <input
-                        type="text"
-                        id={field}
-                        name={field}
-                        onChange={handleInputChange}
-                        value={formState[field]}
-                        className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                    />
-                </FormGroup>
-            ))}
+            <FormGroup title={"Social media"}>
 
-            <FormGroup>
-                <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {['discordUsername', 'steamUsername', 'twitchUsername', 'twitterUsername', 'youtubeUsername', 'telegramUsername'].map((field) => (
+                    <FormGroup key={field}>
+                        <label htmlFor={field} className="block text-sm font-medium text-gray-700">
+                            {field.split('Username').join(' ')}
+                        </label>
+                        <input
+                            type="text"
+                            id={field}
+                            name={field}
+                            onChange={handleInputChange}
+                            value={formState[field]}
+                            className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                        />
+                    </FormGroup>
+                ))}
+            </FormGroup>
+
+            <FormGroup title="Validate">
+                <button type="submit" className=" w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Submit
                 </button>
             </FormGroup>
-        </form>
+        </Form>
     );
 }

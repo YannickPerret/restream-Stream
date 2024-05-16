@@ -36,6 +36,7 @@ export default class VideosController {
 
   async store({ request, auth, response }: HttpContext) {
     const user = await auth.authenticate()
+
     const { title, description, isPublished, showInLive } = request.only([
       'title',
       'description',
@@ -79,7 +80,8 @@ export default class VideosController {
       await queue.add(videoCreated, null, null).then(async (outputPath) => {
         logger.info('Encoding completed')
         videoCreated.path = outputPath
-        videoCreated.status = 'published'
+
+        logger.info(`SDSDFDSFSDFSFSF : ${videoCreated.status}`)
         await videoCreated.save()
       })
     } else {
@@ -173,6 +175,7 @@ export default class VideosController {
       await queue.add(video, null, null).then(async (outputPath) => {
         logger.info('Encoding completed')
         video.path = outputPath
+        video.status = 'published'
         await video.save()
       })
     }

@@ -8,6 +8,7 @@ export default function GuestVideoUploadPage() {
     const [videoFile, setVideoFile] = useState('');
 
     const handleSubmitForm = async (value) => {
+        console.log(value)
         await GuestApi.create(value).then((response) => {
             console.log(response);
         }).catch((error) => {

@@ -64,8 +64,8 @@ export default function VideoValidatePage() {
                                     <p className="text-sm text-gray-500">Description: {video.description}</p>
                                     <p className="text-sm text-gray-500">Status: {video.status}</p>
                                     <p className="text-sm text-gray-500">Created at: {new Date(video.createdAt).toString()}</p>
-                                    <p className="text-sm text-gray-500">Posted by: {video.guest.username}</p>
-                                    <p className="text-sm text-gray-500">Name to display: {video.guest.displayName}</p>
+                                    <p className="text-sm text-gray-500">Posted by: {video.guest?.username}</p>
+                                    <p className="text-sm text-gray-500">Name to display: {video.guest?.displayName}</p>
                                     <div className="flex justify-end gap-4">
                                         <button onClick={() => handleEditVideo(video.id)} className="bg-green-500 text-white px-4 py-2 rounded-lg">Edit
                                         </button>
