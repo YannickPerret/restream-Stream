@@ -90,4 +90,17 @@ export default class Video extends BaseModel {
     const seconds = Math.floor(duration % 60)
     return `${hours > 0 ? hours + 'h ' : ''}${minutes > 0 ? minutes + 'm ' : ''}${seconds > 0 ? seconds + 's' : ''}`
   }
+
+  async requiresEncoding(): Promise<boolean> {
+    const metadata = await Video.getInformation(this.path)
+
+    return !(
+      metadata.streams[0].codec_name === 'h264' &&
+      metadata.streams[0].width === 1920 &&
+      metadata.streams[0].height === 1080 &&
+      metadata.streams[0].r_frame_rate === '60/1' &&
+      metadata.streams[1].codec_name === 'aac' &&
+      metadata.streams[1].sample_rate === 48000
+    )
+  }
 }

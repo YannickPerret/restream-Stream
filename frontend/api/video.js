@@ -69,4 +69,15 @@ export class VideoApi extends Api {
         }
         return await response.json();
     }
+
+    static async validate (id) {
+        const response = await fetch(`${this.baseUrl}/api/videos/${id}/validate`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while validating stream');
+        }
+        return await response.json();
+    }
 }

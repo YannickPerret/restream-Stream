@@ -66,7 +66,7 @@ router
             router.get(':id', [VideosController, 'show'])
             router.put(':id', [VideosController, 'update'])
             router.delete(':id', [VideosController, 'destroy'])
-            router.get(':id/serve', [VideosController, 'serve'])
+            router.post(':id/validate', [VideosController, 'validate'])
           })
           .prefix('videos')
 
@@ -106,3 +106,7 @@ router
       .use(middleware.auth())
   })
   .prefix('api')
+
+router.group(() => {
+  router.get('videos/:id/serve', [VideosController, 'serve'])
+})
