@@ -135,8 +135,14 @@ export default class VideosController {
     if (video.userId !== user.id) {
       return response.forbidden('You are not authorized to delete this video')
     }
+    // Delete the video file
+    fs.unlink(video.path, (err) => {
+      if (err) {
+        logger.error(err)
+      }
+    })
     await video.delete()
-    return response.noContent()
+    return response.status(200)
   }
 
   async serve({ response, params }: HttpContext) {
