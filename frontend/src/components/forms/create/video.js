@@ -1,6 +1,6 @@
 'use client'
 import {useState} from "react";
-import {VideoApi} from "../../../api/video";
+import {VideoApi} from "#api/video.js";
 
 export default function VideoCreateForm({ setVideoFile }) {
     const [title, setTitle] = useState('')
@@ -57,7 +57,7 @@ export default function VideoCreateForm({ setVideoFile }) {
                 <input type="checkbox" id="showInLive" name="showInLive"
                        onChange={(e) => setShowInLive(e.target.checked)} checked={showInLive}/>
             </div>
-            <button type="submit">Create</button>
+            <button className="btn btn-success" type="submit">Create</button>
         </form>
     )
 }

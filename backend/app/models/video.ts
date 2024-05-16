@@ -4,6 +4,7 @@ import User from '#models/user'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
 import Playlist from '#models/playlist'
+import Guest from '#models/guest'
 
 export default class Video extends BaseModel {
   @column({ isPrimary: true })
@@ -22,13 +23,16 @@ export default class Video extends BaseModel {
   declare duration: number
 
   @column()
-  declare isPublished: boolean
+  declare status: 'published' | 'unpublished' | 'pending'
 
   @column()
   declare showInLive: boolean
 
   @column()
-  declare userId: number
+  declare userId: number | null
+
+  @column()
+  declare guestId: number | null
 
   @manyToMany(() => Playlist, {
     pivotTable: 'playlist_videos',
@@ -37,6 +41,9 @@ export default class Video extends BaseModel {
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
+
+  @belongsTo(() => Guest)
+  declare guest: BelongsTo<typeof Guest>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -82,5 +89,18 @@ export default class Video extends BaseModel {
     const minutes = Math.floor((duration % 3600) / 60)
     const seconds = Math.floor(duration % 60)
     return `${hours > 0 ? hours + 'h ' : ''}${minutes > 0 ? minutes + 'm ' : ''}${seconds > 0 ? seconds + 's' : ''}`
+  }
+
+  async requiresEncoding(): Promise<boolean> {
+    const metadata = await Video.getInformation(this.path)
+
+    return !(
+      metadata.streams[0].codec_name === 'h264' &&
+      metadata.streams[0].width === 1920 &&
+      metadata.streams[0].height === 1080 &&
+      metadata.streams[0].r_frame_rate === '60/1' &&
+      metadata.streams[1].codec_name === 'aac' &&
+      metadata.streams[1].sample_rate === 48000
+    )
   }
 }

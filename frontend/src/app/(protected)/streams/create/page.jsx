@@ -1,4 +1,4 @@
-import StreamForm from "@/components/forms/stream";
+import StreamForm from "#components/forms/create/stream.js";
 
 export default function StreamCreate() {
 

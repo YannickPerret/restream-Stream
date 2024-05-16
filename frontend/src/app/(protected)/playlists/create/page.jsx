@@ -1,7 +1,7 @@
 'use client'
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import PlaylistForm from "#components/forms/playlist";
+import PlaylistForm from "#components/forms/create/playlist.js";
 import { PlaylistApi } from "#api/playlist";
 import { useVideoStore } from "#stores/useVideoStore";
 import { VideoApi } from "#api/video";

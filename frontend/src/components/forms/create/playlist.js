@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import FormGroup from "@/components/forms/handleForm/formGroup";
+import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 
 export default function PlaylistForm({ title, isPublished, description, submitPlaylist }) {
     const [localTitle, setLocalTitle] = useState(title);
