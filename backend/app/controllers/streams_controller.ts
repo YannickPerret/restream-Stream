@@ -35,7 +35,8 @@ export default class StreamsController {
       .firstOrFail()
 
     const streamManager = Stream_manager
-    const streamInstance = streamManager.getOrAddStream(params.id, stream)
+    const streamInstance = await streamManager.getOrAddStream(params.id, stream)
+    logger.info(streamInstance)
 
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
@@ -52,7 +53,7 @@ export default class StreamsController {
       return response.notFound({ error: 'Stream not found' })
     }
 
-    const stream = streamManager.getOrAddStream(params.id, getStream)
+    const stream = await streamManager.getOrAddStream(params.id, getStream)
 
     await stream.stop()
     streamManager.removeStream(params.id)
