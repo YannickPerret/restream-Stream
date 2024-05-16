@@ -9,12 +9,57 @@ export default class GuestsController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ auth, response }: HttpContext) {
+    await auth.authenticate()
+    const guests = await Guest.all()
+    return response.json(guests)
+  }
 
   /**
    * Handle form submission for the create action
    */
-  async store({ request }: HttpContext) {}
+  async store({ request, auth, response }: HttpContext) {
+    await auth.authenticate()
+
+    const {
+      username,
+      email,
+      displayName,
+      discordUsername,
+      steamUsername,
+      twitchUsername,
+      twitterUsername,
+      youtubeUsername,
+      telegramUsername,
+    } = request.only([
+      'username',
+      'email',
+      'displayName',
+      'discordUsername',
+      'steamUsername',
+      'twitchUsername',
+      'twitterUsername',
+      'youtubeUsername',
+      'telegramUsername',
+    ])
+
+    const guest = await Guest.firstOrCreate(
+      { username },
+      {
+        username,
+        email,
+        displayName,
+        discordUsername,
+        steamUsername,
+        twitchUsername,
+        twitterUsername,
+        youtubeUsername,
+        telegramUsername,
+      }
+    )
+
+    return response.created(guest)
+  }
 
   /**
    * Show individual record
@@ -24,12 +69,26 @@ export default class GuestsController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request }: HttpContext) {}
+  async update({ params, request, auth, response }: HttpContext) {
+    await auth.authenticate()
+
+    const guest = await Guest.findOrFail(params.id)
+    await guest.merge(request.all()).save()
+
+    return response.json(guest)
+  }
 
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, auth, response }: HttpContext) {
+    await auth.authenticate()
+
+    const guest = await Guest.findOrFail(params.id)
+    await guest.delete()
+
+    return response.status(204).json(null)
+  }
 
   async upload({ request, response }: HttpContext) {
     const {
