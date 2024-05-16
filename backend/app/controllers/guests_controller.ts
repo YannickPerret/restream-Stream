@@ -18,7 +18,48 @@ export default class GuestsController {
   /**
    * Handle form submission for the create action
    */
-  async store({ request }: HttpContext) {}
+  async store({ request, auth, response }: HttpContext) {
+    await auth.authenticate()
+
+    const {
+      username,
+      email,
+      displayName,
+      discordUsername,
+      steamUsername,
+      twitchUsername,
+      twitterUsername,
+      youtubeUsername,
+      telegramUsername,
+    } = request.only([
+      'username',
+      'email',
+      'displayName',
+      'discordUsername',
+      'steamUsername',
+      'twitchUsername',
+      'twitterUsername',
+      'youtubeUsername',
+      'telegramUsername',
+    ])
+
+    const guest = await Guest.firstOrCreate(
+      { username },
+      {
+        username,
+        email,
+        displayName,
+        discordUsername,
+        steamUsername,
+        twitchUsername,
+        twitterUsername,
+        youtubeUsername,
+        telegramUsername,
+      }
+    )
+
+    return response.created(guest)
+  }
 
   /**
    * Show individual record

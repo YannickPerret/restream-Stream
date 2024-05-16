@@ -13,7 +13,7 @@ export class GuestApi extends Api {
         }
         const response = await fetch(url, {
             method: 'GET',
-            headers: this.getHeaders({}),
+            headers: this.getHeaders(),
         });
         if(!response.ok) {
             throw new Error('Error while fetching guests');
@@ -22,6 +22,18 @@ export class GuestApi extends Api {
     }
 
     static async create(data) {
+        const response = await fetch(`${this.baseUrl}/api/guests`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if(!response.ok) {
+            throw new Error('Error while creating stream');
+        }
+        return await response.json();
+    }
+
+    static async upload(data) {
         const response = await fetch(`${this.baseUrl}/api/guests/upload`, {
             method: 'POST',
             headers: this.getHeaders({}),

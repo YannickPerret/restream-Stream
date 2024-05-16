@@ -1,38 +1,139 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Form from "#components/forms/handleForm/form.jsx";
 import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 
-export default function PlaylistForm({ title, isPublished, description, submitPlaylist }) {
-    const [localTitle, setLocalTitle] = useState(title);
-    const [localIsPublished, setLocalIsPublished] = useState(isPublished);
-    const [localDescription, setLocalDescription] = useState(description);
+export default function GuestForm({onSubmit}) {
+    const [guest, setGuest] = useState({
+        username: '',
+        email: '',
+        displayName: '',
+        discordUsername: '',
+        steamUsername: '',
+        twitchUsername: '',
+        twitterUsername: '',
+        youtubeUsername: '',
+        telegramUsername: '',
+        canDiffuse: true,
+    });
 
-    useEffect(() => {
-        setLocalTitle(title);
-        setLocalIsPublished(isPublished);
-        setLocalDescription(description);
-    }, [title, isPublished, description]);
+    const handleChange = (e) => {
+        setGuest({ ...guest, [e.target.name]: e.target.value });
+    };
+
+    const handleCheckboxChange = (e) => {
+        setGuest({ ...guest, [e.target.name]: e.target.checked });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        submitPlaylist(localTitle, localDescription, localIsPublished);
+        onSubmit(guest);
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <FormGroup>
-                <label htmlFor="title">Playlist Title:</label>
-                <input id="title" value={localTitle} onChange={(e) => setLocalTitle(e.target.value)} type="text" required />
+        <Form onSubmit={handleSubmit} className="space-y-4">
+            <FormGroup title="Guest informations">
+                <label htmlFor="username">Username:</label>
+                <input
+                    type="text"
+                    name="username"
+                    value={guest.username}
+                    onChange={handleChange}
+                    placeholder="Username"
+                    required
+                />
+                <label htmlFor="email">Email:</label>
+                <input
+                    type="email"
+                    name="email"
+                    value={guest.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                    className="w-full px-3 py-2 placeholder-gray-300 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-100 focus:border-blue-300"
+                />
+
+                <label htmlFor="displayName">Display Name:</label>
+                <input
+                    type="text"
+                    name="displayName"
+                    value={guest.displayName}
+                    onChange={handleChange}
+                    placeholder="Display Name"
+
+                />
             </FormGroup>
-            <FormGroup>
-                <label htmlFor="description">Description:</label>
-                <textarea id="description" value={localDescription} onChange={(e) => setLocalDescription(e.target.value)} rows={3} cols={20}></textarea>
+            <FormGroup title="Social Networks">
+                <label htmlFor="discordUsername">Discord Username:</label>
+                <input
+                    type="text"
+                    name="discordUsername"
+                    value={guest.discordUsername}
+                    onChange={handleChange}
+                    placeholder="Discord Username"
+
+                />
+
+                <label htmlFor="steamUsername">Steam Username:</label>
+                <input
+                    type="text"
+                    name="steamUsername"
+                    value={guest.steamUsername}
+                    onChange={handleChange}
+                    placeholder="Steam Username"
+                />
+
+                <label htmlFor="twitchUsername">Twitch Username:</label>
+                <input
+                    type="text"
+                    name="twitchUsername"
+                    value={guest.twitchUsername}
+                    onChange={handleChange}
+                    placeholder="Twitch Username"
+                />
+
+                <label htmlFor="twitterUsername">Twitter Username:</label>
+                <input
+                    type="text"
+                    name="twitterUsername"
+                    value={guest.twitterUsername}
+                    onChange={handleChange}
+                    placeholder="Twitter Username"
+                />
+
+                <label htmlFor="youtubeUsername">Youtube Username:</label>
+                <input
+                    type="text"
+                    name="youtubeUsername"
+                    value={guest.youtubeUsername}
+                    onChange={handleChange}
+                    placeholder="Youtube Username"
+                />
+
+                <label htmlFor="telegramUsername">Telegram Username:</label>
+                <input
+                    type="text"
+                    name="telegramUsername"
+                    value={guest.telegramUsername}
+                    onChange={handleChange}
+                    placeholder="Telegram Username"
+                />
             </FormGroup>
-            <FormGroup>
-                <label htmlFor="isPublished">Published</label>
-                <input type="checkbox" id="isPublished" checked={localIsPublished} onChange={(e) => setLocalIsPublished(e.target.checked)} />
+
+            <FormGroup title="Permissions" type={"row"}>
+                <label htmlFor="canDiffuse">Can Diffuse:</label>
+                <input
+                    type="checkbox"
+                    name="canDiffuse"
+                    checked={guest.canDiffuse}
+                    onChange={handleCheckboxChange}
+                    required={true}
+                />
             </FormGroup>
-            <button type="submit">Create Playlist</button>
-        </form>
+
+            <FormGroup title="Validations" type={"row"}>
+                <button className="btn btn-error" type="reset">Reset</button>
+                <button className="btn btn-success" type="submit">Create Guest</button>
+            </FormGroup>
+        </Form>
     );
 };

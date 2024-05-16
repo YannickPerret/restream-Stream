@@ -3,14 +3,17 @@ import { useState } from 'react';
 import GuestVideoUploadForm from "#components/forms/guest/videoUpload.js";
 import VideoPreview from "#components/videos/preview.jsx";
 import {GuestApi} from "#api/guest.js";
+import {useRouter} from "next/navigation";
 
 export default function GuestVideoUploadPage() {
     const [videoFile, setVideoFile] = useState('');
+    const router = useRouter();
 
     const handleSubmitForm = async (value) => {
         console.log(value)
-        await GuestApi.create(value).then((response) => {
+        await GuestApi.upload(value).then((response) => {
             console.log(response);
+            router.push('/guests');
         }).catch((error) => {
             console.log(error);
         })
