@@ -4,7 +4,6 @@ import Guest from '#models/guest'
 import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 import { cuid } from '@adonisjs/core/helpers'
-import logger from '@adonisjs/core/services/logger'
 
 export default class GuestsController {
   /**
@@ -72,8 +71,6 @@ export default class GuestsController {
    */
   async update({ params, request, auth, response }: HttpContext) {
     await auth.authenticate()
-
-    logger.info(request.all())
 
     const guest = await Guest.findOrFail(params.id)
     await guest.merge(request.all()).save()
