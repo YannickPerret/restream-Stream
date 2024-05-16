@@ -34,4 +34,18 @@ body {
 
 input, textarea {
   @apply text-black;
+  @apply border-2 border-gray-300;
+}
+
+/*custom button styles*/
+.btn {
+  @apply px-4 py-2 rounded-md text-white;
+}
+
+.btn-success {
+  @apply bg-green-500;
+}
+
+.btn-error {
+  @apply bg-red-500;
 }

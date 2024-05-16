@@ -14,7 +14,7 @@ export const useVideoStore = createSelectors(create((set) => ({
     //multiple streams
     videos: [],
     addVideo: (video) => set((state) => ({videos: [...state.videos, video]})),
-    removeVideo: (video) => set((state) => ({videos: state.videos.filter((v) => v !== video)})),
+    removeVideo: (videoId) => set((state) => ({videos: state.videos.filter((v) => v.id !== videoId)})),
     //single stream
 
 })));

@@ -1,5 +1,5 @@
 'use client';
-import VideoCreateForm from "@/components/forms/video";
+import VideoCreateForm from "#components/forms/create/video.js";
 import VideoPreview from "@/components/videos/preview";
 import {useState} from "react";
 
