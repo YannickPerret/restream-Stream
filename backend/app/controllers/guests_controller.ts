@@ -9,7 +9,11 @@ export default class GuestsController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ auth, response }: HttpContext) {
+    await auth.authenticate()
+    const guests = await Guest.all()
+    return response.json(guests)
+  }
 
   /**
    * Handle form submission for the create action

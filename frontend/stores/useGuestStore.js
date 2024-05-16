@@ -11,7 +11,8 @@ const createSelectors = (_store) => {
 
 
 export const useGuestStore = createSelectors(create((set) => ({
-    Guests: [],
+    guests: [],
+    addGuests: (guests) => set((state) => ({Guests: [...state.Guests, ...guests]})),
     addGuest: (guest) => set((state) => ({Guests: [...state.Guests, guest]})),
     removeGuest: (guest) => set((state) => ({Guests: state.Guests.filter((g) => g !== guest)})),
 })));

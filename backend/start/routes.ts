@@ -10,7 +10,6 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
-import logger from '@adonisjs/core/services/logger'
 const GuestsController = () => import('#controllers/guests_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
@@ -89,6 +88,16 @@ router
             router.delete(':id', [TimelinesController, 'destroy'])
           })
           .prefix('timelines')
+
+        router
+          .group(() => {
+            router.get('/', [GuestsController, 'index'])
+            router.post('/', [GuestsController, 'store'])
+            router.get(':id', [GuestsController, 'show'])
+            router.put(':id', [GuestsController, 'update'])
+            router.delete(':id', [GuestsController, 'destroy'])
+          })
+          .prefix('guests')
 
         router
           .group(() => {
