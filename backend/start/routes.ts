@@ -11,6 +11,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
 import logger from '@adonisjs/core/services/logger'
+const GuestsController = () => import('#controllers/guests_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
 const VideosController = () => import('#controllers/videos_controller')
@@ -30,6 +31,12 @@ router
         router.post('logout', [AuthController, 'logout']).use(middleware.auth())
       })
       .prefix('auth')
+
+    router
+      .group(() => {
+        router.post('upload', [GuestsController, 'upload'])
+      })
+      .prefix('guests')
 
     router
       .group(() => {
@@ -56,10 +63,6 @@ router
           .group(() => {
             router.get('/', [VideosController, 'index'])
             router.post('/', [VideosController, 'store'])
-            /*router.post('/', async ({ request }) => {
-              console.log('Uploading video')
-              logger.info(request.all())
-            })*/
             router.get(':id', [VideosController, 'show'])
             router.put(':id', [VideosController, 'update'])
             router.delete(':id', [VideosController, 'destroy'])

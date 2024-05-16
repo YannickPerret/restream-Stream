@@ -4,6 +4,7 @@ import User from '#models/user'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
 import Playlist from '#models/playlist'
+import Guest from '#models/guest'
 
 export default class Video extends BaseModel {
   @column({ isPrimary: true })
@@ -22,13 +23,16 @@ export default class Video extends BaseModel {
   declare duration: number
 
   @column()
-  declare isPublished: boolean
+  declare status: 'published' | 'unpublished' | 'pending'
 
   @column()
   declare showInLive: boolean
 
   @column()
-  declare userId: number
+  declare userId: number | null
+
+  @column()
+  declare guestId: number | null
 
   @manyToMany(() => Playlist, {
     pivotTable: 'playlist_videos',
@@ -37,6 +41,9 @@ export default class Video extends BaseModel {
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
+
+  @belongsTo(() => Guest)
+  declare guest: BelongsTo<typeof Guest>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
