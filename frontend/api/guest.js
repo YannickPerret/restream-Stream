@@ -33,6 +33,18 @@ export class GuestApi extends Api {
         return await response.json();
     }
 
+    static async update(id, data) {
+        const response = await fetch(`${this.baseUrl}/api/guests/${id}`, {
+            method: 'PUT',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if(!response.ok) {
+            throw new Error('Error while creating stream');
+        }
+        return await response.json();
+    }
+
     static async upload(data) {
         const response = await fetch(`${this.baseUrl}/api/guests/upload`, {
             method: 'POST',
@@ -41,6 +53,17 @@ export class GuestApi extends Api {
         });
         if(!response.ok) {
             throw new Error('Error while creating stream');
+        }
+        return await response.json();
+    }
+
+    static async delete(id) {
+        const response = await fetch(`${this.baseUrl}/api/guests/${id}`, {
+            method: 'DELETE',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while deleting guest');
         }
         return await response.json();
     }
