@@ -108,7 +108,6 @@ export default class Ffmpeg implements StreamProvider {
 
     instance.on('close', (code: any) => {
       logger.info(`FFmpeg process closed with code: ${code}`)
-      this.stopStream()
     })
   }
 }

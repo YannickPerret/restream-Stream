@@ -153,6 +153,7 @@ export default class Stream extends BaseModel {
 
   async stop(): Promise<void> {
     logger.info('Stopping streams...')
+    clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
     this.streamProvider?.stopStream()
     this.endTime = DateTime.now()
     this.status = 'inactive'
