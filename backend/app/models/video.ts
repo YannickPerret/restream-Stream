@@ -80,7 +80,7 @@ export default class Video extends BaseModel {
   }
 
   async getDurationInMilisecond(): Promise<number> {
-    return (await this.getDurationInSeconde()) * 1000
+    return this.duration * 1000
   }
 
   getDurationInFormat(): string {

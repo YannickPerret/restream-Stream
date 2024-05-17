@@ -7,6 +7,7 @@ import Provider from '#models/provider'
 import StreamFactory from '#models/streamsFactory/stream_factory'
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
+import Video from '#models/video'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -62,6 +63,50 @@ export default class Stream extends BaseModel {
   declare canNextVideo: boolean
   declare providersInstance: Provider[]
   declare primaryProvider: Provider | null
+  declare streamStartTime: DateTime
+  declare nextVideoTimeout: NodeJS.Timeout | null
+
+  async nextVideo() {
+    if (!this.isOnLive || !this.canNextVideo) {
+      logger.info('Stream is not live or not ready to switch videos.')
+      return
+    }
+
+    const currentVideo: Video = await this.timeline.getCurrentVideo()
+    const durationMs: number = await currentVideo?.getDurationInMilisecond()
+    logger.info(`Attente de ${durationMs}ms que la video ${currentVideo.title} se termine.`)
+
+    const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
+    logger.info(
+      `Temps total de stream : ${totalStreamTime / 60 / 60}h (${totalStreamTime} secondes)`
+    )
+
+    if (totalStreamTime > 100800) {
+      logger.info('28h de stream atteint, arrêt du stream')
+      this.canNextVideo = false
+      this.nextVideoTimeout = setTimeout(() => {
+        this.restart()
+      }, durationMs)
+    } else {
+      this.nextVideoTimeout = setTimeout(async () => {
+        if (!this.isOnLive) {
+          logger.info('Stream has been stopped. Not proceeding to the next video.')
+          return
+        }
+        await this.timeline.moveToNextVideo()
+        const nextVideo = await this.timeline.getCurrentVideo()
+
+        if (!nextVideo) {
+          // restart stream with timeline
+          logger.info('Fin de la playlist.')
+          await this.stop()
+          return
+        }
+
+        await this.nextVideo()
+      }, durationMs)
+    }
+  }
 
   async run() {
     logger.info('Starting stream...')
@@ -82,17 +127,21 @@ export default class Stream extends BaseModel {
         this.primaryProvider.streamKey,
         this.timeline.filePath
       )
+
       await this.start()
+      this.timeline.currentVideoIndex = 0
+      this.streamStartTime = DateTime.now()
+      this.canNextVideo = true
+
+      await this.nextVideo()
     } else {
       logger.warn('No primary provider found')
     }
-
-    this.canNextVideo = true
     await this.save()
   }
 
   async start(): Promise<void> {
-    logger.info(`Using primary provider: ${JSON.stringify(this.primaryProvider)}`)
+    logger.info(`timeline: ${await this.timeline.videos()}`)
 
     this.streamProvider?.startStream()
 
@@ -109,6 +158,11 @@ export default class Stream extends BaseModel {
     this.status = 'inactive'
     this.isOnLive = false
     await this.save()
+  }
+
+  async restart() {
+    await this.stop()
+    await this.start()
   }
 
   async getPrimaryProvider() {

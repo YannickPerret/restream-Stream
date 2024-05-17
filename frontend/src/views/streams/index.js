@@ -1,6 +1,6 @@
-import {StreamApi} from "../../../api/stream";
+import {StreamApi} from "#api/stream.js";
 import  {useRouter} from "next/navigation";
-import {useStreamStore} from "../../../stores/useStreamStore";
+import {useStreamStore} from "#stores/useStreamStore.js";
 import Link from "next/link";
 
 export default function StreamPageIndex () {
@@ -44,6 +44,8 @@ export default function StreamPageIndex () {
                     <th>Name</th>
                     <th>Primary Provider</th>
                     <th>Start Time</th>
+                    <th>Timeline</th>
+                    <th>Current Video</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
@@ -54,11 +56,17 @@ export default function StreamPageIndex () {
                         <td>{stream.name}</td>
                         <td>{stream.primaryProvider ? (
                             <Link href={`/providers/${stream.primaryProvider.id}`}>{stream.primaryProvider?.name}</Link>
-                            ) : (
+                        ) : (
                             'None'
-                            )}
+                        )}
                         </td>
                         <td>{stream.startTime}</td>
+                        <td>
+                            <Link href={`/streams/${stream.id}/timeline`}>{stream.timeline.title}</Link>
+                        </td>
+                        <td>
+                            "en cours"
+                        </td>
                         <td>
                             {stream.status === 'inactive' ? (
                                 <>
@@ -68,7 +76,7 @@ export default function StreamPageIndex () {
                             ) : (
                                 <>
                                     <button onClick={() => handleStop(stream.id)}>Stop</button>
-                                <button onClick={() => handleRestart(stream.id)}>Restart</button>
+                                    <button onClick={() => handleRestart(stream.id)}>Restart</button>
                                 </>
                             )}
                             <button onClick={() => handleRemove(stream.id)}>Remove</button>
