@@ -20,7 +20,7 @@ export default class PlaylistsController {
     const user = await auth.authenticate()
 
     logger.info(request.all())
-    const { title, description, videos, isPublished } = request.all()
+    const { title, description, items, isPublished } = request.all()
 
     const playlist = await Playlist.create({
       title,
@@ -29,9 +29,9 @@ export default class PlaylistsController {
       userId: user.id,
     })
 
-    if (videos && videos.length > 0) {
-      for (const [index, video_] of videos.entries()) {
-        const videoDb = await Video.find(video_.id)
+    if (items && items.length > 0) {
+      for (const [index, video_] of items.entries()) {
+        const videoDb = await Video.find(video_.itemId)
 
         if (videoDb) {
           await playlist.related('videos').attach({
@@ -40,7 +40,7 @@ export default class PlaylistsController {
             },
           })
         } else {
-          logger.warn(`Video not found: ${videos[index].id}`)
+          logger.warn(`Video not found: ${items[index].id}`)
         }
       }
     }
