@@ -5,7 +5,8 @@
       "#stores/*": ["stores/*"],
       "#api/*": ["api/*"],
       "#components/*": ["src/components/*"],
-      "#helpers/*": ["helpers/*"]
+      "#helpers/*": ["helpers/*"],
+      "#libs/*": ["libs/*"]
     }
   }
 }

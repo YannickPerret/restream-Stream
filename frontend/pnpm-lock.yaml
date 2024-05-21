@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@adonisjs/transmit-client':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@hello-pangea/dnd':
         specifier: ^16.6.0
         version: 16.6.0(@types/react@18.3.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -44,6 +47,10 @@ importers:
         version: 3.4.3
 
 packages:
+
+  '@adonisjs/transmit-client@1.0.0':
+    resolution: {integrity: sha512-S8P4ouxoDRpHA6iEu13OxzVuG9aV6eObxBYFlsAouIDmqoiUjcgDWUJrtI26nediV2nGvaAuK98ObIEy1UWGFg==}
+    engines: {node: '>=18.16.0'}
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -1579,6 +1586,8 @@ packages:
         optional: true
 
 snapshots:
+
+  '@adonisjs/transmit-client@1.0.0': {}
 
   '@alloc/quick-lru@5.2.0': {}
 
