@@ -1,39 +1,59 @@
-import {StreamApi} from "#api/stream.js";
-import  {useRouter} from "next/navigation";
-import {useStreamStore} from "#stores/useStreamStore.js";
+import { useEffect } from "react";
+import { StreamApi } from "#api/stream.js";
+import { useRouter } from "next/navigation";
+import { useStreamStore } from "#stores/useStreamStore.js";
 import Link from "next/link";
+import transmit from '#libs/transmit';
 
-export default function StreamPageIndex () {
+export default function StreamPageIndex() {
     const router = useRouter();
     const streams = useStreamStore.use.streams();
-    const updateStreamStatus = useStreamStore.use.updateStreamStatus()
-    const removeStream = useStreamStore.use.removeStream()
+    const updateStreamStatus = useStreamStore.use.updateStreamStatus();
+    const removeStream = useStreamStore.use.removeStream();
+    const updateCurrentVideo = useStreamStore.use.updateCurrentVideo();
+    const addSubscription = useStreamStore.use.addSubscription();
+    const subscriptions = useStreamStore.use.subscriptions();
 
     const handleStart = async (id) => {
-        console.log('start', id)
-        await StreamApi.start(id).then(() => {
-            updateStreamStatus(id, 'active')
-        })
-    }
+        await StreamApi.start(id).then(async () => {
+            updateStreamStatus(id, 'active');
+            const subscription = transmit.subscription(`stream/${id}/currentVideo`);
+            await subscription.create();
+            subscription.onMessage(({currentVideo}) => {
+                console.log(currentVideo)
+                updateCurrentVideo(id, currentVideo);
+            });
+            addSubscription(id, subscription);
+        });
+    };
 
-    const handleStop = async(id) => {
-        console.log('stop', id)
-        await StreamApi.stop(id).then(() => {
-            updateStreamStatus(id, 'inactive')
-        })
-    }
+    useEffect(() => {
+        console.log(subscriptions)
+        if (subscriptions.length === 0) return;
+        subscriptions.forEach(subscription => {
+            subscription.onMessage(({currentVideo}) => {
+                console.log(currentVideo)
+                updateCurrentVideo(subscription.id, currentVideo);
+            });
+        });
+    }, [subscriptions]);
+
+
+    const handleStop = async (id) => {
+        await StreamApi.stop(id).then(async () => {
+            updateStreamStatus(id, 'inactive');
+        });
+    };
 
     const handleRestart = async (id) => {
-        console.log('restart', id)
-        await StreamApi.restart(id)
-    }
+        await StreamApi.restart(id);
+    };
 
     const handleRemove = async (id) => {
-        console.log('remove', id)
         await StreamApi.delete(id).then(() => {
-            removeStream(id)
-        })
-    }
+            removeStream(id);
+        });
+    };
 
     return (
         <div>
@@ -60,12 +80,12 @@ export default function StreamPageIndex () {
                             'None'
                         )}
                         </td>
-                        <td>{stream.startTime}</td>
+                        <td>{new Date(stream.startTime).toUTCString()}</td>
                         <td>
                             <Link href={`/streams/${stream.id}/timeline`}>{stream.timeline.title}</Link>
                         </td>
                         <td>
-                            "en cours"
+                            {stream.currentVideo ? stream.currentVideo.title : 'No video playing'}
                         </td>
                         <td>
                             {stream.status === 'inactive' ? (
@@ -86,5 +106,5 @@ export default function StreamPageIndex () {
                 </tbody>
             </table>
         </div>
-    )
+    );
 }

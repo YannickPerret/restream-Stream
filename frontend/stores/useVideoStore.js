@@ -11,11 +11,15 @@ const createSelectors = (_store) => {
 
 
 export const useVideoStore = createSelectors(create((set) => ({
-    //multiple streams
     videos: [],
-    addVideo: (video) => set((state) => ({videos: [...state.videos, video]})),
-    removeVideo: (videoId) => set((state) => ({videos: state.videos.filter((v) => v.id !== videoId)})),
-    setVideos: (videos) => set({videos}),
-    //single stream
-
+    currentVideos: {}, // changed to store current video per stream
+    subscriptions: [],
+    addVideo: (video) => set((state) => ({ videos: [...state.videos, video] })),
+    removeVideo: (videoId) => set((state) => ({ videos: state.videos.filter((v) => v.id !== videoId) })),
+    setVideos: (videos) => set({ videos }),
+    setCurrentVideo: ({ streamId, ...video }) => set((state) => ({
+        currentVideos: { ...state.currentVideos, [streamId]: video }
+    })),
+    setSubscriptions: (subscriptions) => set({ subscriptions }),
+    addSubscription: (subscription) => set((state) => ({ subscriptions: [...state.subscriptions, subscription] }))
 })));

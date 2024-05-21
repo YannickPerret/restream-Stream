@@ -8,6 +8,7 @@ import StreamFactory from '#models/streamsFactory/stream_factory'
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
+import transmit from '@adonisjs/transmit/services/main'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -81,7 +82,7 @@ export default class Stream extends BaseModel {
       `Temps total de stream : ${totalStreamTime / 60 / 60}h (${totalStreamTime} secondes)`
     )
 
-    if (totalStreamTime > 100800) {
+    if (totalStreamTime > 115200000) {
       logger.info('28h de stream atteint, arrêt du stream')
       this.canNextVideo = false
       this.nextVideoTimeout = setTimeout(() => {
@@ -127,8 +128,11 @@ export default class Stream extends BaseModel {
         this.primaryProvider.streamKey,
         this.timeline.filePath
       )
-
       await this.start()
+      transmit.broadcast(`stream/${this.id}/currentVideo`, {
+        currentVideo: await this.timeline.getCurrentVideo(),
+      })
+
       this.timeline.currentVideoIndex = 0
       this.streamStartTime = DateTime.now()
       this.canNextVideo = true

@@ -1,8 +1,8 @@
 'use client';
-import { StreamApi } from '../../../../api/stream';
+import { StreamApi } from '#api/stream';
 import StreamPageIndex from '@/views/streams';
-import { useState, useEffect } from 'react';
-import {useStreamStore} from "../../../../stores/useStreamStore";
+import { useEffect } from 'react';
+import {useStreamStore} from "#stores/useStreamStore";
 
 const StreamsPage = () => {
 
@@ -20,7 +20,6 @@ const StreamsPage = () => {
                 <header className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">Streams</h1>
                     <hr className="border-b-1 border-blueGray-300 pb-6"/>
-
                 </header>
                 <StreamPageIndex/>
             </div>
