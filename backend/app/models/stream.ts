@@ -9,6 +9,7 @@ import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
 import transmit from '@adonisjs/transmit/services/main'
+import * as fs from 'node:fs'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -67,6 +68,27 @@ export default class Stream extends BaseModel {
   declare streamStartTime: DateTime
   declare nextVideoTimeout: NodeJS.Timeout | null
 
+  async updateGuestText() {
+    const currentVideo = await this.timeline.getCurrentVideo()
+    if (currentVideo.guest) {
+      fs.writeFileSync(
+        'resources/datas/guest.txt',
+        `Upload by : ${currentVideo.guest.username || 'CoffeeStream'}`
+      )
+    } else {
+      console.error('Guest is not loaded for the current video')
+    }
+  }
+
+  async updateNextGameText() {
+    const nextGame = await this.timeline.getNextVideo(false)
+    const nextGameTitle = nextGame ? nextGame.title : 'No game'
+    fs.writeFileSync(
+      'resources/datas/nextVideo.txt',
+      `Next game: ${nextGameTitle.replace(/%/g, '%%')}`
+    )
+  }
+
   async nextVideo() {
     if (!this.isOnLive || !this.canNextVideo) {
       logger.info('Stream is not live or not ready to switch videos.')
@@ -103,6 +125,9 @@ export default class Stream extends BaseModel {
           await this.stop()
           return
         }
+
+        await this.updateNextGameText()
+        await this.updateGuestText()
 
         await this.nextVideo()
       }, durationMs)
