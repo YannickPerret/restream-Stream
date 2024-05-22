@@ -8,6 +8,7 @@ import TimelineItem from '#models/timeline_item'
 import logger from '@adonisjs/core/services/logger'
 import Playlist from '#models/playlist'
 import Video from '#models/video'
+import app from '@adonisjs/core/services/app'
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -43,7 +44,7 @@ export default class Timeline extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  declare currentVideoIndex: number
+  currentVideoIndex: number = 0
 
   async getTotalDuration(): Promise<number> {
     const playlists = await this.related('playlists').query()
@@ -60,9 +61,10 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    this.filePath = path.join('resources', 'assets', 'playlists', `playlist${this.id}.${type}`)
+    this.filePath = path.join(
+      app.makePath('resources/assets/playlists', `playlist${this.id}.${type}`)
+    )
 
-    // If file exists, delete it
     if (fs.existsSync(this.filePath)) {
       await fs.promises.unlink(this.filePath)
     }
@@ -113,7 +115,6 @@ export default class Timeline extends BaseModel {
 
   async getCurrentVideo() {
     const videos = await this.videos()
-    logger.info(` index:${this.currentVideoIndex}`)
     return videos[this.currentVideoIndex]
   }
 

@@ -16,7 +16,11 @@ export default class Ffmpeg implements StreamProvider {
   constructor(
     private baseUrl: string,
     private streamKey: string,
-    private timelinePath: string
+    private timelinePath: string,
+    private logo: string,
+    private overlay: string,
+    private guestFile: string,
+    private cryptoFile: string
   ) {}
 
   startStream(): void {
@@ -30,11 +34,12 @@ export default class Ffmpeg implements StreamProvider {
       '-i',
       this.timelinePath,
       '-i',
-      'resources/assets/logos/coffeeStream.png',
+      this.logo,
       '-i',
-      'resources/assets/overlay/overlay1.png',
+      this.overlay ||
+        '/Users/tchoune/Documents/dev/js/coffeeStream/backend/public/assets/streams/overlays/overlay1.png',
       '-filter_complex',
-      `[1:v]scale=200:-1[logo];[2:v]scale=-1:ih[overlay];[0:v][logo]overlay=W-w-5:5[main];[main][overlay]overlay=0:H-h[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=resources/datas/guest.txt:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=resources/datas/nextVideo.txt:reload=1:x=w-text_w-10:y=h-text_h-10:fontsize=16:fontcolor=white`,
+      `[1:v]scale=200:-1[logo];[2:v]scale=-1:ih[overlay];[0:v][logo]overlay=W-w-5:5[main];[main][overlay]overlay=0:H-h[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.guestFile}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.cryptoFile}:reload=1:x=w-text_w-10:y=h-text_h-10:fontsize=16:fontcolor=white`,
       '-vsync',
       'cfr',
       '-copyts',

@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column, manyToMany, afterCreate } from '@adonisjs/lucid/orm'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
@@ -10,6 +10,9 @@ import Timeline from '#models/timeline'
 import Video from '#models/video'
 import transmit from '@adonisjs/transmit/services/main'
 import * as fs from 'node:fs'
+import { cuid } from '@adonisjs/core/helpers'
+import path from 'node:path'
+import app from '@adonisjs/core/services/app'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -35,6 +38,18 @@ export default class Stream extends BaseModel {
 
   @column()
   declare timelineId: number
+
+  @column()
+  declare overlay: string | null | undefined
+
+  @column()
+  declare guestFile: string
+
+  @column()
+  declare cryptoFile: string
+
+  @column()
+  declare logo: string | null | undefined
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
@@ -67,12 +82,31 @@ export default class Stream extends BaseModel {
   declare primaryProvider: Provider | null
   declare streamStartTime: DateTime
   declare nextVideoTimeout: NodeJS.Timeout | null
+  declare cronJob: NodeJS.Timeout | null
+
+  @afterCreate()
+  static async createBaseFiles(stream: Stream) {
+    const dir = `${app.makePath('resources/datas/streams')}`
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+
+    stream.guestFile = path.join(dir, `${cuid()}_guest.txt`)
+    stream.cryptoFile = path.join(dir, `${cuid()}_crypto.txt`)
+
+    fs.writeFileSync(stream.guestFile, 'Upload by : CoffeeStream')
+    fs.writeFileSync(stream.cryptoFile, 'Market : 0.00 XNeuros')
+
+    await stream.save()
+  }
 
   async updateGuestText() {
     const currentVideo = await this.timeline.getCurrentVideo()
+    await currentVideo.load('guest')
     if (currentVideo.guest) {
       fs.writeFileSync(
-        'resources/datas/guest.txt',
+        this.guestFile,
         `Upload by : ${currentVideo.guest.username || 'CoffeeStream'}`
       )
     } else {
@@ -80,13 +114,22 @@ export default class Stream extends BaseModel {
     }
   }
 
-  async updateNextGameText() {
-    const nextGame = await this.timeline.getNextVideo(false)
-    const nextGameTitle = nextGame ? nextGame.title : 'No game'
-    fs.writeFileSync(
-      'resources/datas/nextVideo.txt',
-      `Next game: ${nextGameTitle.replace(/%/g, '%%')}`
+  async updateCryptoText() {
+    // 22 may 2024 - Perret - Fetch created by Quentin Neves
+    const cryptoCurrency = await fetch(
+      'https://www.coingecko.com/price_charts/30105/usd/24_hours.json',
+      {
+        method: 'GET',
+      }
     )
+      .then((response) => {
+        return response.json()
+      })
+      .then((data) => {
+        return data.stats[data.stats.length - 1][1]
+      })
+    const cryptoTitle = cryptoCurrency ? cryptoCurrency : ''
+    fs.writeFileSync(this.cryptoFile, `Market : ${cryptoTitle} XNeuros`)
   }
 
   async nextVideo() {
@@ -126,7 +169,6 @@ export default class Stream extends BaseModel {
           return
         }
 
-        await this.updateNextGameText()
         await this.updateGuestText()
 
         await this.nextVideo()
@@ -151,9 +193,21 @@ export default class Stream extends BaseModel {
         'ffmpeg',
         this.primaryProvider.baseUrl,
         this.primaryProvider.streamKey,
-        this.timeline.filePath
+        this.timeline.filePath,
+        this.logo || '',
+        this.overlay || '',
+        this.guestFile,
+        this.cryptoFile
       )
+
+      this.cronJob = setInterval(async () => {
+        logger.info('Updating crypto text...')
+        await this.updateCryptoText()
+      }, 10000)
+
+      await this.updateGuestText()
       await this.start()
+
       transmit.broadcast(`stream/${this.id}/currentVideo`, {
         currentVideo: await this.timeline.getCurrentVideo(),
       })
@@ -187,6 +241,9 @@ export default class Stream extends BaseModel {
     this.endTime = DateTime.now()
     this.status = 'inactive'
     this.isOnLive = false
+    if (this.cronJob) {
+      clearInterval(this.cronJob)
+    }
     await this.save()
   }
 
