@@ -201,9 +201,8 @@ export default class Stream extends BaseModel {
       )
 
       this.cronJob = setInterval(async () => {
-        logger.info('Updating crypto text...')
         await this.updateCryptoText()
-      }, 10000)
+      }, 1800000)
 
       await this.updateGuestText()
       await this.start()
