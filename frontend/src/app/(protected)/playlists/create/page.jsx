@@ -14,15 +14,16 @@ export default function PlaylistCreatePage() {
         isPublished: true,
         items: []
     });
-    const videos = useVideoStore.use.videos();
+    const videos = useVideoStore(state => state.videos);
+    const setVideos = useVideoStore(state => state.setVideos);
 
     useEffect(() => {
         const fetchVideos = async () => {
             const data = await VideoApi.getAll();
-            useVideoStore.setState({ videos: data });
+            setVideos(data);
         };
         fetchVideos();
-    }, []);
+    }, [setVideos]);
 
     useEffect(() => {
         const savedPlaylist = localStorage.getItem('playlist');
@@ -50,14 +51,18 @@ export default function PlaylistCreatePage() {
     };
 
     const submitPlaylist = async (title, description, isPublished) => {
-        const newPlaylist = { ...playlist, title, description, isPublished };
-        await PlaylistApi.create(newPlaylist).then((response) => {
-            if (response.ok) {
-                console.log('Playlist created successfully');
-                setPlaylist({ title: '', description: '', isPublished: true, items: [] });
-                localStorage.removeItem('playlist');
-            }
-        });
+        const newPlaylist = {
+            title: title,
+            description: description,
+            isPublished: isPublished,
+            items: playlist.items.map(item => ({ type: item.type, itemId: item.video.id }))
+        };
+        const response = await PlaylistApi.create(newPlaylist);
+        if (response.ok) {
+            console.log('Playlist created successfully');
+            setPlaylist({ title: '', description: '', isPublished: true, items: [] });
+            localStorage.removeItem('playlist');
+        }
     };
 
     const totalDuration = playlist.items.reduce((acc, item) => acc + item.video.duration, 0);
@@ -73,7 +78,7 @@ export default function PlaylistCreatePage() {
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
             <div className="bg-slate-500">
                 <div className="container mx-auto">
-                    <h1 className="text-3xl text-white py-4 ">Create a new stream</h1>
+                    <h1 className="text-3xl text-white py-4 ">Create a new playlist</h1>
                     <hr className="border-b-1 border-blueGray-300 pb-6" />
                     <div>
                         <Link href={"/playlists"}>Back to Playlists</Link>
@@ -89,7 +94,7 @@ export default function PlaylistCreatePage() {
                             setTitle={(title) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, title }))}
                             description={playlist.description}
                             setDescription={(value) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, description: value }))}
-                            submitPlaylist={submitPlaylist}
+                            submitPlaylist={() => submitPlaylist(playlist.title, playlist.description, playlist.isPublished)}
                         />
 
                         <h2>Add Videos to Playlist</h2>

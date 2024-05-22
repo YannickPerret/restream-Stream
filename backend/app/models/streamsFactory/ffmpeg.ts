@@ -28,8 +28,7 @@ export default class Ffmpeg implements StreamProvider {
       '-safe',
       '0',
       '-i',
-      this.timelinePath ||
-        'concat:/Users/tchoune/Documents/dev/js/coffeeStream/backend/ressources/playlists/playlists.m3u8',
+      this.timelinePath,
       '-vsync',
       'cfr',
       '-copyts',
@@ -109,7 +108,6 @@ export default class Ffmpeg implements StreamProvider {
 
     instance.on('close', (code: any) => {
       logger.info(`FFmpeg process closed with code: ${code}`)
-      this.stopStream()
     })
   }
 }

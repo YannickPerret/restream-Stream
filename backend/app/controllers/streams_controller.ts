@@ -11,6 +11,7 @@ export default class StreamsController {
       .preload('providers', (query) => {
         query.pivotColumns(['on_primary'])
       })
+      .preload('timeline')
 
     const streamsWithPrimaryProvider = await Promise.all(
       streams.map(async (stream) => {
@@ -35,7 +36,7 @@ export default class StreamsController {
       .firstOrFail()
 
     const streamManager = Stream_manager
-    const streamInstance = streamManager.getOrAddStream(params.id, stream)
+    const streamInstance = await streamManager.getOrAddStream(params.id, stream)
 
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
@@ -46,13 +47,13 @@ export default class StreamsController {
 
   async stop({ params, response }: HttpContext) {
     const streamManager = Stream_manager
-    const getStream = Stream.find(params.id)
+    const streamDb = await Stream.find(params.id)
 
-    if (!getStream) {
+    if (!streamDb) {
       return response.notFound({ error: 'Stream not found' })
     }
 
-    const stream = streamManager.getOrAddStream(params.id, getStream)
+    const stream = await streamManager.getOrAddStream(params.id, streamDb)
 
     await stream.stop()
     streamManager.removeStream(params.id)
@@ -102,7 +103,7 @@ export default class StreamsController {
 
     if (runLive) {
       const streamManager = Stream_manager
-      const streamInstance = streamManager.getOrAddStream(stream.id.toString(), stream)
+      const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()
     }
     return response.created(stream)

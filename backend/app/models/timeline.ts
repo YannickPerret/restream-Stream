@@ -54,30 +54,6 @@ export default class Timeline extends BaseModel {
     return totalDuration
   }
 
-  async getPlaylistCount(): Promise<number> {
-    const playlists = await this.related('playlists').query()
-    return playlists.length
-  }
-
-  async getVideoCount(): Promise<number> {
-    const playlists = await this.related('playlists').query()
-    let totalVideos = 0
-    for (const playlist of playlists) {
-      totalVideos += await playlist.getVideoCount()
-    }
-    return totalVideos
-  }
-
-  async loadTimeline() {
-    try {
-      const contents = await fs.promises.readFile(this.filePath, 'utf8')
-      return contents
-    } catch (error) {
-      console.error(`Erreur lors de la lecture du fichier de la playlist ${this.id} :`, error)
-      throw error
-    }
-  }
-
   async generatePlaylistFile(type: string = 'm3u8') {
     await this.load('items', (query) => {
       query.orderBy('order', 'asc')
@@ -133,5 +109,62 @@ export default class Timeline extends BaseModel {
     const dirPath = path.dirname(this.filePath)
     await fs.promises.mkdir(dirPath, { recursive: true })
     await fs.promises.writeFile(this.filePath, content)
+  }
+
+  async getCurrentVideo() {
+    const videos = await this.videos()
+    logger.info(` index:${this.currentVideoIndex}`)
+    return videos[this.currentVideoIndex]
+  }
+
+  async videos() {
+    await this.load('items')
+    const allVideos = []
+
+    for (const item of this.items) {
+      if (item.type === 'video') {
+        const video = await Video.find(item.itemId)
+        if (video) {
+          allVideos.push(video)
+        }
+      } else if (item.type === 'playlist') {
+        const playlist = await Playlist.find(item.itemId)
+        if (playlist) {
+          await playlist.load('videos')
+          allVideos.push(...playlist.videos)
+        }
+      }
+    }
+
+    return allVideos
+  }
+
+  async getNextVideo(showTransition: boolean = true) {
+    const videos = await this.videos()
+    const nextIndex = showTransition ? this.currentVideoIndex + 1 : this.currentVideoIndex + 2
+    if (nextIndex >= videos.length) {
+      return null
+    }
+    return videos[nextIndex]
+  }
+
+  async moveToNextVideo() {
+    this.currentVideoIndex++
+    const videos = await this.videos()
+    if (this.currentVideoIndex >= videos.length) {
+      this.currentVideoIndex = 0
+    }
+    await this.save()
+  }
+
+  getPreviousItem(showTransition: boolean = true): TimelineItem | null {
+    if (this.currentVideoIndex - 1 < 0) {
+      return null
+    }
+    if (showTransition) {
+      return this.items[this.currentVideoIndex - 1] || null
+    } else {
+      return this.items[this.currentVideoIndex - 2] || null
+    }
   }
 }
