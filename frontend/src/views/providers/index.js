@@ -1,9 +1,7 @@
-import {useProviderStore} from "../../../stores/useProviderStore";
+import {useProviderStore} from "#stores/useProviderStore";
 
 export default function ProviderIndex() {
     const providers = useProviderStore.use.providers()
-
-    console.log(providers)
 
     return (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
