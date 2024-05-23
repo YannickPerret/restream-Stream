@@ -76,8 +76,8 @@ export default class Stream extends BaseModel {
   declare timeline: BelongsTo<typeof Timeline>
 
   declare streamProvider: StreamProvider | null
-  declare isOnLive: boolean
-  declare canNextVideo: boolean
+  isOnLive: boolean = false
+  canNextVideo: boolean = false
   declare providersInstance: Provider[]
   declare primaryProvider: Provider | null
   declare streamStartTime: DateTime
@@ -127,7 +127,6 @@ export default class Stream extends BaseModel {
       .then((data) => {
         return data.stats[data.stats.length - 1][1]
       })
-    logger.info(`Crypto : ${cryptoCurrency}`)
     const cryptoTitle = cryptoCurrency ? cryptoCurrency : ''
     fs.writeFileSync(this.cryptoFile, `Market : ${cryptoTitle} XNeuros`)
   }
@@ -143,9 +142,7 @@ export default class Stream extends BaseModel {
     logger.info(`Attente de ${durationMs}ms que la video ${currentVideo.title} se termine.`)
 
     const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
-    logger.info(
-      `Temps total de stream : ${totalStreamTime / 60 / 60}h (${totalStreamTime} secondes)`
-    )
+    logger.info(`Temps total de stream : (${totalStreamTime} secondes)`)
 
     if (totalStreamTime > 115200000) {
       logger.info('28h de stream atteint, arrêt du stream')
@@ -168,7 +165,10 @@ export default class Stream extends BaseModel {
           await this.stop()
           return
         }
-
+        console.log('Next video:', nextVideo.title, `streams/${this.id}/currentVideo`)
+        transmit.broadcast(`streams/${this.id}/currentVideo`, {
+          currentVideo: nextVideo,
+        })
         await this.updateGuestText()
 
         await this.nextVideo()
@@ -204,7 +204,7 @@ export default class Stream extends BaseModel {
       await this.updateGuestText()
       await this.start()
 
-      transmit.broadcast(`stream/${this.id}/currentVideo`, {
+      transmit.broadcast(`streams/${this.id}/currentVideo`, {
         currentVideo: await this.timeline.getCurrentVideo(),
       })
 
@@ -220,8 +220,6 @@ export default class Stream extends BaseModel {
   }
 
   async start(): Promise<void> {
-    logger.info(`timeline: ${await this.timeline.videos()}`)
-
     this.streamProvider?.startStream()
 
     this.startTime = DateTime.now()

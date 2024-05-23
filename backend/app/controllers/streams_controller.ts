@@ -13,13 +13,17 @@ export default class StreamsController {
         query.pivotColumns(['on_primary'])
       })
       .preload('timeline')
+      .orderBy('id', 'desc')
 
     const streamsWithPrimaryProvider = await Promise.all(
       streams.map(async (stream) => {
         const primaryProvider = await stream.getPrimaryProvider()
+        const currentVideo =
+          stream.status === 'active' ? await stream.timeline.getCurrentVideo() : null
         return {
           ...stream.serialize(),
           primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
+          currentVideo: currentVideo ? currentVideo.serialize() : null,
         }
       })
     )
