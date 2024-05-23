@@ -5,13 +5,11 @@ import logger from '@adonisjs/core/services/logger'
 export interface StreamProvider {
   startStream(playlist?: string): void
   stopStream(): void
-  isActive(): boolean
 }
 
 export default class Ffmpeg implements StreamProvider {
   private instance: any = null
   private pid: number = 0
-  private isOnLive: boolean = false
 
   constructor(
     private baseUrl: string,
@@ -80,7 +78,6 @@ export default class Ffmpeg implements StreamProvider {
     this.handleProcessOutputs(this.instance)
 
     this.pid = Number.parseInt(this.instance.pid.toString(), 10)
-    this.isOnLive = true
   }
 
   stopStream(): void {
@@ -88,14 +85,9 @@ export default class Ffmpeg implements StreamProvider {
       logger.info(`Stopping FFmpeg with PID: ${this.pid}`)
       this.instance.kill('SIGKILL')
       this.pid = 0
-      this.isOnLive = false
     } else {
       logger.error('Cannot stop FFmpeg: instance is undefined or invalid.')
     }
-  }
-
-  isActive(): boolean {
-    return this.isOnLive
   }
 
   private handleProcessOutputs(instance: any) {

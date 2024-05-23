@@ -9,6 +9,7 @@ import logger from '@adonisjs/core/services/logger'
 import Playlist from '#models/playlist'
 import Video from '#models/video'
 import app from '@adonisjs/core/services/app'
+import Stream from '#models/stream'
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -32,6 +33,9 @@ export default class Timeline extends BaseModel {
   @column()
   declare userId: number
 
+  @column()
+  declare streamId: number
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -41,13 +45,14 @@ export default class Timeline extends BaseModel {
   })
   declare items: HasMany<typeof TimelineItem>
 
+  @hasMany(() => Stream)
+  declare streams: HasMany<typeof Stream>
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
-
-  currentVideoIndex: number = 0
 
   async getTotalDuration(): Promise<number> {
     const playlists = await this.related('playlists').query()
@@ -116,9 +121,9 @@ export default class Timeline extends BaseModel {
     await fs.promises.writeFile(this.filePath, content)
   }
 
-  async getCurrentVideo() {
+  async getCurrentVideo(currentIndex: number) {
     const videos = await this.videos()
-    return videos[this.currentVideoIndex]
+    return videos[currentIndex]
   }
 
   async videos() {
@@ -143,35 +148,26 @@ export default class Timeline extends BaseModel {
     return allVideos
   }
 
-  async getNextVideo(withTransition: boolean = true) {
+  async getNextVideo(currentIndex: number, withTransition: boolean = true) {
     const videos = await this.videos()
     if (withTransition) {
-      return videos[this.currentVideoIndex + 1]
+      return videos[currentIndex + 1]
     } else {
       const nextVideoIndex = videos.findIndex(
-        (video, index) => index > this.currentVideoIndex && !video.showInLive
+        (video, index) => index > currentIndex && !video.showInLive
       )
       return nextVideoIndex !== -1 ? videos[nextVideoIndex] : null
     }
   }
 
-  async moveToNextVideo() {
-    this.currentVideoIndex++
-    const videos = await this.videos()
-    if (this.currentVideoIndex >= videos.length) {
-      this.currentVideoIndex = 0
-    }
-    await this.save()
-  }
-
-  getPreviousItem(showTransition: boolean = true): TimelineItem | null {
-    if (this.currentVideoIndex - 1 < 0) {
+  getPreviousItem(currentIndex: number, showTransition: boolean = true) {
+    if (currentIndex - 1 < 0) {
       return null
     }
     if (showTransition) {
-      return this.items[this.currentVideoIndex - 1] || null
+      return this.items[currentIndex - 1] || null
     } else {
-      return this.items[this.currentVideoIndex - 2] || null
+      return this.items[currentIndex - 2] || null
     }
   }
 }

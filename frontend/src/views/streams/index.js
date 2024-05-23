@@ -19,6 +19,7 @@ export default function StreamPageIndex() {
         const subscription = subscriptions.find(sub => sub.id === id);
         if (subscription) {
             subscription.subscription.onMessage(({currentVideo}) => {
+                console.log('currentVideo', currentVideo)
                 updateCurrentVideo(id, currentVideo);
             });
         }

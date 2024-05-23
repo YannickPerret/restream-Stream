@@ -28,6 +28,9 @@ export default class Stream extends BaseModel {
   declare status: 'active' | 'inactive'
 
   @column()
+  declare currentIndex: number
+
+  @column()
   declare type: string
 
   @column()
@@ -74,9 +77,7 @@ export default class Stream extends BaseModel {
 
   @belongsTo(() => Timeline)
   declare timeline: BelongsTo<typeof Timeline>
-
   declare streamProvider: StreamProvider | null
-  isOnLive: boolean = false
   canNextVideo: boolean = false
   declare providersInstance: Provider[]
   declare primaryProvider: Provider | null
@@ -101,7 +102,7 @@ export default class Stream extends BaseModel {
   }
 
   async updateGuestText() {
-    const currentVideo = await this.timeline.getCurrentVideo()
+    const currentVideo = await this.timeline.getCurrentVideo(this.currentIndex)
     await currentVideo.load('guest')
     await currentVideo.load('user')
 
@@ -132,14 +133,16 @@ export default class Stream extends BaseModel {
   }
 
   async nextVideo() {
-    if (!this.isOnLive || !this.canNextVideo) {
+    if (this.status === 'inactive' || !this.canNextVideo) {
       logger.info('Stream is not live or not ready to switch videos.')
       return
     }
 
-    const currentVideo: Video = await this.timeline.getCurrentVideo()
-    const durationMs: number = await currentVideo?.getDurationInMilisecond()
-    logger.info(`Attente de ${durationMs}ms que la video ${currentVideo.title} se termine.`)
+    const currentVideo: Video = await this.timeline.getCurrentVideo(this.currentIndex)
+    const durationMs: number = await currentVideo.getDurationInMilisecond()
+    logger.info(
+      `Waiting for ${await currentVideo.getDurationInSeconde()}s until the video ${currentVideo.title} ends`
+    )
 
     const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
     logger.info(`Temps total de stream : (${totalStreamTime} secondes)`)
@@ -152,32 +155,39 @@ export default class Stream extends BaseModel {
       }, durationMs)
     } else {
       this.nextVideoTimeout = setTimeout(async () => {
-        if (!this.isOnLive) {
+        if (this.status === 'inactive') {
           logger.info('Stream has been stopped. Not proceeding to the next video.')
           return
         }
-        await this.timeline.moveToNextVideo()
-        const nextVideo = await this.timeline.getCurrentVideo()
 
-        if (!nextVideo) {
+        await this.moveToNextVideo()
+
+        if (!(await this.timeline.getCurrentVideo(this.currentIndex))) {
           // restart stream with timeline
           logger.info('Fin de la playlist.')
           await this.stop()
           return
         }
-        console.log('Next video:', nextVideo.title, `streams/${this.id}/currentVideo`)
+
         transmit.broadcast(`streams/${this.id}/currentVideo`, {
-          currentVideo: nextVideo,
+          currentVideo: await this.timeline.getCurrentVideo(this.currentIndex),
         })
         await this.updateGuestText()
 
+        await this.save()
         await this.nextVideo()
       }, durationMs)
     }
   }
 
+  async moveToNextVideo() {
+    if (this.currentIndex + 1 <= (await this.timeline.videos()).length) {
+      this.currentIndex++
+    }
+  }
+
   async run() {
-    logger.info('Starting stream...')
+    logger.info(`Starting stream ${this.id}`)
 
     const providers = await this.related('providers').query().pivotColumns(['on_primary'])
     this.providersInstance = await Promise.all(
@@ -187,6 +197,7 @@ export default class Stream extends BaseModel {
       (provider) => provider.$extras.pivot_on_primary === 1
     )
     this.primaryProvider = primary ?? null
+    this.currentIndex = 0
 
     if (this.primaryProvider) {
       this.streamProvider = StreamFactory.createProvider(
@@ -200,15 +211,13 @@ export default class Stream extends BaseModel {
         this.cryptoFile
       )
 
+      transmit.broadcast(`streams/${this.id}/currentVideo`, {
+        currentVideo: await this.timeline.getCurrentVideo(this.currentIndex),
+      })
       await this.updateCryptoText()
       await this.updateGuestText()
       await this.start()
 
-      transmit.broadcast(`streams/${this.id}/currentVideo`, {
-        currentVideo: await this.timeline.getCurrentVideo(),
-      })
-
-      this.timeline.currentVideoIndex = 0
       this.streamStartTime = DateTime.now()
       this.canNextVideo = true
 
@@ -221,20 +230,17 @@ export default class Stream extends BaseModel {
 
   async start(): Promise<void> {
     this.streamProvider?.startStream()
-
     this.startTime = DateTime.now()
     this.status = 'active'
-    this.isOnLive = true
     await this.save()
   }
 
   async stop(): Promise<void> {
-    logger.info('Stopping streams...')
+    logger.info(`Stopping streams ${this.id}`)
     clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
     this.streamProvider?.stopStream()
     this.endTime = DateTime.now()
     this.status = 'inactive'
-    this.isOnLive = false
 
     await this.save()
   }

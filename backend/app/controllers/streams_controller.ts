@@ -13,13 +13,14 @@ export default class StreamsController {
         query.pivotColumns(['on_primary'])
       })
       .preload('timeline')
-      .orderBy('id', 'desc')
 
     const streamsWithPrimaryProvider = await Promise.all(
       streams.map(async (stream) => {
         const primaryProvider = await stream.getPrimaryProvider()
         const currentVideo =
-          stream.status === 'active' ? await stream.timeline.getCurrentVideo() : null
+          stream.status === 'active'
+            ? await stream.timeline.getCurrentVideo(stream.currentIndex)
+            : null
         return {
           ...stream.serialize(),
           primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
@@ -106,6 +107,7 @@ export default class StreamsController {
       type: type,
       timelineId: timeline,
       logo: logoFile?.filePath,
+      currentIndex: 0,
     })
 
     if (stream && providersForm) {
@@ -120,7 +122,6 @@ export default class StreamsController {
 
     if (runLive) {
       await stream.load('timeline')
-
       const streamManager = Stream_manager
       const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()
