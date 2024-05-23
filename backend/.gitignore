@@ -12,6 +12,7 @@ tmp
 # Frontend assets compiled code
 public/assets
 resources/assets/playlists
+resources/datas/streams
 
 # Build tools specific
 npm-debug.log
