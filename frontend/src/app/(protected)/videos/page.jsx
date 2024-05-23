@@ -9,6 +9,7 @@ export default function VideosIndexPage() {
     useEffect(() => {
         const fetchVideos = async () => {
             await VideoApi.getAll().then((data) => {
+                console.log(data)
                 useVideoStore.setState({
                     videos: data
                 })

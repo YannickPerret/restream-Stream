@@ -82,7 +82,6 @@ export default class Stream extends BaseModel {
   declare primaryProvider: Provider | null
   declare streamStartTime: DateTime
   declare nextVideoTimeout: NodeJS.Timeout | null
-  declare cronJob: NodeJS.Timeout | null
 
   @afterCreate()
   static async createBaseFiles(stream: Stream) {
@@ -128,6 +127,7 @@ export default class Stream extends BaseModel {
       .then((data) => {
         return data.stats[data.stats.length - 1][1]
       })
+    logger.info(`Crypto : ${cryptoCurrency}`)
     const cryptoTitle = cryptoCurrency ? cryptoCurrency : ''
     fs.writeFileSync(this.cryptoFile, `Market : ${cryptoTitle} XNeuros`)
   }
@@ -200,10 +200,7 @@ export default class Stream extends BaseModel {
         this.cryptoFile
       )
 
-      this.cronJob = setInterval(async () => {
-        await this.updateCryptoText()
-      }, 1800000)
-
+      await this.updateCryptoText()
       await this.updateGuestText()
       await this.start()
 
@@ -240,9 +237,7 @@ export default class Stream extends BaseModel {
     this.endTime = DateTime.now()
     this.status = 'inactive'
     this.isOnLive = false
-    if (this.cronJob) {
-      clearInterval(this.cronJob)
-    }
+
     await this.save()
   }
 

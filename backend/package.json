@@ -58,6 +58,7 @@
     "@adonisjs/lucid": "^20.5.1",
     "@adonisjs/transmit": "^1.0.0",
     "@vinejs/vine": "^2.0.0",
+    "adonisjs-scheduler": "^1.0.5",
     "fluent-ffmpeg": "^2.1.2",
     "luxon": "^3.4.4",
     "mysql2": "^3.9.7",
