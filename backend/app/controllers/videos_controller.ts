@@ -25,6 +25,7 @@ export default class VideosController {
         }
       }
     }
+    query = query.orWhereNotNull('guestId')
 
     const videos = await query
     return response.json(videos)
@@ -185,6 +186,10 @@ export default class VideosController {
         await video.save()
       })
     }
+
+    await video.moveToFolders(env.get('VIDEO_DIRECTORY'))
+    video.status = 'published'
+    await video.save()
 
     return response.json(video)
   }

@@ -90,6 +90,12 @@ export default class GuestsController {
     return response.status(204).json(null)
   }
 
+  /**
+   * Upload video
+   * @param request
+   * @param response
+   */
+
   async upload({ request, response }: HttpContext) {
     const {
       title,
@@ -118,7 +124,7 @@ export default class GuestsController {
     ])
 
     const videoFile = request.file('video', {
-      extnames: ['mp4', 'avi', 'mov', 'mts'],
+      extnames: ['mp4', 'avi', 'mov', 'mkv', 'webm'],
       size: '20gb',
     })
 
