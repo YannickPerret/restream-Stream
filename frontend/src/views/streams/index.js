@@ -20,7 +20,6 @@ export default function StreamPageIndex() {
         if (subscription) {
             subscription.subscription.onMessage(({currentVideo}) => {
                 updateCurrentVideo(id, currentVideo);
-                console.log('currentVideo', currentVideo);
             });
         }
         await StreamApi.start(id).then(async () => {

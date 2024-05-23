@@ -103,32 +103,32 @@ export default class Stream extends BaseModel {
   async updateGuestText() {
     const currentVideo = await this.timeline.getCurrentVideo()
     await currentVideo.load('guest')
-    if (currentVideo.guest) {
-      fs.writeFileSync(
-        this.guestFile,
-        `Upload by : ${currentVideo.guest.username || 'CoffeeStream'}`
-      )
-    } else {
-      console.error('Guest is not loaded for the current video')
-    }
+    await currentVideo.load('user')
+
+    const guestText = !currentVideo.showInLive
+      ? ''
+      : currentVideo.guest
+        ? `Upload by : ${currentVideo.guest.displayName || currentVideo.guest.username}`
+        : currentVideo.user
+          ? `Upload by : ${currentVideo.user.fullName}`
+          : 'Guest is not loaded for the current video'
+
+    fs.writeFileSync(this.guestFile, guestText)
   }
 
   async updateCryptoText() {
     // 22 may 2024 - Perret - Fetch created by Quentin Neves
     const cryptoCurrency = await fetch(
       'https://www.coingecko.com/price_charts/30105/usd/24_hours.json',
-      {
-        method: 'GET',
-      }
+      { method: 'GET' }
     )
       .then((response) => {
         return response.json()
       })
       .then((data) => {
-        return data.stats[data.stats.length - 1][1]
+        return data.stats[data.stats.length - 1][1] + ' XNeuros' || ''
       })
-    const cryptoTitle = cryptoCurrency ? cryptoCurrency : ''
-    fs.writeFileSync(this.cryptoFile, `Market : ${cryptoTitle} XNeuros`)
+    fs.writeFileSync(this.cryptoFile, `Market : ${cryptoCurrency}`)
   }
 
   async nextVideo() {

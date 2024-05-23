@@ -27,6 +27,9 @@ export default class Timeline extends BaseModel {
   declare isPublished: boolean
 
   @column()
+  declare showInLive: boolean
+
+  @column()
   declare userId: number
 
   @belongsTo(() => User)
@@ -140,13 +143,16 @@ export default class Timeline extends BaseModel {
     return allVideos
   }
 
-  async getNextVideo(showTransition: boolean = true) {
+  async getNextVideo(withTransition: boolean = true) {
     const videos = await this.videos()
-    const nextIndex = showTransition ? this.currentVideoIndex + 1 : this.currentVideoIndex + 2
-    if (nextIndex >= videos.length) {
-      return null
+    if (withTransition) {
+      return videos[this.currentVideoIndex + 1]
+    } else {
+      const nextVideoIndex = videos.findIndex(
+        (video, index) => index > this.currentVideoIndex && !video.showInLive
+      )
+      return nextVideoIndex !== -1 ? videos[nextVideoIndex] : null
     }
-    return videos[nextIndex]
   }
 
   async moveToNextVideo() {
