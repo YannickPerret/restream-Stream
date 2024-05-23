@@ -82,7 +82,6 @@ export default class VideosController {
         logger.info('Encoding completed')
         videoCreated.path = outputPath
 
-        logger.info(`SDSDFDSFSDFSFSF : ${videoCreated.status}`)
         await videoCreated.save()
       })
     } else {

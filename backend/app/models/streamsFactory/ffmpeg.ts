@@ -81,8 +81,6 @@ export default class Ffmpeg implements StreamProvider {
 
     this.pid = Number.parseInt(this.instance.pid.toString(), 10)
     this.isOnLive = true
-
-    logger.info(`FFmpeg started with PID: ${this.pid}`)
   }
 
   stopStream(): void {

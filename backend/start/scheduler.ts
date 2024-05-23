@@ -1,5 +1,4 @@
 import scheduler from 'adonisjs-scheduler/services/main'
-import logger from '@adonisjs/core/services/logger'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import ace from '@adonisjs/core/services/ace'
@@ -9,7 +8,6 @@ scheduler
     const streamManager = Stream_manager.getAllStreams()
     for (const stream of streamManager) {
       if (stream.isOnLive) {
-        logger.info(`Update crypto in stream ${stream.id}`)
         await stream.updateCryptoText()
       }
     }

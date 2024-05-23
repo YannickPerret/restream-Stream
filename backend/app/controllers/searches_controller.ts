@@ -1,5 +1,4 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/provider'
 import Timeline from '#models/timeline'
 import Playlist from '#models/playlist'
@@ -8,7 +7,6 @@ export default class SearchesController {
   async index({ request, response }: HttpContext) {
     const searchType = request.input('domain', '')
     const searchTerms = request.input('query', '')
-    logger.info(`Searching for ${searchType} with query: ${searchTerms}`)
 
     let results: any[] = []
 
