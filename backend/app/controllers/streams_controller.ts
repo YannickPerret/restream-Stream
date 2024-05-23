@@ -119,6 +119,8 @@ export default class StreamsController {
     }
 
     if (runLive) {
+      await stream.load('timeline')
+
       const streamManager = Stream_manager
       const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()
