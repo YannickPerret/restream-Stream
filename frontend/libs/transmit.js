@@ -6,12 +6,8 @@ let transmit = null;
 
 if (typeof window !== 'undefined') {
     transmit = new Transmit({
-        baseUrl: 'http://localhost:3333',
+        baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
         maxReconnectAttempts: 5,
-        onSubscription: (channel) => {
-            console.log(`Subscription connected to ${channel}`);
-        },
-
         onSubscribeFailed: (error) => {
             console.error("Subscription error:", error);
         },

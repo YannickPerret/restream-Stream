@@ -9,6 +9,7 @@ export default function StreamForm({ onSubmit }) {
     const [timeline, setTimeline] = useState([]);
     const [primaryProvider, setPrimaryProvider] = useState(null);
     const [runLive, setRunLive] = useState(false);
+    const [logo, setLogo] = useState('')
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -18,13 +19,17 @@ export default function StreamForm({ onSubmit }) {
             onPrimary: provider.id === (primaryProvider?.id || null),
         }));
 
-        await StreamApi.create({
-            title,
-            providers: providersWithPrimary,
-            timeline,
-            runLive,
-        })
-            .then(response => {
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('timeline', timeline.id);
+        formData.append('runLive', runLive);
+        formData.append('providers', JSON.stringify(providersWithPrimary));
+
+        if (logo) {
+            formData.append('logo', logo);
+        }
+
+        await StreamApi.create(formData).then(response => {
                 console.log(response);
             })
             .catch(error => {
@@ -54,6 +59,7 @@ export default function StreamForm({ onSubmit }) {
                 placeholder="Enter Title"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
+                required={true}
             />
             <div>
                 Timeline selected:
@@ -84,6 +90,11 @@ export default function StreamForm({ onSubmit }) {
             <div>
                 <label>Provider</label>
                 <SearchForm searchUrl="providers" multiple={true} updateSelectedItems={setProviders} />
+            </div>
+
+            <div>
+                <label>Upload logo</label>
+                <input type="file" onChange={e => setLogo(e.target.files[0])} accept={'image/*'} />
             </div>
 
             <div>

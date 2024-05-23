@@ -26,8 +26,5 @@ export const useStreamStore = createSelectors(create((set) => ({
     })),
     updateCurrentVideo: (id, video) => set(state => ({
         streams: state.streams.map(stream => stream.id === id ? { ...stream, currentVideo: video } : stream)
-    })),
-    subscriptions: [],
-    setSubscriptions: (subscriptions) => set({ subscriptions }),
-    addSubscription: (id, subscription) => set(state => ({ subscriptions: [...state.subscriptions, { id, subscription }] }))
+    }))
 })));

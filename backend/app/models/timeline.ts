@@ -8,6 +8,8 @@ import TimelineItem from '#models/timeline_item'
 import logger from '@adonisjs/core/services/logger'
 import Playlist from '#models/playlist'
 import Video from '#models/video'
+import app from '@adonisjs/core/services/app'
+import Stream from '#models/stream'
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -26,7 +28,13 @@ export default class Timeline extends BaseModel {
   declare isPublished: boolean
 
   @column()
+  declare showInLive: boolean
+
+  @column()
   declare userId: number
+
+  @column()
+  declare streamId: number
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
@@ -37,13 +45,14 @@ export default class Timeline extends BaseModel {
   })
   declare items: HasMany<typeof TimelineItem>
 
+  @hasMany(() => Stream)
+  declare streams: HasMany<typeof Stream>
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
-
-  declare currentVideoIndex: number
 
   async getTotalDuration(): Promise<number> {
     const playlists = await this.related('playlists').query()
@@ -60,9 +69,10 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    this.filePath = path.join('resources', 'assets', 'playlists', `playlist${this.id}.${type}`)
+    this.filePath = path.join(
+      app.makePath('resources/assets/playlists', `playlist${this.id}.${type}`)
+    )
 
-    // If file exists, delete it
     if (fs.existsSync(this.filePath)) {
       await fs.promises.unlink(this.filePath)
     }
@@ -111,10 +121,9 @@ export default class Timeline extends BaseModel {
     await fs.promises.writeFile(this.filePath, content)
   }
 
-  async getCurrentVideo() {
+  async getCurrentVideo(currentIndex: number) {
     const videos = await this.videos()
-    logger.info(` index:${this.currentVideoIndex}`)
-    return videos[this.currentVideoIndex]
+    return videos[currentIndex]
   }
 
   async videos() {
@@ -139,32 +148,26 @@ export default class Timeline extends BaseModel {
     return allVideos
   }
 
-  async getNextVideo(showTransition: boolean = true) {
+  async getNextVideo(currentIndex: number, withTransition: boolean = true) {
     const videos = await this.videos()
-    const nextIndex = showTransition ? this.currentVideoIndex + 1 : this.currentVideoIndex + 2
-    if (nextIndex >= videos.length) {
-      return null
+    if (withTransition) {
+      return videos[currentIndex + 1]
+    } else {
+      const nextVideoIndex = videos.findIndex(
+        (video, index) => index > currentIndex && !video.showInLive
+      )
+      return nextVideoIndex !== -1 ? videos[nextVideoIndex] : null
     }
-    return videos[nextIndex]
   }
 
-  async moveToNextVideo() {
-    this.currentVideoIndex++
-    const videos = await this.videos()
-    if (this.currentVideoIndex >= videos.length) {
-      this.currentVideoIndex = 0
-    }
-    await this.save()
-  }
-
-  getPreviousItem(showTransition: boolean = true): TimelineItem | null {
-    if (this.currentVideoIndex - 1 < 0) {
+  getPreviousItem(currentIndex: number, showTransition: boolean = true) {
+    if (currentIndex - 1 < 0) {
       return null
     }
     if (showTransition) {
-      return this.items[this.currentVideoIndex - 1] || null
+      return this.items[currentIndex - 1] || null
     } else {
-      return this.items[this.currentVideoIndex - 2] || null
+      return this.items[currentIndex - 2] || null
     }
   }
 }

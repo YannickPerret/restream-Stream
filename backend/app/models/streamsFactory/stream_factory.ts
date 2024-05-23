@@ -6,11 +6,15 @@ export default class StreamFactory {
     type: string,
     baseUrl: string,
     streamKey: string,
-    timelinePath: string
+    timelinePath: string,
+    logo: string,
+    overlay: string,
+    guestFile: string,
+    cryptoFile: string
   ): StreamProvider {
     switch (type) {
       case 'ffmpeg':
-        return new Ffmpeg(baseUrl, streamKey, timelinePath)
+        return new Ffmpeg(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, cryptoFile)
       default:
         throw new Error(`Unsupported provider type: ${type}`)
     }

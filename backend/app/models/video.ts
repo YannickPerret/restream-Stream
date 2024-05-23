@@ -5,6 +5,8 @@ import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
 import Playlist from '#models/playlist'
 import Guest from '#models/guest'
+import * as fs from 'node:fs'
+import app from '@adonisjs/core/services/app'
 
 export default class Video extends BaseModel {
   @column({ isPrimary: true })
@@ -93,7 +95,6 @@ export default class Video extends BaseModel {
 
   async requiresEncoding(): Promise<boolean> {
     const metadata = await Video.getInformation(this.path)
-
     return !(
       metadata.streams[0].codec_name === 'h264' &&
       metadata.streams[0].width === 1920 &&
@@ -102,5 +103,19 @@ export default class Video extends BaseModel {
       metadata.streams[1].codec_name === 'aac' &&
       metadata.streams[1].sample_rate === 48000
     )
+  }
+
+  async moveToFolders(folder: string, filename: string | null = null) {
+    if (folder.length === 0) {
+      throw new Error('Folder is empty')
+    }
+    if (!filename) {
+      filename = this.path.split('/').pop() || ''
+    }
+    const folderPath = app.makePath(folder, filename)
+    fs.renameSync(this.path, folderPath)
+
+    this.path = folderPath
+    await this.save()
   }
 }

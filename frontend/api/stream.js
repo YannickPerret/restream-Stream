@@ -29,8 +29,8 @@ export class StreamApi extends Api {
     static async create(data) {
         const response = await fetch(`${this.baseUrl}/api/streams`, {
             method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(data),
+            headers: this.getHeaders({}),
+            body: data,
         });
         if(!response.ok) {
             throw new Error('Error while creating stream');

@@ -2,7 +2,8 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
 import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
-import logger from '@adonisjs/core/services/logger'
+import app from '@adonisjs/core/services/app'
+import { cuid } from '@adonisjs/core/helpers'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
@@ -16,9 +17,14 @@ export default class StreamsController {
     const streamsWithPrimaryProvider = await Promise.all(
       streams.map(async (stream) => {
         const primaryProvider = await stream.getPrimaryProvider()
+        const currentVideo =
+          stream.status === 'active'
+            ? await stream.timeline.getCurrentVideo(stream.currentIndex)
+            : null
         return {
           ...stream.serialize(),
           primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
+          currentVideo: currentVideo ? currentVideo.serialize() : null,
         }
       })
     )
@@ -62,8 +68,13 @@ export default class StreamsController {
 
   async store({ auth, request, response }: HttpContext) {
     const user = await auth.authenticate()
-    const { title, timeline, runLive } = request.all()
-    const providersForm = request.input('providers') || []
+    const { title, timeline, type } = request.all()
+    const runLive = request.input('runLive') === 'true'
+    const providersForm = JSON.parse(request.input('providers')) || []
+    const logoFile = request.file('logo', {
+      size: '5mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    })
 
     if (!title || !providersForm || !timeline) {
       return response.badRequest({ error: 'Missing required fields' })
@@ -80,15 +91,23 @@ export default class StreamsController {
       return response.badRequest({ error: 'Only one primary provider is allowed' })
     }
 
+    if (logoFile && logoFile.isValid) {
+      await logoFile.move(app.makePath('public/assets/streams/logo/'), {
+        name: `${cuid()}.${logoFile.extname}`,
+      })
+    }
+
     const stream = await Stream.create({
-      name: request.input('title'),
+      name: title,
       pid: 0,
       status: 'inactive',
       startTime: null,
       endTime: null,
       userId: user.id,
-      type: request.input('type'),
-      timelineId: timeline.id,
+      type: type,
+      timelineId: timeline,
+      logo: logoFile?.filePath,
+      currentIndex: 0,
     })
 
     if (stream && providersForm) {
@@ -102,6 +121,7 @@ export default class StreamsController {
     }
 
     if (runLive) {
+      await stream.load('timeline')
       const streamManager = Stream_manager
       const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()

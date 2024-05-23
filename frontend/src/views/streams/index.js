@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+'use client'
+import {useEffect, useState} from "react";
 import { StreamApi } from "#api/stream.js";
 import { useRouter } from "next/navigation";
 import { useStreamStore } from "#stores/useStreamStore.js";
@@ -9,34 +10,47 @@ export default function StreamPageIndex() {
     const router = useRouter();
     const streams = useStreamStore.use.streams();
     const updateStreamStatus = useStreamStore.use.updateStreamStatus();
-    const removeStream = useStreamStore.use.removeStream();
     const updateCurrentVideo = useStreamStore.use.updateCurrentVideo();
-    const addSubscription = useStreamStore.use.addSubscription();
-    const subscriptions = useStreamStore.use.subscriptions();
+    const removeStream = useStreamStore.use.removeStream();
+    const [subscriptions, setSubscriptions] = useState([]);
+
 
     const handleStart = async (id) => {
-        await StreamApi.start(id).then(async () => {
-            updateStreamStatus(id, 'active');
-            const subscription = transmit.subscription(`stream/${id}/currentVideo`);
-            await subscription.create();
-            subscription.onMessage(({currentVideo}) => {
-                console.log(currentVideo)
+        const subscription = subscriptions.find(sub => sub.id === id);
+        if (subscription) {
+            subscription.subscription.onMessage(({currentVideo}) => {
+                console.log('currentVideo', currentVideo)
                 updateCurrentVideo(id, currentVideo);
             });
-            addSubscription(id, subscription);
+        }
+        await StreamApi.start(id).then(async () => {
+            updateStreamStatus(id, 'active');
         });
     };
 
     useEffect(() => {
-        console.log(subscriptions)
-        if (subscriptions.length === 0) return;
-        subscriptions.forEach(subscription => {
-            subscription.onMessage(({currentVideo}) => {
-                console.log(currentVideo)
-                updateCurrentVideo(subscription.id, currentVideo);
-            });
-        });
-    }, [subscriptions]);
+        const createSubscriptions = async () => {
+            const newSubscriptions = [];
+            for (const stream of streams) {
+                const sub = transmit.subscription(`streams/${stream.id}/currentVideo`);
+                await sub.create();
+                newSubscriptions.push({ id: stream.id, subscription: sub });
+
+                if (stream.status === 'active') {
+                    sub.onMessage(({currentVideo}) => {
+                        updateCurrentVideo(stream.id, currentVideo);
+                    });
+                }
+            }
+            setSubscriptions(newSubscriptions);
+        };
+
+        createSubscriptions();
+        return () => {
+            subscriptions.forEach(sub => sub.subscription.delete());
+        };
+    }, [streams]);
+
 
 
     const handleStop = async (id) => {
