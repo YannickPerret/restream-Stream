@@ -121,7 +121,6 @@ export default class Queue extends BaseModel {
     try {
       video.path = await VideoEncoder.encode(video, startTimeCode, endTimeCode, queueItems.length)
       await video.save()
-
       queueItems[0].status = 'completed'
     } catch (error) {
       logger.error(error)
