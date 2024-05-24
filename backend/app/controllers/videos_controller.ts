@@ -17,15 +17,15 @@ export default class VideosController {
     let query = Video.query().preload('user').preload('guest')
 
     if (Object.keys(filters).length === 0) {
-      query = query.where('userId', user.id)
+      query = query.where('userId', user.id).orWhereNotNull('guestId')
     } else {
       for (let key in filters) {
         if (filters[key]) {
+          logger.info(`Filtering by ${key} = ${filters[key]}`)
           query = query.where(key, filters[key])
         }
       }
     }
-    query = query.orWhereNotNull('guestId')
 
     const videos = await query
     return response.json(videos)
@@ -57,14 +57,13 @@ export default class VideosController {
     if (videoFile.hasErrors) {
       return response.badRequest(videoFile.errors)
     }
-
     const videoCreated = await Video.create({
       title,
       description,
       path: videoFile.tmpPath,
       duration: await Video.getDuration(videoFile.tmpPath as string),
       showInLive,
-      status: isPublished === true ? 'published' : 'unpublished',
+      status: isPublished ? 'published' : 'unpublished',
       userId: user.id,
     })
 
@@ -162,33 +161,56 @@ export default class VideosController {
     const video = await Video.findOrFail(params.id)
 
     if (await video.requiresEncoding()) {
+      // Move the video to the processing directory
       const newFilePath = app.makePath(
         env.get('VIDEO_PROCESSING_DIRECTORY'),
         `${cuid()}.${video.path.split('.').pop()}`
       )
+
       fs.rename(video.path, newFilePath, (err) => {
         if (err) {
           logger.error(err)
+          return response.internalServerError('Error moving file to processing directory')
+        }
+      })
+      video.path = newFilePath
+      await video.save()
+
+      logger.info('Video is not in the correct format, encoding it')
+
+      const queue = Queue.getInstance()
+      await queue
+        .add(video, null, null)
+        .then(async (outputPath) => {
+          logger.info('Encoding completed')
+          logger.info(`New file path: ${outputPath}`)
+          video.path = outputPath
+          video.status = 'published'
+          await video.save()
+        })
+        .catch(async (err) => {
+          logger.error(err)
+          video.status = 'unpublished'
+          await video.save()
+          return response.internalServerError(err)
+        })
+    } else {
+      const finalPath = app.makePath(
+        env.get('VIDEO_DIRECTORY'),
+        `${cuid()}.${video.path.split('.').pop()}`
+      )
+      fs.rename(video.path, finalPath, (err) => {
+        if (err) {
+          logger.error(err)
+          return response.internalServerError('Error moving file to final directory')
         }
       })
 
-      video.path = newFilePath
-      logger.info('Video is not in the correct format, encoding it')
-
+      logger.info(`New file path: ${finalPath}`)
+      video.path = finalPath
+      video.status = 'published'
       await video.save()
-
-      const queue = Queue.getInstance()
-      await queue.add(video, null, null).then(async (outputPath) => {
-        logger.info('Encoding completed')
-        video.path = outputPath
-        video.status = 'published'
-        await video.save()
-      })
     }
-
-    await video.moveToFolders(env.get('VIDEO_DIRECTORY'))
-    video.status = 'published'
-    await video.save()
 
     return response.json(video)
   }

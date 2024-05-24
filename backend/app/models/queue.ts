@@ -80,14 +80,14 @@ export default class Queue extends BaseModel {
         })
       }
 
-      const queueItem = new QueueItem()
-      queueItem.queueId = queue.id
-      queueItem.videoId = video.id
-      queueItem.startTimeCode = startTimeCode
-      queueItem.endTimeCode = endTimeCode
-      queueItem.status = 'pending'
-
-      await queueItem.save()
+      await QueueItem.create({
+        queueId: queue.id,
+        videoId: video.id,
+        startTimeCode,
+        endTimeCode,
+        status: 'pending',
+        attempts: 0,
+      })
 
       if (!this.isEncoding) {
         await this.runEncoding(queue.id)
@@ -105,8 +105,9 @@ export default class Queue extends BaseModel {
       .where('queueId', queueId)
       .andWhere('status', 'pending')
     if (queueItems.length === 0 || this.currentEncodings >= queue.maxConcurrent) return
+
     this.isEncoding = true
-    this.currentEncodings += 1
+    this.currentEncodings++
 
     const { videoId, startTimeCode, endTimeCode } = queueItems[0]
     queueItems[0].status = 'processing'
@@ -118,19 +119,23 @@ export default class Queue extends BaseModel {
     }
 
     try {
-      video.path = await VideoEncoder.encode(video, startTimeCode, endTimeCode, queue.items.length)
+      video.path = await VideoEncoder.encode(video, startTimeCode, endTimeCode, queueItems.length)
       await video.save()
       queueItems[0].status = 'completed'
-      await queueItems[0].save()
-      this.currentEncodings -= 1
-      await this.processQueue(queueId)
     } catch (error) {
       logger.error(error)
-      queueItems[0].status = 'failed'
-      await queueItems[0].save()
-      this.currentEncodings -= 1
-      await this.processQueue(queueId)
+      queueItems[0].attempts += 1
+      if (queueItems[0].attempts < 3) {
+        queueItems[0].status = 'pending'
+      } else {
+        queueItems[0].status = 'failed'
+        await queueItems[0].delete()
+      }
     }
+
+    this.currentEncodings--
+    await this.processQueue(queueId)
+    await queueItems[0].save()
   }
 
   private async processQueue(queueId: number): Promise<void> {
