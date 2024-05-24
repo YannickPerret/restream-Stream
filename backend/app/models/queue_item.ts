@@ -21,6 +21,9 @@ export default class QueueItem extends BaseModel {
   declare endTimeCode: string | null
 
   @column()
+  declare attempts: number
+
+  @column()
   declare status: 'pending' | 'processing' | 'completed' | 'failed'
 
   @column.dateTime({ autoCreate: true })
