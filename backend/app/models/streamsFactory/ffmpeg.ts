@@ -1,15 +1,13 @@
-// backend/app/providers/ffmpeg_provider.ts
 import { spawn } from 'node:child_process'
 import logger from '@adonisjs/core/services/logger'
 
 export interface StreamProvider {
-  startStream(playlist?: string): void
-  stopStream(): void
+  startStream(): number
+  stopStream(pid: number): void
 }
 
 export default class Ffmpeg implements StreamProvider {
   private instance: any = null
-  private pid: number = 0
 
   constructor(
     private baseUrl: string,
@@ -21,7 +19,7 @@ export default class Ffmpeg implements StreamProvider {
     private cryptoFile: string
   ) {}
 
-  startStream(): void {
+  startStream(): number {
     const parameters = [
       '-nostdin',
       '-re',
@@ -77,16 +75,16 @@ export default class Ffmpeg implements StreamProvider {
 
     this.handleProcessOutputs(this.instance)
 
-    this.pid = Number.parseInt(this.instance.pid.toString(), 10)
+    return Number.parseInt(this.instance.pid.toString(), 10)
   }
 
-  stopStream(): void {
-    if (this.instance && this.pid > 0) {
-      logger.info(`Stopping FFmpeg with PID: ${this.pid}`)
+  stopStream(pid: number): void {
+    if (this.instance && pid > 0) {
+      logger.info(`Stopping FFmpeg with PID: ${pid}`)
       this.instance.kill('SIGKILL')
-      this.pid = 0
     } else {
-      logger.error('Cannot stop FFmpeg: instance is undefined or invalid.')
+      logger.error('Cannot stop FFmpeg: instance is undefined or invalid, force stopping process')
+      process.kill(pid, 'SIGKILL')
     }
   }
 

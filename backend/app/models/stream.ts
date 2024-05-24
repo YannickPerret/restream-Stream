@@ -22,7 +22,7 @@ export default class Stream extends BaseModel {
   declare name: string
 
   @column()
-  declare pid: number | null
+  declare pid: number
 
   @column()
   declare status: 'active' | 'inactive'
@@ -229,18 +229,27 @@ export default class Stream extends BaseModel {
   }
 
   async start(): Promise<void> {
-    this.streamProvider?.startStream()
+    this.pid = this.streamProvider ? this.streamProvider.startStream() : process.pid
     this.startTime = DateTime.now()
     this.status = 'active'
+
     await this.save()
   }
 
   async stop(): Promise<void> {
     logger.info(`Stopping streams ${this.id}`)
     clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
-    this.streamProvider?.stopStream()
+
+    if (this.streamProvider) {
+      this.streamProvider.stopStream(this.pid)
+    } else {
+      if (this.pid > 0) {
+        process.kill(this.pid, 'SIGKILL')
+      }
+    }
     this.endTime = DateTime.now()
     this.status = 'inactive'
+    this.pid = 0
 
     await this.save()
   }
