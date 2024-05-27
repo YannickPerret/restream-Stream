@@ -10,6 +10,7 @@ import Playlist from '#models/playlist'
 import Video from '#models/video'
 import app from '@adonisjs/core/services/app'
 import Stream from '#models/stream'
+import env from '#start/env'
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -54,23 +55,14 @@ export default class Timeline extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  async getTotalDuration(): Promise<number> {
-    const playlists = await this.related('playlists').query()
-    let totalDuration = 0
-    for (const playlist of playlists) {
-      totalDuration += await playlist.getTotalDuration()
-    }
-    return totalDuration
-  }
-
-  async generatePlaylistFile(type: string = 'm3u8') {
+  async generatePlaylistFile(type: string = 'm3u8', currentIndex: number = 0) {
     await this.load('items', (query) => {
       query.orderBy('order', 'asc')
     })
 
     let content = ''
     this.filePath = path.join(
-      app.makePath('resources/assets/playlists', `playlist${this.id}.${type}`)
+      app.makePath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
     )
 
     if (fs.existsSync(this.filePath)) {
@@ -79,7 +71,8 @@ export default class Timeline extends BaseModel {
 
     if (type === 'm3u8') {
       content = '#EXTM3U\n'
-      for (const item of this.items) {
+
+      const addItemToContent = async (item: TimelineItem) => {
         if (item.type === 'video') {
           const video = await Video.find(item.itemId)
           if (video && video.path) {
@@ -111,6 +104,79 @@ export default class Timeline extends BaseModel {
             logger.warn(`Playlist with id ${item.itemId} not found.`)
           }
         }
+      }
+
+      for (let i = currentIndex; i < this.items.length; i++) {
+        await addItemToContent(this.items[i])
+      }
+    } else {
+      throw new Error(`Unknown playlist file type: ${type}`)
+    }
+
+    const dirPath = path.dirname(this.filePath)
+    await fs.promises.mkdir(dirPath, { recursive: true })
+    await fs.promises.writeFile(this.filePath, content)
+  }
+
+  async generatePlaylistFileWithRepetition(type: string = 'm3u8', currentIndex: number = 0) {
+    await this.load('items', (query) => {
+      query.orderBy('order', 'asc')
+    })
+
+    let content = ''
+    this.filePath = path.join(
+      app.makePath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
+    )
+
+    if (fs.existsSync(this.filePath)) {
+      await fs.promises.unlink(this.filePath)
+    }
+
+    if (type === 'm3u8') {
+      content = '#EXTM3U\n'
+      let totalDuration = 0
+
+      const addItemToContent = async (item: TimelineItem) => {
+        if (item.type === 'video') {
+          const video = await Video.find(item.itemId)
+          if (video && video.path) {
+            const relativePath = path.relative('/', video.path)
+            logger.info(`Adding video Id ${item.itemId} to playlist ${this.id}`)
+            content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
+            content += `file '/${relativePath}'\n`
+            totalDuration += video.duration * 1000
+          } else {
+            logger.warn(`Video with id ${item.itemId} not found or does not have a filePath.`)
+          }
+        } else if (item.type === 'playlist') {
+          const playlist = await Playlist.find(item.itemId)
+          if (playlist) {
+            await playlist.load('videos')
+            for (const video of playlist.videos) {
+              logger.info(video)
+              if (video && video.path) {
+                const relativePath = path.relative('/', video.path)
+                logger.info(
+                  `Adding video Id ${video.id} from playlist ${playlist.id} to timeline ${this.id}`
+                )
+                content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
+                content += `file '/${relativePath}'\n`
+                totalDuration += video.duration * 1000
+              } else {
+                logger.warn(`Video with id ${video.id} not found or does not have a filePath.`)
+              }
+            }
+          } else {
+            logger.warn(`Playlist with id ${item.itemId} not found.`)
+          }
+        }
+      }
+
+      while (totalDuration < 115200000) {
+        for (let i = currentIndex; i < this.items.length && totalDuration < 115200000; i++) {
+          await addItemToContent(this.items[i])
+        }
+        currentIndex = 0
       }
     } else {
       throw new Error(`Unknown playlist file type: ${type}`)
@@ -169,5 +235,15 @@ export default class Timeline extends BaseModel {
     } else {
       return this.items[currentIndex - 2] || null
     }
+  }
+
+  async getRestOfVideos(currentIndex: number) {
+    const videos = await this.videos()
+    return videos.slice(currentIndex + 1)
+  }
+
+  async getTimeRestOfVideos(currentIndex: number) {
+    const videos = await this.getRestOfVideos(currentIndex)
+    return videos.reduce((acc, video) => acc + video.duration, 0)
   }
 }

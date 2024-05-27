@@ -33,4 +33,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   VIDEO_DIRECTORY: Env.schema.string(),
   VIDEO_PROCESSING_DIRECTORY: Env.schema.string(),
   VIDEO_GUEST_PENDING_DIRECTORY: Env.schema.string(),
+  TIMELINE_PLAYLIST_DIRECTORY: Env.schema.string(),
 })

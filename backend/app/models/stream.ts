@@ -28,6 +28,9 @@ export default class Stream extends BaseModel {
   declare status: 'active' | 'inactive'
 
   @column()
+  declare restartTimes: number
+
+  @column()
   declare currentIndex: number
 
   @column()
@@ -127,7 +130,7 @@ export default class Stream extends BaseModel {
         return response.json()
       })
       .then((data) => {
-        return data.stats[data.stats.length - 1][1] + ' XNeuros' || ''
+        return data.stats[data.stats.length - 1][1] + ' $Neuros' || ''
       })
     fs.writeFileSync(this.cryptoFile, `Market : ${cryptoCurrency}`)
   }
@@ -145,13 +148,13 @@ export default class Stream extends BaseModel {
     )
 
     const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
-    logger.info(`Temps total de stream : (${totalStreamTime} secondes)`)
+    logger.info(`Temps total de stream : (${totalStreamTime} millisecondes)`)
 
-    if (totalStreamTime > 115200000) {
-      logger.info('28h de stream atteint, arrêt du stream')
+    if (totalStreamTime + durationMs > this.restartTimes) {
+      logger.info('28h de stream atteint, arrêt du stream après la vidéo en cours')
       this.canNextVideo = false
-      this.nextVideoTimeout = setTimeout(() => {
-        this.restart()
+      this.nextVideoTimeout = setTimeout(async () => {
+        await this.restartStream()
       }, durationMs)
     } else {
       this.nextVideoTimeout = setTimeout(async () => {
@@ -163,9 +166,8 @@ export default class Stream extends BaseModel {
         await this.moveToNextVideo()
 
         if (!(await this.timeline.getCurrentVideo(this.currentIndex))) {
-          // restart stream with timeline
           logger.info('Fin de la playlist.')
-          await this.stop()
+          await this.restartStream()
           return
         }
 
@@ -183,6 +185,8 @@ export default class Stream extends BaseModel {
   async moveToNextVideo() {
     if (this.currentIndex + 1 <= (await this.timeline.videos()).length) {
       this.currentIndex++
+    } else {
+      this.currentIndex = 0
     }
   }
 
@@ -254,9 +258,20 @@ export default class Stream extends BaseModel {
     await this.save()
   }
 
-  async restart() {
+  async restartStream() {
+    logger.info('Redémarrage du stream')
     await this.stop()
-    await this.start()
+
+    const remainingTime = await this.timeline.getTimeRestOfVideos(this.currentIndex)
+    logger.warn(`Temps restant : ${remainingTime}`)
+    if (remainingTime > this.restartTimes) {
+      await this.timeline.generatePlaylistFile('m3u8', this.currentIndex)
+    } else {
+      await this.timeline.generatePlaylistFileWithRepetition('m3u8', this.currentIndex)
+    }
+    setTimeout(async () => {
+      await this.run()
+    }, 10000)
   }
 
   async getPrimaryProvider() {

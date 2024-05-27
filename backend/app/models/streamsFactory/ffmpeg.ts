@@ -84,7 +84,7 @@ export default class Ffmpeg implements StreamProvider {
       this.instance.kill('SIGKILL')
     } else {
       logger.error('Cannot stop FFmpeg: instance is undefined or invalid, force stopping process')
-      process.kill(pid, 'SIGKILL')
+      if (pid > 0) process.kill(pid, 'SIGKILL')
     }
   }
 
