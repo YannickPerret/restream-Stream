@@ -51,7 +51,24 @@ export default class TimelinesController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    let timeline = await Timeline.query()
+      .preload('items')
+      .preload('user')
+      .where('id', params.id)
+      .andWhere('user_id', user.id)
+      .firstOrFail()
+
+    const videos = await timeline.getItemsWithVideos()
+
+    const timelineWithVideos = {
+      ...timeline.toJSON(),
+      videos,
+    }
+
+    return response.json(timelineWithVideos)
+  }
 
   /**
    * Handle form submission for the edit action

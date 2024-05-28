@@ -6,10 +6,11 @@ import {useStreamStore} from "#stores/useStreamStore";
 
 const StreamsPage = () => {
 
+    const getStreams = useStreamStore.use.fetchStreams()
+
     useEffect(() => {
         const fetchStreams = async () => {
-            const data = await StreamApi.getAll();
-            useStreamStore.setState({streams: data.streams});
+            await getStreams();
         };
         fetchStreams();
     }, []);

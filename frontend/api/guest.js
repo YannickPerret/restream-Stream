@@ -68,4 +68,15 @@ export class GuestApi extends Api {
         return await response.json();
     }
 
+    static async getOne(id) {
+        const response = await fetch(`${this.baseUrl}/api/guests/${id}`, {
+            method: 'GET',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while fetching guest');
+        }
+        return await response.json();
+    }
+
 }

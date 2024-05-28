@@ -1,22 +1,20 @@
 'use client'
 
 import {useEffect} from "react";
-import {ProviderApi} from "../../../../api/provider";
-import {useProviderStore} from "../../../../stores/useProviderStore";
+import {useProviderStore} from "#stores/useProviderStore";
 import ProviderIndex from "@/views/providers";
 
 export default function ProvidersPage() {
 
+    const getPlaylists = useProviderStore.use.fetchProviders()
+
     useEffect(() => {
         const fetchProviders = async () => {
-            await ProviderApi.getAll().then((data) => {
-                useProviderStore.setState({
-                    providers: data.providers
-                })
-            })
+            await getPlaylists();
         }
         fetchProviders();
     }, []);
+
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
             <div className="bg-slate-500">

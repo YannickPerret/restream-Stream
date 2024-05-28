@@ -43,6 +43,7 @@ router
           .group(() => {
             router.get('/', [StreamsController, 'index'])
             router.post('/', [StreamsController, 'store'])
+            router.get(':id', [StreamsController, 'show'])
             router.post(':id/start', [StreamsController, 'start'])
             router.post(':id/stop', [StreamsController, 'stop'])
             router.delete(':id', [StreamsController, 'destroy'])

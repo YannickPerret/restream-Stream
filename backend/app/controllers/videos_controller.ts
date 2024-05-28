@@ -97,7 +97,16 @@ export default class VideosController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const video = await Video.findOrFail(params.id)
+    if (video.userId !== user.id) {
+      return response.forbidden('You are not authorized to view this video')
+    }
+    await video.load('user')
+    await video.load('guest')
+    return response.json(video)
+  }
 
   /**
    * Handle form submission for the edit action

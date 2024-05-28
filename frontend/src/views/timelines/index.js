@@ -2,6 +2,7 @@ import {usePlaylistStore} from "#stores/usePlaylistStore"
 import {getDurationInFormat} from "#helpers/time.js";
 import {boolenStringFormat} from "#helpers/string.js";
 import {useTimelineStore} from "#stores/useTimelineStore.js";
+import Link from "next/link";
 
 
 export default function TimelineIndexView() {
@@ -22,7 +23,7 @@ export default function TimelineIndexView() {
                 <tbody>
                     {timelines.map(timeline => (
                         <tr key={timeline.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">{timeline.title}</th>
+                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"><Link href={`/timelines/${timeline.id}`}>{timeline.title}</Link></th>
                             <td>{timeline.description}</td>
                             <td>{boolenStringFormat(timeline.isPublished)}</td>
                             <td>{getDurationInFormat(timeline.items.reduce((acc, video) => acc + video.duration, 0))}</td>

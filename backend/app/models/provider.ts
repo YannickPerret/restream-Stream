@@ -36,7 +36,7 @@ export default class Provider extends BaseModel {
   declare broadcasterId: string
 
   @column()
-  declare user_id: number
+  declare userId: number
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>

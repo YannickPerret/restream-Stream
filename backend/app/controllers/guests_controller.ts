@@ -64,7 +64,10 @@ export default class GuestsController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response }: HttpContext) {
+    const guest = await Guest.findOrFail(params.id)
+    return response.json(guest)
+  }
 
   /**
    * Handle form submission for the edit action

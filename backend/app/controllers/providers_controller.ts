@@ -8,7 +8,7 @@ export default class ProvidersController {
   async index({ auth, response }: HttpContext) {
     const user = await auth.authenticate()
     const providers = await Provider.findManyBy('user_id', user.id)
-    return response.json({ providers })
+    return response.json(providers)
   }
 
   /**
@@ -52,7 +52,11 @@ export default class ProvidersController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response }: HttpContext) {
+    const provider = await Provider.findOrFail(params.id)
+    await provider.load('user')
+    return response.json(provider)
+  }
 
   /**
    * Handle form submission for the edit action

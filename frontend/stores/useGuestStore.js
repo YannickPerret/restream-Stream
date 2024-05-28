@@ -12,6 +12,7 @@ const createSelectors = (_store) => {
 
 export const useGuestStore = createSelectors(create((set) => ({
     guests: [],
+    selectedGuest: null,
     setGuests: (guests) => set({ guests }),
     removeGuest: (id) => set((state) => ({
         guests: state.guests.filter((guest) => guest.id !== id)
@@ -21,4 +22,9 @@ export const useGuestStore = createSelectors(create((set) => ({
             guest.id === updatedGuest.id ? updatedGuest : guest
         )
     })),
+    findGuest: (id) => set((state) => ({
+        selectedGuest: state.guests.find((guest) => guest.id === id)
+    })),
+    setSelectedGuest: (guest) => set({ selectedGuest: guest }),
+    clearSelectedGuest: () => set({ selectedGuest: null }),
 })));

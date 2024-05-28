@@ -120,19 +120,17 @@ export default class Stream extends BaseModel {
     fs.writeFileSync(this.guestFile, guestText)
   }
 
-  async updateCryptoText() {
-    // 22 may 2024 - Perret - Fetch created by Quentin Neves
-    const cryptoCurrency = await fetch(
-      'https://www.coingecko.com/price_charts/30105/usd/24_hours.json',
-      { method: 'GET' }
-    )
-      .then((response) => {
-        return response.json()
+  async updateCryptoText(value: number = 0) {
+    if (value <= 0) {
+      value = await fetch('https://www.coingecko.com/price_charts/30105/usd/24_hours.json', {
+        method: 'GET',
       })
-      .then((data) => {
-        return data.stats[data.stats.length - 1][1] + ' $Neuros' || ''
-      })
-    fs.writeFileSync(this.cryptoFile, `Market : ${cryptoCurrency}`)
+        .then((response) => response.json())
+        .then((data) => {
+          return data.stats[data.stats.length - 1][1] || 0
+        })
+    }
+    fs.writeFileSync(this.cryptoFile, `Market : ${value} $Neuros`)
   }
 
   async nextVideo() {

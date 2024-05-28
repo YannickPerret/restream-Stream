@@ -51,7 +51,23 @@ export default class PlaylistsController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response }: HttpContext) {
+    try {
+      const playlist = await Playlist.query()
+        .where('id', params.id)
+        .preload('videos', (videoQuery) => {
+          videoQuery.preload('user')
+          videoQuery.preload('guest')
+        })
+        .preload('user')
+        .firstOrFail()
+
+      return response.json(playlist)
+    } catch (error) {
+      logger.error(error)
+      return response.status(404).json({ message: 'Playlist not found' })
+    }
+  }
 
   /**
    * Handle form submission for the edit action

@@ -29,7 +29,28 @@ export default class StreamsController {
       })
     )
 
-    return response.ok({ streams: streamsWithPrimaryProvider })
+    return response.json(streamsWithPrimaryProvider)
+  }
+
+  async show({ params, response }: HttpContext) {
+    const stream = await Stream.query()
+      .preload('providers', (query) => {
+        query.pivotColumns(['on_primary'])
+      })
+      .preload('timeline')
+      .preload('user')
+      .where('id', params.id)
+      .firstOrFail()
+
+    const primaryProvider = await stream.getPrimaryProvider()
+    const currentVideo =
+      stream.status === 'active' ? await stream.timeline.getCurrentVideo(stream.currentIndex) : null
+
+    return response.json({
+      ...stream.serialize(),
+      primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
+      currentVideo: currentVideo ? currentVideo.serialize() : null,
+    })
   }
 
   async start({ params, response }: HttpContext) {

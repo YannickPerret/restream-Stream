@@ -6,9 +6,17 @@ import ace from '@adonisjs/core/services/ace'
 scheduler
   .call(async () => {
     const streamManager = Stream_manager.getAllStreams()
+    // 28 may 2024 - Perret - Fetch created by Quentin Neves
+    const value = await fetch('https://www.coingecko.com/price_charts/30105/usd/24_hours.json', {
+      method: 'GET',
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        return data.stats[data.stats.length - 1][1] || 0
+      })
     for (const stream of streamManager) {
-      if (stream.isOnLive) {
-        await stream.updateCryptoText()
+      if (stream.status === 'active') {
+        await stream.updateCryptoText(value)
       }
     }
   })
