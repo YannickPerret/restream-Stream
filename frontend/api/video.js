@@ -50,8 +50,8 @@ export class VideoApi extends Api {
     static async update(id, data) {
         const response = await fetch(`${this.baseUrl}/api/videos/${id}`, {
             method: 'PUT',
-            headers: this.getHeaders(),
-            body: JSON.stringify(data),
+            headers: this.getHeaders({}),
+            body: data,
         });
         if(!response.ok) {
             throw new Error('Error while updating stream');

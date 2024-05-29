@@ -61,6 +61,7 @@ router
             router.post('/', [ProviderController, 'store'])
             router.delete(':id', [ProviderController, 'destroy'])
             router.get(':id', [ProviderController, 'show'])
+            router.put(':id', [ProviderController, 'update'])
           })
           .prefix('providers')
 

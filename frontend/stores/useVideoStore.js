@@ -49,13 +49,14 @@ export const useVideoStore = createSelectors(create((set, get) => ({
     },
 
     updateVideoById: async (id, data) => {
+        console.log("updateVideoById", id, data)
         try {
             const updatedVideo = await VideoApi.update(id, data);
             set((state) => ({
                 videos: state.videos.map((video) =>
                     video.id === id ? updatedVideo : video
                 ),
-                selectedVideo: state.selectedVideo?.id === id ? updatedVideo : state.selectedVideo, // Met à jour selectedVideo si nécessaire
+                selectedVideo: state.selectedVideo?.id === id ? updatedVideo : state.selectedVideo,
             }));
         } catch (error) {
             console.error("Failed to update video", error);
@@ -67,7 +68,7 @@ export const useVideoStore = createSelectors(create((set, get) => ({
             await VideoApi.delete(id);
             set((state) => ({
                 videos: state.videos.filter((video) => video.id !== id),
-                selectedVideo: state.selectedVideo?.id === id ? null : state.selectedVideo, // Réinitialise selectedVideo si la vidéo supprimée était sélectionnée
+                selectedVideo: state.selectedVideo?.id === id ? null : state.selectedVideo,
             }));
         } catch (error) {
             console.error("Failed to delete video", error);
