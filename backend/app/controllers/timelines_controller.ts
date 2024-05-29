@@ -78,5 +78,14 @@ export default class TimelinesController {
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, auth, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const timeline = await Timeline.findOrFail(params.id)
+    if (timeline.userId !== user.id) {
+      return response.forbidden('You are not authorized to delete this timeline')
+    }
+
+    await timeline.delete()
+    return response.noContent()
+  }
 }

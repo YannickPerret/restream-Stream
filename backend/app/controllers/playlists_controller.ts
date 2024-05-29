@@ -77,5 +77,15 @@ export default class PlaylistsController {
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const playlist = await Playlist.findOrFail(params.id)
+
+    if (playlist.userId !== user.id) {
+      return response.forbidden('You are not authorized to delete this playlist')
+    }
+
+    await playlist.delete()
+    return response.noContent()
+  }
 }

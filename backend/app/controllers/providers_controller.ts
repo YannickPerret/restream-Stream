@@ -96,5 +96,13 @@ export default class ProvidersController {
   /**
    * Delete record
    */
-  async destroy({ params }: HttpContext) {}
+  async destroy({ params, auth, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const provider = await Provider.findOrFail(params.id)
+    if (provider.userId !== user.id) {
+      return response.forbidden('You are not authorized to delete this provider')
+    }
+    await provider.delete()
+    return response.noContent()
+  }
 }

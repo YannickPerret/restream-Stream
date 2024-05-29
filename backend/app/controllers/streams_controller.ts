@@ -209,8 +209,12 @@ export default class StreamsController {
     })
   }
 
-  async destroy({ params, response }: HttpContext) {
+  async destroy({ params, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
     const stream = await Stream.findOrFail(params.id)
+    if (stream.userId !== user.id) {
+      return response.forbidden('You are not authorized to delete this stream')
+    }
     const streamManager = Stream_manager
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
