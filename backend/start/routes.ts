@@ -10,6 +10,10 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
+import app from '@adonisjs/core/services/app'
+import * as fs from 'node:fs'
+import logger from '@adonisjs/core/services/logger'
+import path from 'node:path'
 const GuestsController = () => import('#controllers/guests_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
@@ -44,6 +48,7 @@ router
             router.get('/', [StreamsController, 'index'])
             router.post('/', [StreamsController, 'store'])
             router.get(':id', [StreamsController, 'show'])
+            router.put(':id', [StreamsController, 'update'])
             router.post(':id/start', [StreamsController, 'start'])
             router.post(':id/stop', [StreamsController, 'stop'])
             router.delete(':id', [StreamsController, 'destroy'])
@@ -119,4 +124,15 @@ router
 
 router.group(() => {
   router.get('videos/:id/serve', [VideosController, 'serve'])
+  router.get('/images/*', async ({ params, response }) => {
+    const filePath = app.publicPath(...params['*'])
+    const exists = fs.existsSync(filePath)
+    if (exists) {
+      response.header('Content-Type', 'image/jpeg')
+      const imageStream = fs.createReadStream(filePath)
+      return response.stream(imageStream)
+    } else {
+      return response.status(404).send('File not found')
+    }
+  })
 })

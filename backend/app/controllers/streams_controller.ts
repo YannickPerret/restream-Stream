@@ -4,6 +4,7 @@ import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
+import logger from '@adonisjs/core/services/logger'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
@@ -148,6 +149,64 @@ export default class StreamsController {
       await streamInstance.run()
     }
     return response.created(stream)
+  }
+
+  async update({ params, request, response }: HttpContext) {
+    const { name, timeline, restartTimes } = request.all()
+    const { id } = params
+    const logoFile = request.file('logo', {
+      size: '5mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    })
+
+    const overlayFile = request.file('overlay', {
+      size: '5mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    })
+
+    const stream = await Stream.findOrFail(id)
+
+    if (logoFile) {
+      if (logoFile.isValid) {
+        await logoFile.move(app.publicPath('assets/streams/logo/'), {
+          name: `${cuid()}.${logoFile.extname}`,
+        })
+        stream.logo = '/assets/streams/logo/' + logoFile.fileName
+      } else {
+        return response.badRequest({ error: 'Invalid logo file' })
+      }
+    }
+
+    if (overlayFile) {
+      if (overlayFile.isValid) {
+        await overlayFile.move(app.publicPath('assets/streams/overlay/'), {
+          name: `${cuid()}.${overlayFile.extname}`,
+        })
+        stream.overlay = '/assets/streams/overlay/' + overlayFile.fileName
+      } else {
+        return response.badRequest({ error: 'Invalid overlay file' })
+      }
+    }
+
+    stream.name = name
+    stream.timelineId = timeline
+    stream.restartTimes = restartTimes
+    await stream.save()
+
+    await stream.load('providers', (query) => {
+      query.pivotColumns(['on_primary'])
+    })
+    await stream.load('timeline')
+
+    const primaryProvider = await stream.getPrimaryProvider()
+    const currentVideo =
+      stream.status === 'active' ? await stream.timeline.getCurrentVideo(stream.currentIndex) : null
+
+    return response.ok({
+      ...stream.serialize(),
+      primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
+      currentVideo: currentVideo ? currentVideo.serialize() : null,
+    })
   }
 
   async destroy({ params, response }: HttpContext) {

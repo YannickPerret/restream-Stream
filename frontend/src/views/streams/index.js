@@ -4,6 +4,7 @@ import { StreamApi } from "#api/stream.js";
 import { useStreamStore } from "#stores/useStreamStore.js";
 import Link from "next/link";
 import transmit from '#libs/transmit';
+import StreamsEditView from "@/views/streams/edit.jsx";
 
 export default function StreamPageIndex() {
     const streams = useStreamStore.use.streams();
@@ -11,6 +12,7 @@ export default function StreamPageIndex() {
     const updateCurrentVideo = useStreamStore.use.updateCurrentVideo();
     const deleteStreamById = useStreamStore.use.deleteStreamById();
     const [subscriptions, setSubscriptions] = useState([]);
+    const [selectedStream, setSelectedStream] = useState(null);
 
     useEffect(() => {
         const createSubscriptions = async () => {
@@ -67,6 +69,12 @@ export default function StreamPageIndex() {
     return (
 
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+            {selectedStream && (
+                <StreamsEditView
+                    streamToEdit={selectedStream}
+                    onClose={() => setSelectedStream(null)}
+                />
+            )}
             <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400" >
                 <tr>
@@ -85,8 +93,8 @@ export default function StreamPageIndex() {
                         className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
 
                         <th scope="row"
-                            className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"><Link
-                            href={`/streams/${stream.id}`}>{stream.name} </Link></th>
+                            className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                            <Link href={`/streams/${stream.id}`}>{stream.name} </Link></th>
                         <td>{stream.primaryProvider ? (
                             <Link href={`/providers/${stream.primaryProvider.id}`}>{stream.primaryProvider?.name}</Link>
                         ) : (
@@ -95,7 +103,7 @@ export default function StreamPageIndex() {
                         </td>
                         <td>{new Date(stream.startTime).toUTCString()}</td>
                         <td>
-                            <Link href={`/streams/${stream.id}/timeline`}>{stream.timeline.title}</Link>
+                            <Link href={`/timelines/${stream.timeline.id}`}>{stream.timeline.title}</Link>
                         </td>
                         <td>
                             {stream.currentVideo ? stream.currentVideo.title : 'No video playing'}
@@ -104,14 +112,28 @@ export default function StreamPageIndex() {
 
                         <td>
                             {stream.status === 'inactive' ? (
-                                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleStart(stream.id)}>Start</button>
+                                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => handleStart(stream.id)}>Start</button>
                             ) : (
                                 <>
-                                    <button className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleStop(stream.id)}>Stop</button>
-                                    <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleRestart(stream.id)}>Restart</button>
+                                    <button
+                                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => handleStop(stream.id)}>Stop
+                                    </button>
+                                    <button
+                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => handleRestart(stream.id)}>Restart
+                                    </button>
                                 </>
                             )}
-                            <button className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded" onClick={() => handleRemove(stream.id)}>Remove</button>
+
+                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                                    onClick={() => setSelectedStream(stream)}>Edit
+                            </button>
+
+                            <button className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                                    onClick={() => handleRemove(stream.id)}>Remove
+                            </button>
                         </td>
                     </tr>
                 ))}

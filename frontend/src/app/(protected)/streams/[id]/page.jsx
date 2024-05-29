@@ -7,6 +7,7 @@ import {ArrowLeft} from "lucide-react";
 import StreamsShowView from "@/views/streams/show.js";
 import {StreamApi} from "#api/stream.js";
 import transmit from "#libs/transmit.js";
+import StreamsEditView from "@/views/streams/edit.jsx";
 
 export default function StreamShowPage() {
     const { id } = useParams();
@@ -15,6 +16,7 @@ export default function StreamShowPage() {
     const updateStreamSelectedStatus = useStreamStore.use.updateStreamSelectedStatus();
     const [subscription, setSubscription] = useState(null)
     const stream = useStreamStore.use.streams()
+    const [selectedStream, setSelectedStream] = useState(null);
 
 
     useEffect(() => {
@@ -64,12 +66,23 @@ export default function StreamShowPage() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
+            {selectedStream && (
+                <StreamsEditView
+                    streamToEdit={selectedStream}
+                    onClose={() => setSelectedStream(null)}
+                />
+            )}
             <div className="bg-slate-500">
                 <header className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">Show Stream Information</h1>
                     <hr className="border-b-1 border-blueGray-300 pb-6"/>
                     <div>
                         <Link href={"/streams"} className={"flex"}><ArrowLeft />&nbsp; Back to Streams</Link>
+                    </div>
+                    <div>
+                        <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                                onClick={() => setSelectedStream(stream)}>Edit
+                        </button>
                     </div>
                 </header>
 
