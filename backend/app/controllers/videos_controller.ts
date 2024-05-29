@@ -100,7 +100,7 @@ export default class VideosController {
   async show({ params, response, auth }: HttpContext) {
     const user = await auth.authenticate()
     const video = await Video.findOrFail(params.id)
-    if (video.userId !== user.id) {
+    if (video.userId && video.userId !== user.id) {
       return response.forbidden('You are not authorized to view this video')
     }
     await video.load('user')
