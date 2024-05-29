@@ -15,7 +15,7 @@ export default function StreamShowPage() {
     const updateCurrentVideo = useStreamStore.use.updateCurrentVideo()
     const updateStreamSelectedStatus = useStreamStore.use.updateStreamSelectedStatus();
     const [subscription, setSubscription] = useState(null)
-    const stream = useStreamStore.use.streams()
+    const stream = useStreamStore.use.selectedStream()
     const [selectedStream, setSelectedStream] = useState(null);
 
 
@@ -28,15 +28,17 @@ export default function StreamShowPage() {
 
     useEffect(() => {
         const createSubscriptions = async () => {
+            if (stream){
                 const sub = transmit.subscription(`streams/${stream.id}/currentVideo`);
                 await sub.create();
                 setSubscription(sub);
 
                 if (stream.status === 'active') {
-                    subscription.onMessage(({ currentVideo }) => {
+                    subscription.onMessage(({currentVideo}) => {
                         updateCurrentVideo(stream.id, currentVideo);
                     });
                 }
+            }
         };
 
         createSubscriptions();
@@ -44,10 +46,10 @@ export default function StreamShowPage() {
     }, [stream]);
 
     const handleStart = async (id) => {
-            subscription.onMessage(({ currentVideo }) => {
-                console.log('currentVideo', currentVideo);
-                updateCurrentVideo(id, currentVideo);
-            });
+        subscription.onMessage(({ currentVideo }) => {
+            console.log('currentVideo', currentVideo);
+            updateCurrentVideo(id, currentVideo);
+        });
 
         await StreamApi.start(id).then(async () => {
             updateStreamSelectedStatus('active')
@@ -91,7 +93,7 @@ export default function StreamShowPage() {
                     handleStop={handleStop}
                     handleRestart={handleRestart}
                 />
-        </div>
+            </div>
         </section>
     )
 }
