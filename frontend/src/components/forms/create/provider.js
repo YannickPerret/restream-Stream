@@ -49,8 +49,8 @@ export default function ProvidersCreateForm() {
                 <select className="mt-1 block w-full rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300" value={providerType} onChange={(e) => setProviderType(e.target.value)}>
                     <option disabled={true} value="">Select an option</option>
                     <option value="Twitch">Twitch</option>
-                    <option value="YouTube">YouTube</option>
-                    <option value="Facebook">Facebook</option>
+                    <option value="YouTube" disabled={true}>YouTube</option>
+                    <option value="Facebook" disabled={true}>Facebook</option>
                 </select>
             </label>
 
