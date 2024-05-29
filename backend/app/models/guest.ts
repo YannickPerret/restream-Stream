@@ -33,7 +33,7 @@ export default class Guest extends BaseModel {
   declare telegramUsername: string
 
   @column()
-  declare canDiffuse: boolean
+  declare canDiffuse: number
 
   @column()
   declare notes: string

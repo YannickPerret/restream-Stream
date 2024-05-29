@@ -7,31 +7,18 @@ import GuestShowView from "@/views/guests/show.jsx";
 
 export default function GuestShowPage() {
     const setSelectedGuest = useGuestStore.use.setSelectedGuest();
-    const findGuest = useGuestStore.use.findGuest();
-    const params = useParams();
-
+    const getProvider = useGuestStore.use.fetchGuestById();
+    const {id} = useParams();
 
     useEffect(() => {
         const fetchGuest = async() => {
-            if(params.id) {
-                if (findGuest(params.id)) {
-                    setSelectedGuest(params.id);
-                }
-                else
-                {
-                    const data = await GuestApi.getOne(params.id);
-                    if(data) {
-                        setSelectedGuest(data);
-                    }
-                    else {
-                        console.log("Guest not found")
-                    }
-                }
+            if(id) {
+                await getProvider(id);
             }
         }
-
         fetchGuest();
-    }, [params]);
+    }, [id]);
+
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">

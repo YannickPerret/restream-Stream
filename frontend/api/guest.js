@@ -36,8 +36,8 @@ export class GuestApi extends Api {
     static async update(id, data) {
         const response = await fetch(`${this.baseUrl}/api/guests/${id}`, {
             method: 'PUT',
-            headers: this.getHeaders(),
-            body: JSON.stringify(data),
+            headers: this.getHeaders({}),
+            body: data,
         });
         if(!response.ok) {
             throw new Error('Error while creating stream');
@@ -65,7 +65,6 @@ export class GuestApi extends Api {
         if(!response.ok) {
             throw new Error('Error while deleting guest');
         }
-        return await response.json();
     }
 
     static async getOne(id) {
