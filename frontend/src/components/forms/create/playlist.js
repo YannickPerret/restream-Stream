@@ -20,6 +20,7 @@ export default function PlaylistForm({ title, isPublished, description, setTitle
 
     return (
         <form onSubmit={handleSubmit}>
+
             <FormGroup>
                 <label htmlFor="title">Playlist Title:</label>
                 <input id="title" value={localTitle} onChange={(e) => { setLocalTitle(e.target.value); setTitle(e.target.value); }} type="text" required />

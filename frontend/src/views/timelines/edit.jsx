@@ -54,7 +54,6 @@ export default function TimelinesEditView() {
 
     const handleListChange = (reorderedItems) => {
         const updatedTimeline = reorderedItems.map(item => item.item);
-        console.log('Updated Timeline after Drag:', updatedTimeline);
         setLocalTimeline(updatedTimeline);
     };
 

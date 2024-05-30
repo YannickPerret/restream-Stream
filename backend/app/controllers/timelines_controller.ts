@@ -9,8 +9,23 @@ export default class TimelinesController {
    */
   async index({ auth, response }: HttpContext) {
     const user = await auth.authenticate()
-    const timelines = await Timeline.query().preload('items').where('user_id', user.id)
-    return response.json(timelines)
+    let timelines = await Timeline.query().preload('items').where('user_id', user.id)
+
+    if (!timelines) {
+      return response.json([])
+    }
+
+    const timelinesWithVideos = await Promise.all(
+      timelines.map(async (timeline: any) => {
+        const videos = await timeline.getItemsWithVideos()
+        return {
+          ...timeline.toJSON(),
+          videos,
+        }
+      })
+    )
+
+    return response.json(timelinesWithVideos)
   }
 
   /**
