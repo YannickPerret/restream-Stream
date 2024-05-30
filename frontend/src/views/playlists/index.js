@@ -2,13 +2,20 @@ import {usePlaylistStore} from "#stores/usePlaylistStore"
 import {getDurationInFormat} from "#helpers/time.js";
 import {boolenStringFormat} from "#helpers/string.js";
 import Link from "next/link";
+import GuestsEditView from "@/views/guests/edit.jsx";
+import {useState} from "react";
 
 
 export default function PlaylistIndexView() {
     const playlists = usePlaylistStore.use.playlists()
+    const deletePlaylist = usePlaylistStore.use.deletePlaylistById();
 
     if(!playlists) {
         return <div>Loading...</div>
+    }
+
+    const handleRemove = async (id) => {
+        await deletePlaylist(id);
     }
 
     return (
@@ -34,8 +41,13 @@ export default function PlaylistIndexView() {
                             <td>{boolenStringFormat(playlist.isPublished)}</td>
                             <td>{getDurationInFormat(playlist.videos.reduce((acc, video) => acc + video.duration, 0))}</td>
                             <td>
-                                <button className="text-indigo-600 hover:text-indigo-900">Edit</button>
-                                <button className="text-red-600 hover:text-red-900">Delete</button>
+                                <Link className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                                        href={`playlists/${playlist.id}/edit`}>Edit
+                                </Link>
+                                <button
+                                    className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                                    onClick={() => handleRemove(playlist.id)}>Delete
+                                </button>
                             </td>
                         </tr>
                     ))}

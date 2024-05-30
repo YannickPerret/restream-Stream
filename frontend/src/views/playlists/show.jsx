@@ -10,7 +10,6 @@ export default function PlaylistShowView() {
     if (!playlist) {
         return <div>Loading...</div>;
     }
-    console.log(playlist)
     return (
         <div className="p-4">
             <div className="mb-6">

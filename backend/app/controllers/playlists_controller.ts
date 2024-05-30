@@ -72,7 +72,40 @@ export default class PlaylistsController {
   /**
    * Handle form submission for the edit action
    */
-  async update({ params, request }: HttpContext) {}
+  async update({ params, request, auth, response }: HttpContext) {
+    const user = await auth.authenticate()
+    const playlist = await Playlist.findOrFail(params.id)
+
+    if (playlist.userId !== user.id) {
+      return response.forbidden('You are not authorized to update this playlist')
+    }
+
+    const updatePlaylist = request.all()
+
+    playlist.title = updatePlaylist.title
+    playlist.description = updatePlaylist.description
+    playlist.isPublished = updatePlaylist.isPublished
+
+    await playlist.save()
+
+    if (updatePlaylist.videos && updatePlaylist.videos.length > 0) {
+      await playlist.related('videos').detach()
+      for (const [index, video_] of updatePlaylist.videos.entries()) {
+        const videoDb = await Video.find(video_.id)
+
+        if (videoDb) {
+          await playlist.related('videos').attach({
+            [videoDb.id]: {
+              order: index + 1,
+            },
+          })
+        } else {
+          logger.warn(`Video not found: ${updatePlaylist.videos[index].id}`)
+        }
+      }
+    }
+    return response.json(playlist)
+  }
 
   /**
    * Delete record

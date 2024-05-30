@@ -51,8 +51,7 @@ export default function PlaylistEditView() {
             ...selectedPlaylist,
             videos: localPlaylist
         };
-        console.log(updatedPlaylist)
-       // await updatePlaylist(updatedPlaylist);
+        await updatePlaylist(selectedPlaylist.id, updatedPlaylist);
     }
     const handleAddItem = (video) => {
         const newPlaylist = [...localPlaylist, video];
@@ -93,20 +92,24 @@ export default function PlaylistEditView() {
                     ))}
                 </select>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <CardList
-                    title="List of videos available"
-                    items={mapItemsToCards(videos, false, false, true)}
-                    draggable={false}
-                />
-                <CardList
-                    title="Current playlist"
-                    items={mapItemsToCards(localPlaylist, true, true, false)}
-                    draggable={true}
-                    onListChange={handleListChange}
-                />
+            <div className="grid grid-cols-5 gap-8">
+                <div className="col-span-2">
+                    <CardList
+                        title="List of videos available"
+                        items={mapItemsToCards(videos, false, false, true)}
+                        draggable={false}
+                    />
+                </div>
+                <div className="col-span-3">
+                    <CardList
+                        title="Current playlist"
+                        items={mapItemsToCards(localPlaylist, true, true, false)}
+                        draggable={true}
+                        onListChange={handleListChange}
+                    />
+                </div>
                 <button
-                    className="col-span-1 md:col-span-2 bg-blue-500 text-white py-2 px-4 rounded mt-4"
+                    className="col-span-5 bg-blue-500 text-white py-2 px-4 rounded mt-4"
                     onClick={savePlaylist}
                 >
                     Save Playlist
