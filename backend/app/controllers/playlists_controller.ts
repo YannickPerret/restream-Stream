@@ -19,7 +19,6 @@ export default class PlaylistsController {
   async store({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
 
-    logger.info(request.all())
     const { title, description, items, isPublished } = request.all()
 
     const playlist = await Playlist.create({

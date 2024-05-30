@@ -52,7 +52,6 @@ export default function TimelineForm({ title, isPublished, description, submitTi
             </FormGroup>
 
             <FormGroup title="Validations" type={"row"}>
-                <button className="btn btn-error" type="reset">Reset</button>
                 <button className="btn btn-success" type="submit">Create new timeline</button>
             </FormGroup>
         </Form>
