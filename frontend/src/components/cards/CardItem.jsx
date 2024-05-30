@@ -1,25 +1,18 @@
 import React from 'react';
 
-const CardItem = React.forwardRef(({ item, number, provided, remove, add, draggable, addable }, ref) => (
+const CardItem = React.forwardRef(({ title, number, description, duration, provided, remove, add, draggable, addable, children }, ref) => (
     <div
         ref={ref}
-        {...(provided ? provided.draggableProps : {})}
-        {...(provided ? provided.dragHandleProps : {})}
+        {...(draggable ? { ...draggable.draggableProps, ...draggable.dragHandleProps } : {})}
         className="border rounded-lg shadow-md p-4 bg-white dark:bg-gray-800"
     >
         <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium">{item.title}</h3>
+            <h3 className="text-lg font-medium">{title}</h3>
             {number !== null && <span className="text-gray-500 dark:text-gray-400">{number}</span>}
         </div>
         <div className="mb-4">
-            {item.duration && <p className="text-sm text-gray-400 dark:text-gray-500">Duration: {item.duration}</p>}
-            <p className="text-gray-500 dark:text-gray-400">{item.description}</p>
+            {children}
         </div>
-        {item.footer && (
-            <div className="flex justify-end">
-                <span className="text-sm text-gray-500 dark:text-gray-400">{item.footer}</span>
-            </div>
-        )}
         {draggable && (
             <button onClick={remove} className="mt-2 bg-red-500 text-white py-1 px-2 rounded">Remove</button>
         )}

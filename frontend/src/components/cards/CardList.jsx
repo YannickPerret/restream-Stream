@@ -1,54 +1,48 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import CardItem from './CardItem';
+import VideoCardItem from './VideoCardItem';
+import PlaylistCardItem from './PlaylistCardItem';
 
-const CardList = ({ title, items, draggable, onListChange }) => {
-
+const CardList = ({ title, items, onListChange }) => {
     const onDragEnd = (result) => {
         if (!result.destination) return;
 
-        const reorderedIndexes = Array.from(items.map((_, index) => index));
-        const [removed] = reorderedIndexes.splice(result.source.index, 1);
-        reorderedIndexes.splice(result.destination.index, 0, removed);
+        const reorderedItems = Array.from(items);
+        const [removed] = reorderedItems.splice(result.source.index, 1);
+        reorderedItems.splice(result.destination.index, 0, removed);
 
-        onListChange(reorderedIndexes);
+        onListChange(reorderedItems);
     };
 
     return (
-        <div className="h-[800px] overflow-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+        <div className="flex flex-col h-full max-h-[800px]">
             <h2 className="text-xl font-semibold mb-4">{title}</h2>
-            {draggable ? (
-                <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable droppableId="droppable-list">
-                        {(provided) => (
-                            <div
-                                {...provided.droppableProps}
-                                ref={provided.innerRef}
-                                className="space-y-4 p-4"
-                            >
-                                {items.map((item, index) => (
-                                    <Draggable key={item.id} draggableId={String(item.id)} index={index}>
-                                        {(provided) => (
-                                            <CardItem
-                                                ref={provided.innerRef}
-                                                provided={provided}
-                                                {...item}
-                                            />
-                                        )}
-                                    </Draggable>
-                                ))}
-                                {provided.placeholder}
-                            </div>
-                        )}
-                    </Droppable>
-                </DragDropContext>
-            ) : (
-                <div className="space-y-4 p-4">
-                    {items.map((item) => (
-                        <CardItem key={item.id} {...item} />
-                    ))}
-                </div>
-            )}
+            <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="droppable-list">
+                    {(provided) => (
+                        <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="overflow-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                        >
+                            {items.map((item, index) => (
+                                <Draggable key={item.id} draggableId={String(item.id)} index={index}>
+                                    {(provided) => (
+                                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                            {item.type === 'video' ? (
+                                                <VideoCardItem video={item.video} number={index + 1} draggable remove={item.remove} />
+                                            ) : (
+                                                <PlaylistCardItem playlist={item.playlist} number={index + 1} draggable remove={item.remove} />
+                                            )}
+                                        </div>
+                                    )}
+                                </Draggable>
+                            ))}
+                            {provided.placeholder}
+                        </div>
+                    )}
+                </Droppable>
+            </DragDropContext>
         </div>
     );
 };
