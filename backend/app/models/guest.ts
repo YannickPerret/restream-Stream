@@ -15,6 +15,9 @@ export default class Guest extends BaseModel {
   declare displayName: string
 
   @column()
+  declare ipAddress: string
+
+  @column()
   declare discordUsername: string
 
   @column()

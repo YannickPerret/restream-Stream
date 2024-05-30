@@ -4,6 +4,7 @@ import Guest from '#models/guest'
 import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 import { cuid } from '@adonisjs/core/helpers'
+import * as fs from 'node:fs'
 
 export default class GuestsController {
   /**
@@ -140,15 +141,12 @@ export default class GuestsController {
       return response.badRequest(videoFile.errors)
     }
 
-    await videoFile.move(app.makePath(env.get('VIDEO_GUEST_PENDING_DIRECTORY')), {
-      name: `${cuid()}.${videoFile.extname}`,
-    })
-
     const guest = await Guest.firstOrCreate(
       { username },
       {
         username,
         displayName,
+        ipAddress: request.ip(),
         email,
         discordUsername,
         twitchUsername,
@@ -158,6 +156,15 @@ export default class GuestsController {
         telegramUsername,
       }
     )
+
+    if (!guest.canDiffuse) {
+      fs.unlinkSync(videoFile.tmpPath as string)
+      return response.forbidden('Guest cannot diffuse')
+    }
+
+    await videoFile.move(app.makePath(env.get('VIDEO_GUEST_PENDING_DIRECTORY')), {
+      name: `${cuid()}.${videoFile.extname}`,
+    })
 
     const videoCreated = await Video.create({
       title,
