@@ -3,7 +3,6 @@ import { useParams } from 'next/navigation';
 import { usePlaylistStore } from '#stores/usePlaylistStore';
 import { useVideoStore } from '#stores/useVideoStore';
 import CardList from '#components/cards/CardList';
-import { getDurationInFormat } from '#helpers/time.js';
 
 export default function PlaylistEditView() {
     const { id } = useParams();
@@ -12,6 +11,9 @@ export default function PlaylistEditView() {
     const selectedPlaylist = usePlaylistStore.use.selectedPlaylist();
     const videos = useVideoStore.use.videos();
     const updatePlaylist = usePlaylistStore.use.updatePlaylistById();
+    const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
+    const [videoTransition, setVideoTransition] = useState("");
+    const videosNotShownLive = videos.filter(video => !video.showInLive);
 
     const [localPlaylist, setLocalPlaylist] = useState([]);
 
@@ -38,47 +40,78 @@ export default function PlaylistEditView() {
         setLocalPlaylist(updatedPlaylist);
     };
 
-    const savePlaylist = async () => {
-        await updatePlaylist(id, { videos: localPlaylist });
+    const handleRemoveItem = (index) => {
+        const updatedPlaylist = [...localPlaylist];
+        updatedPlaylist.splice(index, 1);
+        setLocalPlaylist(updatedPlaylist);
     };
 
-    const mapVideosToItems = (videos, isPlaylist = false) =>
-        videos.map((video, index) => ({
-            id: index,
-            videoId: video.id,
+    const savePlaylist = async () => {
+        const updatedPlaylist = {
+            ...selectedPlaylist,
+            videos: localPlaylist
+        };
+        console.log(updatedPlaylist)
+       // await updatePlaylist(updatedPlaylist);
+    }
+    const handleAddItem = (video) => {
+        const newPlaylist = [...localPlaylist, video];
+        if (addAutoTransitionAfter && videoTransition) {
+            const transitionVideo = videos.find(v => v.id === parseInt(videoTransition));
+            if (transitionVideo) {
+                newPlaylist.push(transitionVideo);
+            }
+        }
+        setLocalPlaylist(newPlaylist);
+    };
+
+    const mapItemsToCards = (items, isPlaylist = false, draggable = false, addable = false) =>
+        items.map((item, index) => ({
+            id: `${item.id}-${isPlaylist ? 'playlist' : 'available'}-${index}`,
+            item,
             number: isPlaylist ? index + 1 : null,
-            title: video.title,
-            description: video.description,
-            duration: getDurationInFormat(video.duration),
-            footer: video.guest ? (
-                <>
-                    {video.user && <span>Validate by: {video.user.fullName}</span>}<br />
-                    {video.guest && <span>Upload by Guest: {video.guest.username}</span>}
-                </>
-            ) : (
-                <span>Upload by: {video.user?.fullName}</span>
-            )
+            remove: () => handleRemoveItem(index),
+            add: () => handleAddItem(item),
+            draggable: draggable,
+            addable: addable
         }));
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <CardList
-                title="List of videos available"
-                items={mapVideosToItems(videos)}
-                draggable={false}
-            />
-            <CardList
-                title="Current playlist"
-                items={mapVideosToItems(localPlaylist, true)}
-                draggable={true}
-                onListChange={handleListChange}
-            />
-            <button
-                className="col-span-1 md:col-span-2 bg-blue-500 text-white py-2 px-4 rounded mt-4"
-                onClick={savePlaylist}
-            >
-                Save Playlist
-            </button>
-        </div>
-    );
+        <>
+            <div>
+                <label>Add auto transition after video</label>
+                <input
+                    type="checkbox"
+                    checked={addAutoTransitionAfter}
+                    onChange={() => setAddAutoTransitionAfter(!addAutoTransitionAfter)}
+                />
+                <label>Video de transition </label>
+                <select onChange={(e) => setVideoTransition(e.target.value)} value={videoTransition}>
+                    <option value="">None</option>
+                    {videosNotShownLive.map(video => (
+                        <option key={video.id} value={video.id}>{video.title}</option>
+                    ))}
+                </select>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <CardList
+                    title="List of videos available"
+                    items={mapItemsToCards(videos, false, false, true)}
+                    draggable={false}
+                />
+                <CardList
+                    title="Current playlist"
+                    items={mapItemsToCards(localPlaylist, true, true, false)}
+                    draggable={true}
+                    onListChange={handleListChange}
+                />
+                <button
+                    className="col-span-1 md:col-span-2 bg-blue-500 text-white py-2 px-4 rounded mt-4"
+                    onClick={savePlaylist}
+                >
+                    Save Playlist
+                </button>
+            </div>
+        </>
+    )
 }
