@@ -1,11 +1,15 @@
 'use client'
 import TimelineForm from "#components/forms/create/timeline.js";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useVideoStore } from "#stores/useVideoStore.js";
 import { usePlaylistStore } from "#stores/usePlaylistStore.js";
 import { TimelineApi } from "#api/timeline.js";
-import DraggableList from '#components/draggable/Draggable';
+import VideoCardItem from "#components/cards/VideoCardItem.jsx";
+import PlaylistCardItem from "#components/cards/PlaylistCardItem.jsx";
+import SimpleCardList from "#components/cards/SimpleCardList.jsx";
+import CardList from "#components/cards/CardList";
+import {getDurationInFormat} from "#helpers/time.js";
 
 export default function TimelineCreatePage() {
     const [timeline, setTimeline] = useState({
@@ -15,8 +19,19 @@ export default function TimelineCreatePage() {
         items: []
     });
 
+    const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
+    const [videoTransition, setVideoTransition] = useState("");
+
+
+    const fetchVideos = useVideoStore.use.fetchVideos();
+    const fetchPlaylists = usePlaylistStore.use.fetchPlaylists();
     const videos = useVideoStore.use.videos();
     const playlists = usePlaylistStore.use.playlists();
+
+    useEffect(() => {
+        fetchVideos();
+        fetchPlaylists();
+    }, [fetchVideos, fetchPlaylists]);
 
     const submitTimeline = async (title, description, isPublished) => {
         const newTimeline = { ...timeline, title, description, isPublished };
@@ -36,30 +51,52 @@ export default function TimelineCreatePage() {
     };
 
     const addVideoToTimeline = (video) => {
+        const newItems = [
+            ...timeline.items,
+            {
+                type: "video",
+                video: video,
+                key: `video-${video.id}-${timeline.items.length}`
+            }
+        ];
+        if (addAutoTransitionAfter && videoTransition) {
+            const transitionVideo = videos.find(v => v.id === parseInt(videoTransition));
+            if (transitionVideo) {
+                newItems.push({
+                    type: "video",
+                    video: transitionVideo,
+                    key: `transition-${transitionVideo.id}-${newItems.length}`
+                });
+            }
+        }
         setTimeline((prevTimeline) => ({
             ...prevTimeline,
-            items: [
-                ...prevTimeline.items,
-                {
-                    type: "video",
-                    video: video,
-                    key: `video-${video.id}-${prevTimeline.items.length}`
-                }
-            ]
+            items: newItems
         }));
     };
 
     const addPlaylistToTimeline = (playlist) => {
+        const newItems = [
+            ...timeline.items,
+            {
+                type: "playlist",
+                playlist: playlist,
+                key: `playlist-${playlist.id}-${timeline.items.length}`
+            }
+        ];
+        if (addAutoTransitionAfter && videoTransition) {
+            const transitionVideo = videos.find(v => v.id === parseInt(videoTransition));
+            if (transitionVideo) {
+                newItems.push({
+                    type: "video",
+                    video: transitionVideo,
+                    key: `transition-${transitionVideo.id}-${newItems.length}`
+                });
+            }
+        }
         setTimeline((prevTimeline) => ({
             ...prevTimeline,
-            items: [
-                ...prevTimeline.items,
-                {
-                    type: "playlist",
-                    playlist: playlist,
-                    key: `playlist-${playlist.id}-${prevTimeline.items.length}`
-                }
-            ]
+            items: newItems
         }));
     };
 
@@ -77,6 +114,64 @@ export default function TimelineCreatePage() {
         }));
     };
 
+    const videoItems = videos.map(video => ({
+        id: video.id,
+        content: (
+            <VideoCardItem
+                video={video}
+                addable
+                add={() => addVideoToTimeline(video)}
+            />
+        )
+    }));
+
+    const playlistItems = playlists.map(playlist => ({
+        id: playlist.id,
+        content: (
+            <PlaylistCardItem
+                playlist={playlist}
+                addable
+                add={() => addPlaylistToTimeline(playlist)}
+            />
+        )
+    }));
+
+    const timelineItems = timeline.items.map((item, index) => ({
+        id: item.key,
+        content: (
+            item.type === 'video' ? (
+                <VideoCardItem
+                    video={item.video}
+                    number={index + 1}
+                    draggable
+                    remove={() => removeItemFromTimeline(item.key)}
+                />
+            ) : (
+                <PlaylistCardItem
+                    playlist={item.playlist}
+                    number={index + 1}
+                    draggable
+                    remove={() => removeItemFromTimeline(item.key)}
+                />
+            )
+        )
+    }));
+
+    const calculateTotalDuration = () => {
+        return timeline.items.reduce((total, item) => {
+            if (item.type === 'video') {
+                return total + (item.video.duration || 0);
+            } else if (item.type === 'playlist') {
+                return total + item.playlist.videos.reduce((playlistTotal, video) => {
+                    return playlistTotal + (video.duration || 0);
+                }, 0);
+            }
+            return total;
+        }, 0);
+    };
+
+    const totalDuration = calculateTotalDuration();
+
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
             <div className="bg-slate-500">
@@ -89,7 +184,7 @@ export default function TimelineCreatePage() {
                 </header>
 
                 <div className="flex flex-row">
-                    <aside>
+                    <aside className="w-1/3 p-4 space-y-8">
                         <TimelineForm
                             title={timeline.title}
                             isPublished={timeline.isPublished}
@@ -105,35 +200,46 @@ export default function TimelineCreatePage() {
                             }))}
                             submitTimeline={submitTimeline}
                         />
-
-                        <h2>Add Videos to Timeline</h2>
-
-                        {videos?.length === 0 && <p>No video available</p>}
-                        {videos?.map((video, index) => (
-                            <div key={index} className="flex gap-2">
-                                <p>{video.title}</p>
-                                <p>Durée : {video.duration} s</p>
-                                <button onClick={() => addVideoToTimeline(video)}>Add to Timeline</button>
-                            </div>
-                        ))}
-
-                        <h2>Add Playlist to Timeline</h2>
-                        {playlists?.length === 0 && <p>No playlist available</p>}
-                        {playlists?.map((playlist, index) => (
-                            <div key={index} className="flex gap-2">
-                                <p>{playlist.title}</p>
-                                <p>Durée : {playlist.duration} s</p>
-                                <button onClick={() => addPlaylistToTimeline(playlist)}>Add to Timeline</button>
-                            </div>
-                        ))}
+                        <div className="mb-4">
+                            <label className="mr-2">Add auto transition after video</label>
+                            <input
+                                type="checkbox"
+                                checked={addAutoTransitionAfter}
+                                onChange={() => setAddAutoTransitionAfter(!addAutoTransitionAfter)}
+                                className="mr-4"
+                            />
+                            <label className="mr-2">Video de transition</label>
+                            <select
+                                onChange={(e) => setVideoTransition(e.target.value)}
+                                value={videoTransition}
+                                className="mr-4"
+                            >
+                                <option value="">None</option>
+                                {videos.filter(video => !video.showInLive).map(video => (
+                                    <option key={video.id} value={video.id}>{video.title}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <SimpleCardList
+                            title="List of videos available"
+                            items={videoItems}
+                            className="overflow-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                        />
+                        <SimpleCardList
+                            title="List of playlists available"
+                            items={playlistItems}
+                            className="overflow-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                        />
                     </aside>
 
-                    <div className="rows">
+                    <div className="w-2/3 p-4">
                         <h2>Current Timeline</h2>
-                        <DraggableList
-                            items={timeline.items}
+                        <p>Total Duration: {getDurationInFormat(totalDuration)}</p>
+
+                        <CardList
+                            title=""
+                            items={timelineItems}
                             onListChange={onListChange}
-                            remove={removeItemFromTimeline}
                         />
                     </div>
                 </div>

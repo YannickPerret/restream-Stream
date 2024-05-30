@@ -64,18 +64,24 @@ export default class GuestsController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response, auth }: HttpContext) {
+    await auth.authenticate()
+    const guest = await Guest.findOrFail(params.id)
+    return response.json(guest)
+  }
 
   /**
    * Handle form submission for the edit action
    */
   async update({ params, request, auth, response }: HttpContext) {
     await auth.authenticate()
-
     const guest = await Guest.findOrFail(params.id)
-    await guest.merge(request.all()).save()
+    const updated = await guest.merge(request.all()).save()
 
-    return response.json(guest)
+    if (!updated) {
+      return response.internalServerError('Error updating guest')
+    }
+    return response.json(updated)
   }
 
   /**
@@ -83,11 +89,9 @@ export default class GuestsController {
    */
   async destroy({ params, auth, response }: HttpContext) {
     await auth.authenticate()
-
     const guest = await Guest.findOrFail(params.id)
     await guest.delete()
-
-    return response.status(204).json(null)
+    return response.noContent()
   }
 
   /**

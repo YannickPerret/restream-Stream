@@ -1,11 +1,13 @@
-'use client'
+'use client';
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PlaylistForm from "#components/forms/create/playlist.js";
 import { PlaylistApi } from "#api/playlist";
 import { useVideoStore } from "#stores/useVideoStore";
-import { VideoApi } from "#api/video";
-import DraggableList from '#components/draggable/Draggable';
+import CardList from "#components/cards/CardList";
+import SimpleCardList from "#components/cards/SimpleCardList.jsx";
+import VideoCardItem from "#components/cards/VideoCardItem.jsx";
+import { getDurationInFormat } from "#helpers/time.js";
 
 export default function PlaylistCreatePage() {
     const [playlist, setPlaylist] = useState({
@@ -14,16 +16,14 @@ export default function PlaylistCreatePage() {
         isPublished: true,
         items: []
     });
-    const videos = useVideoStore(state => state.videos);
-    const setVideos = useVideoStore(state => state.setVideos);
+    const [videoTransition, setVideoTransition] = useState('');
+    const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
+    const getVideos = useVideoStore.use.fetchVideos();
+    const videos = useVideoStore.use.videos();
 
     useEffect(() => {
-        const fetchVideos = async () => {
-            const data = await VideoApi.getAll();
-            setVideos(data);
-        };
-        fetchVideos();
-    }, [setVideos]);
+        getVideos();
+    }, [getVideos]);
 
     useEffect(() => {
         const savedPlaylist = localStorage.getItem('playlist');
@@ -37,9 +37,16 @@ export default function PlaylistCreatePage() {
     }, [playlist]);
 
     const addVideoToPlaylist = (video) => {
+        const newPlaylist = [...playlist.items, { type: 'video', video: video, key: `${video.id}-${playlist.items.length}` }];
+        if (addAutoTransitionAfter && videoTransition) {
+            const transitionVideo = videos.find(v => v.id === parseInt(videoTransition));
+            if (transitionVideo) {
+                newPlaylist.push({ type: 'video', video: transitionVideo, key: `${transitionVideo.id}-${newPlaylist.length}` });
+            }
+        }
         setPlaylist((prevPlaylist) => ({
             ...prevPlaylist,
-            items: [...prevPlaylist.items, { type: 'video', video: video, key: `${video.id}-${prevPlaylist.items.length}` }]
+            items: newPlaylist
         }));
     };
 
@@ -65,7 +72,20 @@ export default function PlaylistCreatePage() {
         }
     };
 
-    const totalDuration = playlist.items.reduce((acc, item) => acc + item.video.duration, 0);
+    const calculateTotalDuration = () => {
+        return playlist.items.reduce((total, item) => {
+            if (item.type === 'video') {
+                return total + (item.video.duration || 0);
+            } else if (item.type === 'playlist') {
+                return total + item.playlist.videos.reduce((playlistTotal, video) => {
+                    return playlistTotal + (video.duration || 0);
+                }, 0);
+            }
+            return total;
+        }, 0);
+    };
+
+    const totalDuration = calculateTotalDuration();
 
     const onListChange = (newList) => {
         setPlaylist((prevPlaylist) => ({
@@ -73,6 +93,36 @@ export default function PlaylistCreatePage() {
             items: newList
         }));
     };
+
+    const mapItemsToCards = (items, isPlaylist = false, draggable = false, addable = false) =>
+        items.map((item, index) => ({
+            id: item?.id ? `${item.id}-${isPlaylist ? 'playlist' : 'available'}-${index}` : `unknown-${index}`,
+            content: (
+                <VideoCardItem
+                    video={item.video}
+                    number={isPlaylist ? index + 1 : null}
+                    draggable={draggable}
+                    remove={() => removeItemFromPlaylist(item.key)}
+                />
+            ),
+            item,
+            draggable: draggable,
+            addable: addable
+        }));
+
+    const videoItems = videos.map(video => ({
+        id: video.id,
+        type: 'video',
+        content: (
+            <VideoCardItem
+                video={video}
+                addable={true}
+                add={() => addVideoToPlaylist(video)}
+            />
+        ),
+    }));
+
+    const playlistItems = mapItemsToCards(playlist.items, true, true, false);
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
@@ -86,7 +136,7 @@ export default function PlaylistCreatePage() {
                 </div>
 
                 <div className="flex flex-row">
-                    <aside>
+                    <aside className="w-1/3 p-4">
                         <PlaylistForm
                             title={playlist.title}
                             isPublished={playlist.isPublished}
@@ -97,27 +147,44 @@ export default function PlaylistCreatePage() {
                             submitPlaylist={() => submitPlaylist(playlist.title, playlist.description, playlist.isPublished)}
                         />
 
-                        <h2>Add Videos to Playlist</h2>
+                        <div className="mb-4">
+                            <label className="mr-2">Add auto transition after video</label>
+                            <input
+                                type="checkbox"
+                                checked={addAutoTransitionAfter}
+                                onChange={() => setAddAutoTransitionAfter(!addAutoTransitionAfter)}
+                                className="mr-4"
+                            />
+                            <label className="mr-2">Video de transition</label>
+                            <select
+                                onChange={(e) => setVideoTransition(e.target.value)}
+                                value={videoTransition}
+                                className="mr-4"
+                            >
+                                <option value="">None</option>
+                                {videos.filter(video => !video.showInLive).map(video => (
+                                    <option key={video.id} value={video.id}>{video.title}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                        {videos?.length === 0 && <p>No video available</p>}
-                        {videos?.map((video, index) => (
-                            <div key={index} className="flex gap-2">
-                                <p>{video.title}</p>
-                                <p>Durée : {video.duration} s</p>
-                                <button onClick={() => addVideoToPlaylist(video)}>Add to Playlist</button>
-                            </div>
-                        ))}
+                        <h2>Add Videos to Playlist</h2>
+                        <SimpleCardList
+                            title="List of videos available"
+                            items={videoItems}
+                            className="overflow-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent"
+                        />
                     </aside>
 
-                    <div className="rows">
+                    <div className="w-2/3 p-4">
                         <h2>Current Playlist</h2>
                         <div>
-                            <p>Durée totale de la playlist : {totalDuration} s</p>
+                            <p>Playlist duration : {getDurationInFormat(totalDuration)}</p>
                         </div>
-                        <DraggableList
-                            items={playlist.items}
+                        <CardList
+                            title=""
+                            items={playlistItems}
                             onListChange={onListChange}
-                            remove={removeItemFromPlaylist}
                         />
                     </div>
                 </div>

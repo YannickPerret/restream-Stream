@@ -29,7 +29,6 @@ export default await Env.create(new URL('../', import.meta.url), {
   DB_PASSWORD: Env.schema.string.optional(),
   DB_DATABASE: Env.schema.string(),
 
-  STREAM_KEY: Env.schema.string(),
   VIDEO_DIRECTORY: Env.schema.string(),
   VIDEO_PROCESSING_DIRECTORY: Env.schema.string(),
   VIDEO_GUEST_PENDING_DIRECTORY: Env.schema.string(),

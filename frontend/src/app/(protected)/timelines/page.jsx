@@ -5,10 +5,10 @@ import {useTimelineStore} from "#stores/useTimelineStore.js";
 import TimelineIndexView from "@/views/timelines/index.js";
 
 export default function TimelinesIndexPage() {
+    const getTimelines = useTimelineStore.use.fetchTimelines()
     useEffect(() => {
         const fetchTimelines = async () => {
-            const data = await TimelineApi.getAll();
-            useTimelineStore.setState({timelines: data});
+            await getTimelines();
         };
         fetchTimelines();
     }, []);

@@ -1,19 +1,14 @@
 'use client'
 import VideoIndexView from "@/views/videos";
 import {useEffect} from "react";
-import {VideoApi} from "#api/video.js";
 import {useVideoStore} from "#stores/useVideoStore";
 
 export default function VideosIndexPage() {
+    const getVideos = useVideoStore.use.fetchVideos()
 
     useEffect(() => {
         const fetchVideos = async () => {
-            await VideoApi.getAll().then((data) => {
-                console.log(data)
-                useVideoStore.setState({
-                    videos: data
-                })
-            })
+            await getVideos()
         }
         fetchVideos();
     }, []);

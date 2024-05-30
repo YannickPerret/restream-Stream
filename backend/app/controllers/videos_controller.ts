@@ -21,7 +21,6 @@ export default class VideosController {
     } else {
       for (let key in filters) {
         if (filters[key]) {
-          logger.info(`Filtering by ${key} = ${filters[key]}`)
           query = query.where(key, filters[key])
         }
       }
@@ -97,7 +96,16 @@ export default class VideosController {
   /**
    * Show individual record
    */
-  async show({ params }: HttpContext) {}
+  async show({ params, response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    const video = await Video.findOrFail(params.id)
+    if (video.userId && video.userId !== user.id) {
+      return response.forbidden('You are not authorized to view this video')
+    }
+    await video.load('user')
+    await video.load('guest')
+    return response.json(video)
+  }
 
   /**
    * Handle form submission for the edit action

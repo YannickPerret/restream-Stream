@@ -32,7 +32,18 @@ body {
   }
 }
 
-input, textarea {
+a {
+  @apply text-blue-200;
+  @apply underline;
+}
+
+nav a {
+  @apply no-underline;
+  @apply text-white;
+}
+
+
+input, textarea, select {
   @apply text-black;
   @apply border-2 border-gray-300;
 }

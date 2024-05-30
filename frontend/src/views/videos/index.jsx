@@ -2,44 +2,58 @@
 import {useVideoStore} from "#stores/useVideoStore";
 import Link from "next/link";
 import {VideoApi} from "#api/video.js";
+import {getDurationInFormat} from "#helpers/time.js";
+import {boolenStringFormat} from "#helpers/string.js";
+import ProvidersEditView from "@/views/providers/edit.jsx";
+import VideoEditForm from "#components/forms/edit/video.jsx";
+import VideosEditView from "@/views/videos/edit.jsx";
+import {useState} from "react";
 
 export default function VideoIndexView() {
     const videos = useVideoStore.use.videos();
+    const removeVideo = useVideoStore.use.deleteVideoById;
+    const [selectedVideo, setSelectedVideo] = useState(null);
+
 
     const handleRemoveVideo = async (id) => {
-        await VideoApi.delete(id).then(() => {
-            useVideoStore.use.removeVideo(id);
-        })
+        await removeVideo(id);
     }
 
-  return (
-    <table>
-        <thead>
-            <tr>
-                <th>title</th>
-                <th>Description</th>
-                <th>Duration</th>
-                <th>Is Published</th>
-                <th>Is show in live</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {videos.map((video) => (
-                <tr key={video.id}>
-                    <td><Link href={`/videos/${video.id}`}>{video.title}</Link></td>
-                    <td>{video.description}</td>
-                    <td>{video.duration}</td>
-                    <td>{video.isPublished ? 'Yes' : 'No'}</td>
-                    <td>{video.showInLive ? 'Yes' : 'No'}</td>
-                    <td>
-                        <Link className="btn btn-success" href={`/videos/${video.id}/edit`}>Edit</Link>
-                        <button className="btn btn-error" onClick={() => handleRemoveVideo(video.id)}>Delete</button>
-                    </td>
+    return (
+        <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
+            {selectedVideo && (
+                <VideosEditView videoToEdit={selectedVideo} onClose={() => setSelectedVideo(null)}/>
+            )}
+            <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400" >
+                <tr>
+                    <th scope="col" className="px-6 py-3">Title</th>
+                    <th scope="col" className="px-6 py-3">Description</th>
+                    <th scope="col" className="px-6 py-3">Duration</th>
+                    <th scope="col" className="px-6 py-3">Status</th>
+                    <th scope="col" className="px-6 py-3">Show in live?</th>
+                    <th scope="col" className="px-6 py-3">Actions</th>
                 </tr>
-            ))}
-        </tbody>
-    </table>
-  );
+                </thead>
+                <tbody>
+                {videos.map((video) => (
+                    <tr key={video.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"><Link href={`/videos/${video.id}`}>{video.title}</Link></th>
+                        <td>{video.description}</td>
+                        <td>{getDurationInFormat(video.duration)}</td>
+                        <td>{video.status}</td>
+                        <td>{boolenStringFormat(video.showInLive)}</td>
+                        <td>
+                            <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                                    onClick={() => setSelectedVideo(video)}>Edit
+                            </button>
+                            <button className="btn btn-error" onClick={() => handleRemoveVideo(video.id)}>Delete
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    );
 }

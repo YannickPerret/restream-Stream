@@ -88,7 +88,6 @@ export default class Timeline extends BaseModel {
           if (playlist) {
             await playlist.load('videos')
             for (const video of playlist.videos) {
-              logger.info(video)
               if (video && video.path) {
                 const relativePath = path.relative('/', video.path)
                 logger.info(
@@ -245,5 +244,30 @@ export default class Timeline extends BaseModel {
   async getTimeRestOfVideos(currentIndex: number) {
     const videos = await this.getRestOfVideos(currentIndex)
     return videos.reduce((acc, video) => acc + video.duration, 0)
+  }
+
+  async getItemsWithVideos() {
+    await this.load('items')
+    const items = []
+
+    for (const item of this.items) {
+      if (item.type === 'video') {
+        const video = await Video.find(item.itemId)
+        if (video) {
+          items.push(video)
+        }
+      } else if (item.type === 'playlist') {
+        const playlist = await Playlist.find(item.itemId)
+        if (playlist) {
+          await playlist.load('videos')
+          items.push({
+            ...playlist.toJSON(),
+            videos: playlist.videos,
+          })
+        }
+      }
+    }
+
+    return items
   }
 }

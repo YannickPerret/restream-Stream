@@ -9,7 +9,8 @@ import {useRouter} from "next/navigation";
 
 export default function VideoValidatePage() {
     const videos = useVideoStore.use.videos()
-    const removeVideo = useVideoStore.use.removeVideo();
+    const getVideos = useVideoStore.use.fetchVideos();
+    const removeVideo = useVideoStore.use.deleteVideoById();
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [videoToEdit, setVideoToEdit] = useState(null);
     const router = useRouter();
@@ -19,8 +20,7 @@ export default function VideoValidatePage() {
 
     useEffect(() => {
         const fetchAllVideoValidate = async() => {
-            const data = await VideoApi.getAll({status: 'pending'});
-            useVideoStore.setState({videos: data});
+            await getVideos({status: 'pending'});
         }
         fetchAllVideoValidate();
     }, []);

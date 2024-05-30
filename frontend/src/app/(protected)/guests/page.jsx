@@ -4,37 +4,28 @@ import {GuestApi} from "#api/guest.js";
 import {useGuestStore} from "#stores/useGuestStore.js";
 import GuestIndexView from "@/views/guests/index.js";
 import {useRouter} from "next/navigation";
+import {useProviderStore} from "#stores/useProviderStore.js";
 
 export default function GuestIndexPage() {
-    const router = useRouter();
-    const guests = useGuestStore(state => state.guests);
-    const setGuests = useGuestStore(state => state.setGuests);
-    const removeGuest = useGuestStore(state => state.removeGuest);
-    const updateGuest = useGuestStore(state => state.updateGuest);
+    const removeGuest = useGuestStore.use.deleteGuestById();
+    const updateGuest = useGuestStore.use.updateGuestById();
+    const getGuests = useGuestStore.use.fetchGuests()
 
     useEffect(() => {
         const fetchGuests = async () => {
-            await GuestApi.getAll().then((data) => {
-                setGuests(data);
-            })
+            await getGuests();
         }
         fetchGuests();
-    }, [setGuests]);
+    }, []);
 
     const handleRemove = async (id) => {
-        await GuestApi.delete(id).then(() => {
-            removeGuest(id);
-        });
-    };
-
-    const handleEdit = async (id) => {
-        router.push(`/guests/${id}/edit`);
+        await removeGuest(id);
     };
 
     const handleRevok = async (id, revok) => {
-        await GuestApi.update(id, {canDiffuse: revok}).then((data) => {
-            updateGuest(data);
-        });
+        const formdata = new FormData();
+        formdata.append('canDiffuse', revok ? 1 : 0);
+        await updateGuest(id, formdata)
     };
 
     return (
@@ -47,7 +38,6 @@ export default function GuestIndexPage() {
 
                 <GuestIndexView
                     remove={handleRemove}
-                    edit={handleEdit}
                     revok={handleRevok}
                 />
             </div>
