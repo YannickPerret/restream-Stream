@@ -1,5 +1,5 @@
-import {create} from "zustand";
-import {PlaylistApi} from "#api/playlist.js";
+import { create } from 'zustand';
+import { PlaylistApi } from '#api/playlist.js';
 
 const createSelectors = (_store) => {
     let store = _store;
@@ -9,7 +9,6 @@ const createSelectors = (_store) => {
     }
     return store;
 };
-
 
 export const usePlaylistStore = createSelectors(create((set, get) => ({
     playlists: [],
@@ -44,6 +43,7 @@ export const usePlaylistStore = createSelectors(create((set, get) => ({
             return null;
         }
     },
+
     createPlaylist: async (data) => {
         try {
             const newPlaylist = await PlaylistApi.create(data);
@@ -76,5 +76,14 @@ export const usePlaylistStore = createSelectors(create((set, get) => ({
         } catch (error) {
             console.error("Failed to delete playlist", error);
         }
+    },
+
+    updatePlaylistVideos: (videos) => {
+        set((state) => ({
+            selectedPlaylist: {
+                ...state.selectedPlaylist,
+                videos,
+            },
+        }));
     },
 })));

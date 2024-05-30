@@ -49,7 +49,6 @@ export const useVideoStore = createSelectors(create((set, get) => ({
     },
 
     updateVideoById: async (id, data) => {
-        console.log("updateVideoById", id, data)
         try {
             const updatedVideo = await VideoApi.update(id, data);
             set((state) => ({
