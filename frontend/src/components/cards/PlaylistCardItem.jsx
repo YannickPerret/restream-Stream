@@ -3,7 +3,6 @@ import CardItem from './CardItem';
 
 const PlaylistCardItem = ({ playlist, number, draggable, remove, add, addable }) => {
     if (!playlist) return null;
-
     return (
         <CardItem
             title={playlist.title}

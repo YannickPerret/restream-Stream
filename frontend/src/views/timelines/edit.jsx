@@ -5,18 +5,19 @@ import { useTimelineStore } from '#stores/useTimelineStore';
 import { useVideoStore } from '#stores/useVideoStore';
 import { usePlaylistStore } from '#stores/usePlaylistStore';
 import CardList from '#components/cards/CardList';
-import CardItem from "#components/cards/CardItem.jsx";
 import SimpleCardList from "#components/cards/SimpleCardList.jsx";
+import VideoCardItem from "#components/cards/VideoCardItem";
+import PlaylistCardItem from "#components/cards/PlaylistCardItem";
 
 export default function TimelinesEditView() {
     const { id } = useParams();
-    const fetchTimelineById = useTimelineStore.use.fetchTimelineById()
-    const fetchVideos = useVideoStore.use.fetchVideos()
-    const fetchPlaylists = usePlaylistStore.use.fetchPlaylists()
+    const fetchTimelineById = useTimelineStore.use.fetchTimelineById();
+    const fetchVideos = useVideoStore.use.fetchVideos();
+    const fetchPlaylists = usePlaylistStore.use.fetchPlaylists();
     const selectedTimeline = useTimelineStore.use.selectedTimeline();
-    const videos = useVideoStore.use.videos()
-    const playlists = usePlaylistStore.use.playlists()
-    const updateTimeline = useTimelineStore.use.updateTimelineById()
+    const videos = useVideoStore.use.videos();
+    const playlists = usePlaylistStore.use.playlists();
+    const updateTimeline = useTimelineStore.use.updateTimelineById();
     const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
     const [videoTransition, setVideoTransition] = useState("");
     const videosNotShownLive = videos.filter(video => !video.showInLive);
@@ -36,13 +37,13 @@ export default function TimelinesEditView() {
             const timelineItems = selectedTimeline.items.map(item => {
                 if (item.type === 'video') {
                     const video = videos.find(v => v.id === item.itemId);
-                    return { ...item, video };
+                    return video ? { ...item, video } : null;
                 } else if (item.type === 'playlist') {
                     const playlist = playlists.find(p => p.id === item.itemId);
-                    return { ...item, playlist };
+                    return playlist ? { ...item, playlist } : null;
                 }
                 return item;
-            });
+            }).filter(item => item !== null);
             setLocalTimeline(timelineItems);
         }
     }, [selectedTimeline, videos, playlists]);
@@ -52,7 +53,9 @@ export default function TimelinesEditView() {
     }
 
     const handleListChange = (reorderedItems) => {
-        setLocalTimeline(reorderedItems);
+        const updatedTimeline = reorderedItems.map(item => item.item);
+        console.log('Updated Timeline after Drag:', updatedTimeline);
+        setLocalTimeline(updatedTimeline);
     };
 
     const handleRemoveItem = (index) => {
@@ -99,36 +102,55 @@ export default function TimelinesEditView() {
         setLocalTimeline(newTimeline);
     };
 
-    const mapItemsToCards = (items, isTimeline = false, draggable = false, addable = false, type = '') =>
-        items.map((item, index) => ({
-            id: `${item.id}-${isTimeline ? 'timeline' : type}-${index}`,
-            type: item.type,
-            video: item.video,
-            playlist: item.playlist,
-            number: isTimeline ? index + 1 : null,
-            remove: () => handleRemoveItem(index),
-            add: () => handleAddItem(item, type),
-            draggable: draggable,
-            addable: addable
-        }));
-
     const videoItems = videos.map(video => ({
         id: video.id,
-        type: 'video',
-        video,
-        add: () => handleAddItem(video, 'video'),
-        addable: true,
+        content: (
+            <VideoCardItem
+                video={video}
+                addable
+                add={() => handleAddItem(video, 'video')}
+            />
+        )
     }));
 
     const playlistItems = playlists.map(playlist => ({
         id: playlist.id,
-        type: 'playlist',
-        playlist,
-        add: () => handleAddItem(playlist, 'playlist'),
-        addable: true,
+        content: (
+            <PlaylistCardItem
+                playlist={playlist}
+                addable
+                add={() => handleAddItem(playlist, 'playlist')}
+            />
+        )
     }));
 
-    const timelineItems = mapItemsToCards(localTimeline, true, true, false);
+    const timelineItems = localTimeline.map((item, index) => {
+        if (!item) {
+            console.error("Invalid item in localTimeline:", item);
+            return null;
+        }
+        return {
+            id: `timeline-item-${index}`,
+            item,
+            content: (
+                item.type === 'video' ? (
+                    <VideoCardItem
+                        video={item.video}
+                        number={index + 1}
+                        draggable
+                        remove={() => handleRemoveItem(index)}
+                    />
+                ) : (
+                    <PlaylistCardItem
+                        playlist={item.playlist}
+                        number={index + 1}
+                        draggable
+                        remove={() => handleRemoveItem(index)}
+                    />
+                )
+            )
+        };
+    }).filter(Boolean);
 
     return (
         <>

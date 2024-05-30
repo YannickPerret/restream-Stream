@@ -27,7 +27,7 @@ export default function PlaylistsEditPage() {
                   <h1 className="text-3xl text-white py-4 ">Edit the playlist</h1>
                   <hr className="border-b-1 border-blueGray-300 pb-6" />
                   <div>
-                      <Link href={`/playlists/${id}`}>Back to the playlist</Link>
+                      <Link href={`/playlists/${id}`}>Back to the playlist</Link> &nbsp; | &nbsp;
                       <Link href={"/playlists"}>Back to all Playlist</Link>
                   </div>
               </div>

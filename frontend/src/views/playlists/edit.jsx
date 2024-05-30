@@ -3,6 +3,8 @@ import { useParams } from 'next/navigation';
 import { usePlaylistStore } from '#stores/usePlaylistStore';
 import { useVideoStore } from '#stores/useVideoStore';
 import CardList from '#components/cards/CardList';
+import SimpleCardList from "#components/cards/SimpleCardList.jsx";
+import VideoCardItem from "#components/cards/VideoCardItem.jsx";
 
 export default function PlaylistEditView() {
     const { id } = useParams();
@@ -14,7 +16,6 @@ export default function PlaylistEditView() {
     const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
     const [videoTransition, setVideoTransition] = useState("");
     const videosNotShownLive = videos.filter(video => !video.showInLive);
-
     const [localPlaylist, setLocalPlaylist] = useState([]);
 
     useEffect(() => {
@@ -26,7 +27,7 @@ export default function PlaylistEditView() {
     }, [id, fetchVideos, fetchPlaylistById]);
 
     useEffect(() => {
-        if (selectedPlaylist) {
+        if (selectedPlaylist && selectedPlaylist.videos) {
             setLocalPlaylist(selectedPlaylist.videos);
         }
     }, [selectedPlaylist]);
@@ -35,8 +36,8 @@ export default function PlaylistEditView() {
         return <div>Loading...</div>;
     }
 
-    const handleListChange = (reorderedIndexes) => {
-        const updatedPlaylist = reorderedIndexes.map(index => localPlaylist[index]);
+    const handleListChange = (reorderedItems) => {
+        const updatedPlaylist = reorderedItems.map(item => item.item);
         setLocalPlaylist(updatedPlaylist);
     };
 
@@ -52,7 +53,8 @@ export default function PlaylistEditView() {
             videos: localPlaylist
         };
         await updatePlaylist(selectedPlaylist.id, updatedPlaylist);
-    }
+    };
+
     const handleAddItem = (video) => {
         const newPlaylist = [...localPlaylist, video];
         if (addAutoTransitionAfter && videoTransition) {
@@ -64,16 +66,29 @@ export default function PlaylistEditView() {
         setLocalPlaylist(newPlaylist);
     };
 
-    const mapItemsToCards = (items, isPlaylist = false, draggable = false, addable = false) =>
-        items.map((item, index) => ({
-            id: `${item.id}-${isPlaylist ? 'playlist' : 'available'}-${index}`,
-            item,
-            number: isPlaylist ? index + 1 : null,
-            remove: () => handleRemoveItem(index),
-            add: () => handleAddItem(item),
-            draggable: draggable,
-            addable: addable
-        }));
+    const videoItems = videos.map(video => ({
+        id: video.id,
+        content: (
+            <VideoCardItem
+                video={video}
+                addable
+                add={() => handleAddItem(video)}
+            />
+        )
+    }));
+
+    const playlistItems = localPlaylist.map((item, index) => ({
+        id: `playlist-item-${index}`,
+        item,
+        content: (
+            <VideoCardItem
+                video={item}
+                number={index + 1}
+                draggable
+                remove={() => handleRemoveItem(index)}
+            />
+        )
+    }));
 
     return (
         <>
@@ -92,29 +107,27 @@ export default function PlaylistEditView() {
                     ))}
                 </select>
             </div>
-            <div className="grid grid-cols-5 gap-8">
-                <div className="col-span-2">
-                    <CardList
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="col-span-1">
+                    <SimpleCardList
                         title="List of videos available"
-                        items={mapItemsToCards(videos, false, false, true)}
-                        draggable={false}
+                        items={videoItems}
                     />
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-1">
                     <CardList
                         title="Current playlist"
-                        items={mapItemsToCards(localPlaylist, true, true, false)}
-                        draggable={true}
+                        items={playlistItems}
                         onListChange={handleListChange}
                     />
                 </div>
                 <button
-                    className="col-span-5 bg-blue-500 text-white py-2 px-4 rounded mt-4"
+                    className="col-span-1 md:col-span-2 bg-blue-500 text-white py-2 px-4 rounded mt-4"
                     onClick={savePlaylist}
                 >
                     Save Playlist
                 </button>
             </div>
         </>
-    )
+    );
 }

@@ -5,7 +5,7 @@ const VideoCardItem = ({ video, number, draggable, remove, add, addable }) => {
     if (!video) return null;
     return (
         <CardItem
-            title={video.title}
+            title={video.title || 'Unknown Video'}
             number={number}
             draggable={draggable}
             remove={remove}

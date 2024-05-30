@@ -1,7 +1,6 @@
+// CardList.jsx
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import VideoCardItem from './VideoCardItem';
-import PlaylistCardItem from './PlaylistCardItem';
 
 const CardList = ({ title, items, onListChange }) => {
     const onDragEnd = (result) => {
@@ -15,7 +14,7 @@ const CardList = ({ title, items, onListChange }) => {
     };
 
     return (
-        <div className="flex flex-col h-full max-h-[800px]">
+        <div className="flex flex-col h-full max-h-[1000px]">
             <h2 className="text-xl font-semibold mb-4">{title}</h2>
             <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="droppable-list">
@@ -29,11 +28,7 @@ const CardList = ({ title, items, onListChange }) => {
                                 <Draggable key={item.id} draggableId={String(item.id)} index={index}>
                                     {(provided) => (
                                         <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                                            {item.type === 'video' ? (
-                                                <VideoCardItem video={item.video} number={index + 1} draggable remove={item.remove} />
-                                            ) : (
-                                                <PlaylistCardItem playlist={item.playlist} number={index + 1} draggable remove={item.remove} />
-                                            )}
+                                            {item.content}
                                         </div>
                                     )}
                                 </Draggable>

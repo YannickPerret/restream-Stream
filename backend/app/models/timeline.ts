@@ -88,7 +88,6 @@ export default class Timeline extends BaseModel {
           if (playlist) {
             await playlist.load('videos')
             for (const video of playlist.videos) {
-              logger.info(video)
               if (video && video.path) {
                 const relativePath = path.relative('/', video.path)
                 logger.info(
