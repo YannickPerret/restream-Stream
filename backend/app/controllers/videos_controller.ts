@@ -21,7 +21,6 @@ export default class VideosController {
     } else {
       for (let key in filters) {
         if (filters[key]) {
-          logger.info(`Filtering by ${key} = ${filters[key]}`)
           query = query.where(key, filters[key])
         }
       }
