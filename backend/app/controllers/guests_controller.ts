@@ -5,6 +5,11 @@ import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 import { cuid } from '@adonisjs/core/helpers'
 import * as fs from 'node:fs'
+import hash from '@adonisjs/core/services/hash'
+import { DateTime } from 'luxon'
+import GuestToken from '#models/guest_token'
+import { Message } from '@adonisjs/mail'
+import mail from '@adonisjs/mail/services/main'
 
 export default class GuestsController {
   /**
@@ -23,7 +28,6 @@ export default class GuestsController {
     await auth.authenticate()
 
     const {
-      username,
       email,
       displayName,
       discordUsername,
@@ -33,7 +37,6 @@ export default class GuestsController {
       youtubeUsername,
       telegramUsername,
     } = request.only([
-      'username',
       'email',
       'displayName',
       'discordUsername',
@@ -45,9 +48,8 @@ export default class GuestsController {
     ])
 
     const guest = await Guest.firstOrCreate(
-      { username },
+      { email },
       {
-        username,
         email,
         displayName,
         discordUsername,
@@ -105,7 +107,6 @@ export default class GuestsController {
     const {
       title,
       description,
-      username,
       displayName,
       email,
       discordUsername,
@@ -117,7 +118,6 @@ export default class GuestsController {
     } = request.only([
       'title',
       'description',
-      'username',
       'displayName',
       'email',
       'discordUsername',
@@ -141,12 +141,13 @@ export default class GuestsController {
       return response.badRequest(videoFile.errors)
     }
 
+    const ipAddress = request.ip()
+
     const guest = await Guest.firstOrCreate(
-      { username },
+      { email },
       {
-        username,
         displayName,
-        ipAddress: request.ip(),
+        ipAddress,
         email,
         discordUsername,
         twitchUsername,
@@ -162,6 +163,9 @@ export default class GuestsController {
       return response.forbidden('Guest cannot diffuse')
     }
 
+    const token = crypto.randomUUID()
+    const expiresAt = DateTime.now().plus({ minutes: 15 })
+
     await videoFile.move(app.makePath(env.get('VIDEO_GUEST_PENDING_DIRECTORY')), {
       name: `${cuid()}.${videoFile.extname}`,
     })
@@ -176,10 +180,73 @@ export default class GuestsController {
       guestId: guest.id,
     })
 
+    mail.use('resend')
+
+    await mail.send((message) => {
+      message
+        .to(email)
+        .from('noreply@beyondspeedrun.com')
+        .subject('Video Upload Verification')
+        .htmlView('emails/verify_guest', {
+          guest,
+          token,
+          FRONTEND_URL: env.get('FRONTEND_URL'),
+        })
+    })
+
+    await GuestToken.create({
+      guestId: guest.id,
+      videoId: videoCreated.id,
+      token,
+      expiresAt,
+      status: 'sended',
+    })
+
     if (!videoCreated) {
       return response.internalServerError('Error creating video')
     }
 
     return response.created(videoCreated)
+  }
+
+  async validateToken({ response, params }: HttpContext) {
+    const { token } = params
+
+    const verificationToken = await GuestToken.query()
+      .where('token', token)
+      .where('expires_at', '>', DateTime.now().toSQL())
+      .where('status', 'sended')
+      .first()
+
+    if (!verificationToken) {
+      console.log('Invalid or expired token')
+
+      const guestToken = await GuestToken.query().where('token', token).first()
+      if (guestToken?.status === 'validated') {
+        return response.badRequest('Token already validated')
+      }
+
+      if (guestToken) {
+        guestToken.status = 'invalidated'
+        await guestToken.save()
+
+        const video = await Video.find(guestToken.videoId)
+        if (video) {
+          fs.unlinkSync(video.path)
+          await video.delete()
+        }
+      }
+
+      return response.badRequest('Invalid or expired token')
+    }
+
+    const video = await Video.findOrFail(verificationToken.videoId)
+    video.status = 'pending'
+    await video.save()
+
+    verificationToken.status = 'validated'
+    await verificationToken.save()
+
+    return response.ok('Video verified successfully')
   }
 }

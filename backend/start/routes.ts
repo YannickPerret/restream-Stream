@@ -12,8 +12,6 @@ import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
-import logger from '@adonisjs/core/services/logger'
-import path from 'node:path'
 const GuestsController = () => import('#controllers/guests_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
@@ -38,6 +36,7 @@ router
     router
       .group(() => {
         router.post('upload', [GuestsController, 'upload'])
+        router.get('verify/:token', [GuestsController, 'validateToken'])
       })
       .prefix('guests')
 
