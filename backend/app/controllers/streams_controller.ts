@@ -4,6 +4,7 @@ import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
+import * as fs from 'node:fs'
 import logger from '@adonisjs/core/services/logger'
 
 export default class StreamsController {
@@ -219,6 +220,8 @@ export default class StreamsController {
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
+
+    stream.removeAssets()
     streamManager.removeStream(params.id)
     await stream.delete()
     return response.ok({ message: 'Stream deleted' })

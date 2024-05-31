@@ -277,4 +277,38 @@ export default class Stream extends BaseModel {
     const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1)
     return primary ?? null
   }
+
+  removeAssets() {
+    if (this.logo) {
+      fs.unlink(this.logo, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.overlay) {
+      fs.unlink(this.overlay, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.guestFile) {
+      fs.unlink(this.guestFile, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.cryptoFile) {
+      fs.unlink(this.cryptoFile, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+  }
 }

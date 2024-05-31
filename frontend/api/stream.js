@@ -58,7 +58,6 @@ export class StreamApi extends Api {
         if(!response.ok) {
             throw new Error('Error while deleting stream');
         }
-        return await response.json();
     }
 
     static async start(id) {

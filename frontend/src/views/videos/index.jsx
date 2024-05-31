@@ -11,7 +11,7 @@ import {useState} from "react";
 
 export default function VideoIndexView() {
     const videos = useVideoStore.use.videos();
-    const removeVideo = useVideoStore.use.deleteVideoById;
+    const removeVideo = useVideoStore.use.deleteVideoById();
     const [selectedVideo, setSelectedVideo] = useState(null);
 
 

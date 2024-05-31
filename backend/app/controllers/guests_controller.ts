@@ -5,10 +5,8 @@ import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 import { cuid } from '@adonisjs/core/helpers'
 import * as fs from 'node:fs'
-import hash from '@adonisjs/core/services/hash'
 import { DateTime } from 'luxon'
 import GuestToken from '#models/guest_token'
-import { Message } from '@adonisjs/mail'
 import mail from '@adonisjs/mail/services/main'
 
 export default class GuestsController {
@@ -159,9 +157,7 @@ export default class GuestsController {
       }
     )
 
-    console.log('Guest:', guest)
     if (Number(guest.canDiffuse) !== 1) {
-      console.log('Deleting file', videoFile.tmpPath)
       fs.unlinkSync(videoFile.tmpPath as string)
       return response.forbidden('Guest cannot diffuse')
     }
@@ -179,7 +175,7 @@ export default class GuestsController {
       path: videoFile.filePath as string,
       duration: await Video.getDuration(videoFile.filePath as string),
       showInLive: true,
-      status: 'pending',
+      status: 'unpublished',
       guestId: guest.id,
     })
 
