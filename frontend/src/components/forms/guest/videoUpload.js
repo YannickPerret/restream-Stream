@@ -7,7 +7,6 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm, isUpl
         title: '',
         description: '',
         video: '',
-        username: '',
         email: '',
         displayName: '',
         discordUsername: '',
@@ -81,16 +80,6 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm, isUpl
             </FormGroup>
 
             <FormGroup title={"User information"}>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username (if already have upload video, make just your username)</label>
-                <input
-                    type="text"
-                    id="username"
-                    name="username"
-                    required
-                    onChange={handleInputChange}
-                    value={formState.username}
-                    className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                />
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
                 <input
                     type="email"
@@ -110,6 +99,7 @@ export default function GuestVideoUploadForm({ setVideoFile, onSubmitForm, isUpl
                     onChange={handleInputChange}
                     value={formState.displayName}
                     className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                    required
                 />
             </FormGroup>
 

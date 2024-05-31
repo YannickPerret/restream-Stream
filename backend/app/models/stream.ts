@@ -112,7 +112,7 @@ export default class Stream extends BaseModel {
     const guestText = !currentVideo.showInLive
       ? ''
       : currentVideo.guest
-        ? `Upload by : ${currentVideo.guest.displayName || currentVideo.guest.username}`
+        ? `Upload by : ${currentVideo.guest.displayName}`
         : currentVideo.user
           ? `Upload by : ${currentVideo.user.fullName}`
           : 'Guest is not loaded for the current video'

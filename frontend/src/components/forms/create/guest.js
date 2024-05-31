@@ -5,7 +5,6 @@ import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 
 export default function GuestForm({onSubmit}) {
     const [guest, setGuest] = useState({
-        username: '',
         email: '',
         displayName: '',
         discordUsername: '',
@@ -33,15 +32,6 @@ export default function GuestForm({onSubmit}) {
     return (
         <Form onSubmit={handleSubmit} className="space-y-4">
             <FormGroup title="Guest informations">
-                <label htmlFor="username">Username:</label>
-                <input
-                    type="text"
-                    name="username"
-                    value={guest.username}
-                    onChange={handleChange}
-                    placeholder="Username"
-                    required
-                />
                 <label htmlFor="email">Email:</label>
                 <input
                     type="email"
