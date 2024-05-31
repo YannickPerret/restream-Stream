@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Timeline from '#models/timeline'
 import TimelineItem from '#models/timeline_item'
 import logger from '@adonisjs/core/services/logger'
+import * as fs from 'node:fs'
 
 export default class TimelinesController {
   /**
@@ -139,6 +140,12 @@ export default class TimelinesController {
     if (timeline.userId !== user.id) {
       return response.forbidden('You are not authorized to delete this timeline')
     }
+
+    fs.unlink(timeline.filePath, (err) => {
+      if (err) {
+        logger.error(err)
+      }
+    })
 
     await timeline.delete()
     return response.noContent()

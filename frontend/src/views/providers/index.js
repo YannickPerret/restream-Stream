@@ -6,11 +6,16 @@ import ProvidersEditView from "@/views/providers/edit.jsx";
 
 export default function ProviderIndex() {
     const providers = useProviderStore.use.providers()
+    const deleteById = useProviderStore.use.deleteProviderById()
     const [selectedProvider, setSelectedProvider] = useState(null);
 
 
     if (!providers) {
         return <div>Loading...</div>
+    }
+
+    const handleDelete = async (id) => {
+        await deleteById(id)
     }
 
     return (
@@ -44,7 +49,7 @@ export default function ProviderIndex() {
                             <td>
                                 <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                                         onClick={() => setSelectedProvider(provider)}>Edit</button>
-                                <button className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">Delete</button>
+                                <button className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded" onClick={() => {handleDelete(provider.id)}}>Delete</button>
                             </td>
                         </tr>
                     ))}

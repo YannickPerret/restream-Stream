@@ -5,7 +5,6 @@ import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 
 
 export default function GuestEditForm({guest, handleSubmit}) {
-    const [username, setUsername] = useState(guest.username ||'')
     const [email, setEmail] = useState(guest.email ||'')
     const [displayName, setDisplayName] = useState(guest.displayName ||'')
     const [discordUsername , setDiscordUsername] = useState(guest.discordUsername ||'')
@@ -21,7 +20,6 @@ export default function GuestEditForm({guest, handleSubmit}) {
     const handleLocalSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData();
-        formData.append('username', username);
         formData.append('email', email);
         formData.append('displayName', displayName);
         formData.append('discordUsername', discordUsername);
@@ -38,10 +36,6 @@ export default function GuestEditForm({guest, handleSubmit}) {
     return (
         <Form onSubmit={handleLocalSubmit}>
             <FormGroup title={'General'} type={"row"}>
-                <FormGroup type={"row"}>
-                    <label htmlFor="username">Username</label>
-                    <input type="text" id="username" name="username" onChange={(e) => setUsername(e.target.value)} value={username}/>
-                </FormGroup>
                 <FormGroup type={"row"}>
                     <label htmlFor="email">Email</label>
                     <input type="text" id="email" name="email" onChange={(e) => setEmail(e.target.value)} value={email}/>

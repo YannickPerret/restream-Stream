@@ -6,13 +6,13 @@ export default class Guest extends BaseModel {
   declare id: number
 
   @column()
-  declare username: string
-
-  @column()
   declare email: string
 
   @column()
   declare displayName: string
+
+  @column()
+  declare ipAddress: string
 
   @column()
   declare discordUsername: string

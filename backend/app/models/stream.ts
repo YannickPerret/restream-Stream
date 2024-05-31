@@ -112,7 +112,7 @@ export default class Stream extends BaseModel {
     const guestText = !currentVideo.showInLive
       ? ''
       : currentVideo.guest
-        ? `Upload by : ${currentVideo.guest.displayName || currentVideo.guest.username}`
+        ? `Upload by : ${currentVideo.guest.displayName}`
         : currentVideo.user
           ? `Upload by : ${currentVideo.user.fullName}`
           : 'Guest is not loaded for the current video'
@@ -276,5 +276,39 @@ export default class Stream extends BaseModel {
     const providers = await this.related('providers').query().pivotColumns(['on_primary'])
     const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1)
     return primary ?? null
+  }
+
+  removeAssets() {
+    if (this.logo) {
+      fs.unlink(this.logo, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.overlay) {
+      fs.unlink(this.overlay, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.guestFile) {
+      fs.unlink(this.guestFile, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
+
+    if (this.cryptoFile) {
+      fs.unlink(this.cryptoFile, (err) => {
+        if (err) {
+          logger.error(err)
+        }
+      })
+    }
   }
 }

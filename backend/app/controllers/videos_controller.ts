@@ -139,7 +139,8 @@ export default class VideosController {
   async destroy({ params, auth, response }: HttpContext) {
     const user = await auth.authenticate()
     const video = await Video.findOrFail(params.id)
-    if (video.userId !== user.id) {
+
+    if (video.user && video.user.id !== user.id) {
       return response.forbidden('You are not authorized to delete this video')
     }
     // Delete the video file
@@ -149,7 +150,7 @@ export default class VideosController {
       }
     })
     await video.delete()
-    return response.status(200)
+    return response.noContent()
   }
 
   async serve({ response, params }: HttpContext) {

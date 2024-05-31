@@ -67,7 +67,6 @@ export class VideoApi extends Api {
         if(!response.ok) {
             throw new Error('Error while deleting stream');
         }
-        return await response.json();
     }
 
     static async validate (id) {

@@ -12,7 +12,6 @@ import GuestForm from "#components/forms/create/guest.js";
 
 export default function GuestCreatePage() {
     const [guest, setGuest] = useState({
-        username: '',
         email: '',
         displayName: '',
         discordUsername: '',
@@ -32,7 +31,6 @@ export default function GuestCreatePage() {
             if (response.ok) {
                 console.log('Guest created successfully');
                 setGuest({
-                    username: '',
                     email: '',
                     displayName: '',
                     discordUsername: '',

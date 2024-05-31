@@ -58,6 +58,5 @@ export class ProviderApi extends Api {
         if(!response.ok) {
             throw new Error('Error while deleting stream');
         }
-        return await response.json();
     }
 }

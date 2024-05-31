@@ -35,7 +35,7 @@ export default function PlaylistShowView() {
                                         {item.guest ? (
                                             <>
                                                 {item.user && <span>Validate by: {item.user.fullName}</span>}<br />
-                                                {item.guest && <span>Upload by Guest: {item.guest.username}</span>}
+                                                {item.guest && <span>Upload by Guest: {item.guest.displayName}</span>}
                                             </>
                                         ) : (
                                             <span>Upload by: {item.user.fullName}</span>
