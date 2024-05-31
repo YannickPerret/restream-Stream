@@ -155,10 +155,13 @@ export default class GuestsController {
         twitterUsername,
         youtubeUsername,
         telegramUsername,
+        canDiffuse: 1,
       }
     )
 
-    if (!guest.canDiffuse) {
+    console.log('Guest:', guest)
+    if (Number(guest.canDiffuse) !== 1) {
+      console.log('Deleting file', videoFile.tmpPath)
       fs.unlinkSync(videoFile.tmpPath as string)
       return response.forbidden('Guest cannot diffuse')
     }
@@ -219,8 +222,6 @@ export default class GuestsController {
       .first()
 
     if (!verificationToken) {
-      console.log('Invalid or expired token')
-
       const guestToken = await GuestToken.query().where('token', token).first()
       if (guestToken?.status === 'validated') {
         return response.badRequest('Token already validated')
