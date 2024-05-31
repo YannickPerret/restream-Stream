@@ -33,4 +33,17 @@ export default await Env.create(new URL('../', import.meta.url), {
   VIDEO_PROCESSING_DIRECTORY: Env.schema.string(),
   VIDEO_GUEST_PENDING_DIRECTORY: Env.schema.string(),
   TIMELINE_PLAYLIST_DIRECTORY: Env.schema.string(),
+  FRONTEND_URL: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring the mail package
+  |----------------------------------------------------------
+  */
+  SMTP_HOST: Env.schema.string(),
+  SMTP_PORT: Env.schema.number(),
+  SMTP_USERNAME: Env.schema.string(),
+  SMTP_PASSWORD: Env.schema.string(),
+
+  RESEND_API_KEY: Env.schema.string(),
 })
