@@ -6,9 +6,6 @@ export default class Guest extends BaseModel {
   declare id: number
 
   @column()
-  declare username: string
-
-  @column()
   declare email: string
 
   @column()
