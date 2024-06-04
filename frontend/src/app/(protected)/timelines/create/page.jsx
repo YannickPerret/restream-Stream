@@ -9,7 +9,7 @@ import VideoCardItem from "#components/cards/VideoCardItem.jsx";
 import PlaylistCardItem from "#components/cards/PlaylistCardItem.jsx";
 import SimpleCardList from "#components/cards/SimpleCardList.jsx";
 import CardList from "#components/cards/CardList";
-import {getDurationInFormat} from "#helpers/time.js";
+import { getDurationInFormat } from "#helpers/time.js";
 
 export default function TimelineCreatePage() {
     const [timeline, setTimeline] = useState({
@@ -21,7 +21,6 @@ export default function TimelineCreatePage() {
 
     const [addAutoTransitionAfter, setAddAutoTransitionAfter] = useState(false);
     const [videoTransition, setVideoTransition] = useState("");
-
 
     const fetchVideos = useVideoStore.use.fetchVideos();
     const fetchPlaylists = usePlaylistStore.use.fetchPlaylists();
@@ -41,13 +40,12 @@ export default function TimelineCreatePage() {
             order: index
         }));
 
-        await TimelineApi.create({ ...newTimeline, items: itemsForBackend }).then((response) => {
-            if (response.ok) {
-                console.log('Timeline created successfully');
-                setTimeline({ title: '', description: '', isPublished: true, items: [] });
-                localStorage.removeItem('timeline');
-            }
-        });
+        const response = await TimelineApi.create({ ...newTimeline, items: itemsForBackend });
+        if (response.ok) {
+            console.log('Timeline created successfully');
+            setTimeline({ title: '', description: '', isPublished: true, items: [] });
+            localStorage.removeItem('timeline');
+        }
     };
 
     const addVideoToTimeline = (video) => {
@@ -56,7 +54,7 @@ export default function TimelineCreatePage() {
             {
                 type: "video",
                 video: video,
-                key: `video-${video.id}-${timeline.items.length}`
+                key: `video-${video.id}-${Date.now()}`
             }
         ];
         if (addAutoTransitionAfter && videoTransition) {
@@ -65,7 +63,7 @@ export default function TimelineCreatePage() {
                 newItems.push({
                     type: "video",
                     video: transitionVideo,
-                    key: `transition-${transitionVideo.id}-${newItems.length}`
+                    key: `transition-${transitionVideo.id}-${Date.now()}`
                 });
             }
         }
@@ -81,7 +79,7 @@ export default function TimelineCreatePage() {
             {
                 type: "playlist",
                 playlist: playlist,
-                key: `playlist-${playlist.id}-${timeline.items.length}`
+                key: `playlist-${playlist.id}-${Date.now()}`
             }
         ];
         if (addAutoTransitionAfter && videoTransition) {
@@ -90,7 +88,7 @@ export default function TimelineCreatePage() {
                 newItems.push({
                     type: "video",
                     video: transitionVideo,
-                    key: `transition-${transitionVideo.id}-${newItems.length}`
+                    key: `transition-${transitionVideo.id}-${Date.now()}`
                 });
             }
         }
@@ -108,16 +106,21 @@ export default function TimelineCreatePage() {
     };
 
     const onListChange = (newList) => {
+        const updatedItems = newList.map((item, index) => ({
+            ...item,
+            order: index,
+        }));
         setTimeline((prevTimeline) => ({
             ...prevTimeline,
-            items: newList
+            items: updatedItems
         }));
     };
 
     const videoItems = videos.map(video => ({
-        id: video.id,
+        id: `video-${video.id}`,
         content: (
             <VideoCardItem
+                key={`video-${video.id}`}
                 video={video}
                 addable
                 add={() => addVideoToTimeline(video)}
@@ -126,9 +129,10 @@ export default function TimelineCreatePage() {
     }));
 
     const playlistItems = playlists.map(playlist => ({
-        id: playlist.id,
+        id: `playlist-${playlist.id}`,
         content: (
             <PlaylistCardItem
+                key={`playlist-${playlist.id}`}
                 playlist={playlist}
                 addable
                 add={() => addPlaylistToTimeline(playlist)}
@@ -138,9 +142,11 @@ export default function TimelineCreatePage() {
 
     const timelineItems = timeline.items.map((item, index) => ({
         id: item.key,
+        key: item.key,
         content: (
             item.type === 'video' ? (
                 <VideoCardItem
+                    key={item.key}
                     video={item.video}
                     number={index + 1}
                     draggable
@@ -148,6 +154,7 @@ export default function TimelineCreatePage() {
                 />
             ) : (
                 <PlaylistCardItem
+                    key={item.key}
                     playlist={item.playlist}
                     number={index + 1}
                     draggable

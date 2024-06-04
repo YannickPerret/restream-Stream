@@ -9,6 +9,7 @@ export default function VideosShowView(){
     if(!video) {
         return <div className="p-4">Loading...</div>
     }
+    console.log(video)
     return(
         <div className="p-4">
             <div className="shadow-md rounded p-4">
@@ -21,7 +22,7 @@ export default function VideosShowView(){
                 <p>Video status : {video.status}</p>
                 {video.guest ? (
                     <>
-                        {video.user && <span>Validate by: {video.user.fullName}</span>}<br />
+                        {video.user && <span>Validate by: {video.user?.fullName}</span>}<br />
                         {video.guest && <span>Upload by Guest: {video.guest.displayName}</span>}
                     </>
                 ) : (

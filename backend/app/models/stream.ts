@@ -1,5 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, manyToMany, afterCreate } from '@adonisjs/lucid/orm'
+import {
+  BaseModel,
+  belongsTo,
+  column,
+  manyToMany,
+  afterCreate,
+  beforeDelete,
+} from '@adonisjs/lucid/orm'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
@@ -99,9 +106,14 @@ export default class Stream extends BaseModel {
     stream.cryptoFile = path.join(dir, `${cuid()}_crypto.txt`)
 
     fs.writeFileSync(stream.guestFile, 'Upload by : CoffeeStream')
-    fs.writeFileSync(stream.cryptoFile, 'Market : 0.00 XNeuros')
+    fs.writeFileSync(stream.cryptoFile, 'Market : 0.00 XNeuros / $')
 
     await stream.save()
+  }
+
+  @beforeDelete()
+  static async deleteBaseFiles(stream: Stream) {
+    stream.removeAssets()
   }
 
   async updateGuestText() {
@@ -130,7 +142,7 @@ export default class Stream extends BaseModel {
           return data.stats[data.stats.length - 1][1] || 0
         })
     }
-    fs.writeFileSync(this.cryptoFile, `Market : ${value} $Neuros`)
+    fs.writeFileSync(this.cryptoFile, `Market : ${value} XNeuros / $`)
   }
 
   async nextVideo() {

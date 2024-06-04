@@ -130,6 +130,9 @@ export default class VideosController {
     video.showInLive = showInLive
 
     await video.save()
+    await video.load('user')
+    await video.load('guest')
+
     return response.json(video)
   }
 

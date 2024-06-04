@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { StreamApi } from '#api/stream.js';
 import SearchForm from '../../search/searchForm.jsx';
+import Form from "#components/forms/handleForm/form.jsx";
+import FormGroup from "#components/forms/handleForm/formGroup.jsx";
 
 export default function StreamForm({ onSubmit }) {
     const [title, setTitle] = useState('');
@@ -10,6 +12,7 @@ export default function StreamForm({ onSubmit }) {
     const [primaryProvider, setPrimaryProvider] = useState(null);
     const [runLive, setRunLive] = useState(false);
     const [logo, setLogo] = useState('')
+    const [overlay, setOverlay] = useState('')
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -27,6 +30,9 @@ export default function StreamForm({ onSubmit }) {
 
         if (logo) {
             formData.append('logo', logo);
+        }
+        if (overlay) {
+            formData.append('overlay', overlay);
         }
 
         await StreamApi.create(formData).then(response => {
@@ -52,57 +58,78 @@ export default function StreamForm({ onSubmit }) {
     }, [providers]);
 
     return (
-        <form onSubmit={handleSubmit}>
-            <label>Title</label>
-            <input
-                type="text"
-                placeholder="Enter Title"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                required={true}
-            />
-            <div>
-                Timeline selected:
-                <div>
-                    <label>{timeline?.title}</label>
-                </div>
-            </div>
+        <Form onSubmit={handleSubmit}>
+            <FormGroup title={"Stream"} type={"column"}>
+                <FormGroup type={"row"}>
+                    <label>Title</label>
+                    <input
+                        type="text"
+                        placeholder="Enter Title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        required={true}
+                    />
+                </FormGroup>
+            </FormGroup>
 
-            <div>
-                <label>Timeline</label>
-                <SearchForm searchUrl="timelines" multiple={false} updateSelectedItems={setTimeline} />
-            </div>
+            <FormGroup title={"Timeline"} type={"column"}>
+                <FormGroup type={"row"}>
+                    <label>Timeline</label>
+                    <SearchForm searchUrl="timelines" multiple={false} updateSelectedItems={setTimeline} />
+                </FormGroup>
 
-            <div>
-                Providers selected:
-                {providers.map(provider => (
-                    <div key={provider.id}>
-                        <label>{provider.name}</label>
-                        <input
-                            type="radio"
-                            checked={primaryProvider ? provider.id === primaryProvider.id : false}
-                            onChange={() => handlePrimaryChange(provider)}
-                        />
+                <FormGroup type={"row"}>
+                    <label>Timeline selected:</label>
+                    <div>
+                        <label>{timeline?.title}</label>
                     </div>
-                ))}
-            </div>
+                </FormGroup>
+            </FormGroup>
 
-            <div>
-                <label>Provider</label>
-                <SearchForm searchUrl="providers" multiple={true} updateSelectedItems={setProviders} />
-            </div>
+            <FormGroup title={"Providers"} type={"column"}>
+                <FormGroup type={"row"}>
+                    <label>Providers selected : <span style={{color:"mediumvioletred"}}>(check one primary provider required)</span></label>
+                    {providers.map(provider => (
+                        <div key={provider.id}>
+                            <label>{provider.name}</label>
+                            <input
+                                type="radio"
+                                checked={primaryProvider ? provider.id === primaryProvider.id : false}
+                                onChange={() => handlePrimaryChange(provider)}
+                            />
+                        </div>
+                    ))}
+                </FormGroup>
 
-            <div>
-                <label>Upload logo</label>
-                <input type="file" onChange={e => setLogo(e.target.files[0])} accept={'image/*'} />
-            </div>
+                <FormGroup type={"row"}>
+                    <label>Provider</label>
+                    <SearchForm searchUrl="providers" multiple={true} updateSelectedItems={setProviders} />
+                </FormGroup>
+            </FormGroup>
 
-            <div>
-                <label>Launch live directly</label>
-                <input type="checkbox" checked={runLive} onChange={e => setRunLive(e.target.checked)} />
-            </div>
+            <FormGroup title={"Assets"} type={"column"}>
+                <FormGroup type={"row"}>
+                    <label>Upload logo</label>
+                    <input type="file" onChange={e => setLogo(e.target.files[0])} accept={'image/*'}/>
+                </FormGroup>
 
-            <button type="submit">Submit</button>
-        </form>
+                <FormGroup type={"row"}>
+                    <label>Upload overlay</label>
+                    <input type="file" onChange={e => setOverlay(e.target.files[0])} accept={'image/*'}/>
+                </FormGroup>
+            </FormGroup>
+
+            <FormGroup title={"Options"} type={"column"}>
+                <FormGroup type={"row"}>
+                    <label>Launch live directly</label>
+                    <input type="checkbox" checked={runLive} onChange={e => setRunLive(e.target.checked)} />
+                </FormGroup>
+            </FormGroup>
+
+
+            <FormGroup title="Validations" type={"row"}>
+                <button className="btn btn-success" type="submit">Create new timeline</button>
+            </FormGroup>
+        </Form>
     );
 }

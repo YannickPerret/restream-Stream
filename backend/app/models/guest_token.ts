@@ -21,7 +21,7 @@ export default class GuestToken extends BaseModel {
   declare status: string
 
   @column.dateTime()
-  declare expiresAt: DateTime
+  declare expiresAt: DateTime | null
 
   @belongsTo(() => Guest)
   declare guest: BelongsTo<typeof Guest>

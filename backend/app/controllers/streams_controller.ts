@@ -4,8 +4,7 @@ import Provider from '#models/provider'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
-import * as fs from 'node:fs'
-import logger from '@adonisjs/core/services/logger'
+import env from '#start/env'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
@@ -98,6 +97,10 @@ export default class StreamsController {
       size: '5mb',
       extnames: ['jpg', 'png', 'jpeg'],
     })
+    const overlayFile = request.file('overlay', {
+      size: '50mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    })
 
     if (!title || !providersForm || !timeline) {
       return response.badRequest({ error: 'Missing required fields' })
@@ -115,8 +118,14 @@ export default class StreamsController {
     }
 
     if (logoFile && logoFile.isValid) {
-      await logoFile.move(app.makePath('public/assets/streams/logo/'), {
+      await logoFile.move(app.publicPath(env.get('LOGO_DIRECTORY')), {
         name: `${cuid()}.${logoFile.extname}`,
+      })
+    }
+
+    if (overlayFile && overlayFile.isValid) {
+      await overlayFile.move(app.publicPath(env.get('OVERLAY_DIRECTORY')), {
+        name: `${cuid()}.${overlayFile.extname}`,
       })
     }
 
@@ -124,12 +133,11 @@ export default class StreamsController {
       name: title,
       pid: 0,
       status: 'inactive',
-      startTime: null,
-      endTime: null,
       userId: user.id,
       type: type,
       timelineId: timeline,
-      logo: logoFile?.filePath,
+      logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
+      overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
     })
 
@@ -169,10 +177,10 @@ export default class StreamsController {
 
     if (logoFile) {
       if (logoFile.isValid) {
-        await logoFile.move(app.publicPath('assets/streams/logo/'), {
+        await logoFile.move(app.publicPath(env.get('LOGO_DIRECTORY')), {
           name: `${cuid()}.${logoFile.extname}`,
         })
-        stream.logo = '/assets/streams/logo/' + logoFile.fileName
+        stream.logo = env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName
       } else {
         return response.badRequest({ error: 'Invalid logo file' })
       }
@@ -180,10 +188,10 @@ export default class StreamsController {
 
     if (overlayFile) {
       if (overlayFile.isValid) {
-        await overlayFile.move(app.publicPath('assets/streams/overlay/'), {
+        await overlayFile.move(app.publicPath(env.get('OVERLAY_DIRECTORY')), {
           name: `${cuid()}.${overlayFile.extname}`,
         })
-        stream.overlay = '/assets/streams/overlay/' + overlayFile.fileName
+        stream.overlay = env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName
       } else {
         return response.badRequest({ error: 'Invalid overlay file' })
       }
@@ -213,6 +221,9 @@ export default class StreamsController {
   async destroy({ params, response, auth }: HttpContext) {
     const user = await auth.authenticate()
     const stream = await Stream.findOrFail(params.id)
+    if (stream.status === 'active') {
+      return response.badRequest({ error: 'Stream is active' })
+    }
     if (stream.userId !== user.id) {
       return response.forbidden('You are not authorized to delete this stream')
     }
@@ -224,6 +235,6 @@ export default class StreamsController {
     stream.removeAssets()
     streamManager.removeStream(params.id)
     await stream.delete()
-    return response.ok({ message: 'Stream deleted' })
+    return response.noContent()
   }
 }

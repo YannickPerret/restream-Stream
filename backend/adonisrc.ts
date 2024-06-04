@@ -14,7 +14,7 @@ export default defineConfig({
     () => import('@adonisjs/core/commands'),
     () => import('@adonisjs/lucid/commands'),
     () => import('adonisjs-scheduler/commands'),
-    () => import('@adonisjs/mail/commands')
+    () => import('@adonisjs/mail/commands'),
   ],
 
   /*
@@ -44,7 +44,7 @@ export default defineConfig({
       environment: ['console', 'web'],
     },
     () => import('@adonisjs/mail/mail_provider'),
-    () => import('@adonisjs/core/providers/edge_provider')
+    () => import('@adonisjs/core/providers/edge_provider'),
   ],
 
   /*
@@ -77,20 +77,20 @@ export default defineConfig({
   tests: {
     suites: [
       {
-        files: ['tests/unit/**/*.spec(.ts|.js)'],
-        name: 'unit',
-        timeout: 2000,
+        name: 'functional',
+        files: ['tests/functional/**/*.spec.(js|ts)'],
       },
       {
-        files: ['tests/functional/**/*.spec(.ts|.js)'],
-        name: 'functional',
-        timeout: 30000,
+        name: 'unit',
+        files: ['tests/unit/**/*.spec.(js|ts)'],
       },
     ],
     forceExit: false,
   },
-  metaFiles: [{
-    pattern: 'resources/views/**/*.edge',
-    reloadServer: false,
-  }]
+  metaFiles: [
+    {
+      pattern: 'resources/views/**/*.edge',
+      reloadServer: false,
+    },
+  ],
 })

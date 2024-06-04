@@ -1,5 +1,12 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
+import {
+  BaseModel,
+  beforeCreate,
+  beforeDelete,
+  belongsTo,
+  column,
+  manyToMany,
+} from '@adonisjs/lucid/orm'
 import User from '#models/user'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
@@ -28,7 +35,7 @@ export default class Video extends BaseModel {
   declare status: 'published' | 'unpublished' | 'pending'
 
   @column()
-  declare showInLive: boolean
+  declare showInLive: number
 
   @column()
   declare userId: number | null
@@ -52,6 +59,12 @@ export default class Video extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @beforeCreate()
+  static async setDuration(video: Video) {
+    if (video.path === null) return
+    video.duration = (await Video.getDuration(video.path)) || 0
+  }
 
   static async getInformation(path: string): Promise<ffmpeg.FfprobeData> {
     return new Promise((resolve, reject) => {

@@ -174,7 +174,7 @@ export default class GuestsController {
       description,
       path: videoFile.filePath as string,
       duration: await Video.getDuration(videoFile.filePath as string),
-      showInLive: true,
+      showInLive: 1,
       status: 'unpublished',
       guestId: guest.id,
     })
@@ -211,39 +211,47 @@ export default class GuestsController {
   async validateToken({ response, params }: HttpContext) {
     const { token } = params
 
-    const verificationToken = await GuestToken.query()
-      .where('token', token)
-      .where('expires_at', '>', DateTime.now().toSQL())
-      .where('status', 'sended')
-      .first()
+    const guestToken = await GuestToken.query().where('token', token).first()
 
-    if (!verificationToken) {
-      const guestToken = await GuestToken.query().where('token', token).first()
-      if (guestToken?.status === 'validated') {
-        return response.badRequest('Token already validated')
-      }
-
-      if (guestToken) {
-        guestToken.status = 'invalidated'
-        await guestToken.save()
-
-        const video = await Video.find(guestToken.videoId)
-        if (video) {
-          fs.unlinkSync(video.path)
-          await video.delete()
-        }
-      }
-
-      return response.badRequest('Invalid or expired token')
+    if (!guestToken) {
+      return response.badRequest('Invalid token')
     }
 
-    const video = await Video.findOrFail(verificationToken.videoId)
-    video.status = 'pending'
-    await video.save()
+    // Check if the token is already validated
+    if (guestToken.status === 'validated') {
+      return response.badRequest('Token already validated')
+    }
 
-    verificationToken.status = 'validated'
-    await verificationToken.save()
+    // Check if the token is expired
+    if (
+      !guestToken.expiresAt ||
+      DateTime.fromSQL(guestToken.expiresAt.toSQL()!) <= DateTime.now()
+    ) {
+      guestToken.status = 'invalidated'
+      await guestToken.save()
 
-    return response.ok('Video verified successfully')
+      const video = await Video.find(guestToken.videoId)
+      if (video) {
+        fs.unlinkSync(video.path)
+        await video.delete()
+      }
+
+      return response.badRequest('Expired token')
+    }
+
+    // If the token is not expired and not validated yet, proceed with the validation
+    if (guestToken.status === 'sended') {
+      const video = await Video.findOrFail(guestToken.videoId)
+      video.status = 'pending'
+      await video.save()
+
+      guestToken.status = 'validated'
+      await guestToken.save()
+
+      return response.ok('Video verified successfully')
+    }
+
+    // If the token status is neither 'sended' nor 'validated', return an error
+    return response.badRequest('Invalid token status')
   }
 }

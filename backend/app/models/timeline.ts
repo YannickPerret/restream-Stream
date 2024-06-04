@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeDelete, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
 import User from '#models/user'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import * as fs from 'node:fs'
@@ -54,6 +54,13 @@ export default class Timeline extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+
+  @beforeDelete()
+  static async deletePlaylistFile(timeline: Timeline) {
+    if (timeline.filePath) {
+      await fs.promises.unlink(timeline.filePath)
+    }
+  }
 
   async generatePlaylistFile(type: string = 'm3u8', currentIndex: number = 0) {
     await this.load('items', (query) => {

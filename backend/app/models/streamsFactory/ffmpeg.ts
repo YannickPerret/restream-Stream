@@ -21,21 +21,27 @@ export default class Ffmpeg implements StreamProvider {
   ) {}
 
   startStream(): number {
-    const parameters = [
-      '-nostdin',
-      '-re',
-      '-f',
-      'concat',
-      '-safe',
-      '0',
-      '-i',
-      this.timelinePath,
-      '-i',
-      app.publicPath(this.logo),
-      '-i',
-      app.publicPath(this.overlay),
+    let parameters = ['-nostdin', '-re', '-f', 'concat', '-safe', '0', '-i', this.timelinePath]
+
+    let filterComplex = ''
+
+    if (this.logo) {
+      parameters.push('-i', app.publicPath(this.logo))
+      filterComplex += '[1:v]scale=200:-1[logo];[0:v][logo]overlay=W-w-5:5[main];'
+    } else {
+      filterComplex += '[0:v]'
+    }
+
+    if (this.overlay) {
+      parameters.push('-i', app.publicPath(this.overlay))
+      filterComplex += '[2:v]scale=-1:ih[overlay];[main][overlay]overlay=0:H-h[main];'
+    }
+
+    filterComplex += `[main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.guestFile}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.cryptoFile}:reload=1:x=w-text_w-10:y=h-text_h-10:fontsize=16:fontcolor=white`
+
+    parameters.push(
       '-filter_complex',
-      `[1:v]scale=200:-1[logo];[2:v]scale=-1:ih[overlay];[0:v][logo]overlay=W-w-5:5[main];[main][overlay]overlay=0:H-h[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.guestFile}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.cryptoFile}:reload=1:x=w-text_w-10:y=h-text_h-10:fontsize=16:fontcolor=white`,
+      filterComplex,
       '-vsync',
       'cfr',
       '-copyts',
@@ -65,8 +71,8 @@ export default class Ffmpeg implements StreamProvider {
       'aac',
       '-f',
       'flv',
-      `${this.baseUrl}/${this.streamKey}`,
-    ]
+      `${this.baseUrl}/${this.streamKey}`
+    )
 
     this.instance = spawn('ffmpeg', parameters, {
       detached: true,
