@@ -4,6 +4,7 @@ import User from '#models/user'
 import Timeline from '#models/timeline'
 import Provider from '#models/provider'
 import Video from '#models/video'
+import app from '@adonisjs/core/services/app'
 
 test.group('Stream', (group) => {
   let user: User
@@ -23,7 +24,7 @@ test.group('Stream', (group) => {
     video1 = await Video.create({
       title: 'Test Video 1',
       description: 'This is the first test video',
-      path: '/Users/tchoune/Documents/dev/js/coffeeStream/backend/tests/assets/videos/testVideo.mp4',
+      path: app.makePath('tests/assets/videos/testVideo.mp4'),
       status: 'published',
       showInLive: 1,
       userId: user.id,
@@ -32,7 +33,7 @@ test.group('Stream', (group) => {
     video2 = await Video.create({
       title: 'Test Video 2',
       description: 'This is the second test video',
-      path: '/Users/tchoune/Documents/dev/js/coffeeStream/backend/tests/assets/videos/testVideo.mp4',
+      path: app.makePath('tests/assets/videos/testVideo.mp4'),
       status: 'published',
       showInLive: 1,
       userId: user.id,

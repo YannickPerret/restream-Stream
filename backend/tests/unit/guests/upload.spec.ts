@@ -14,7 +14,7 @@ test.group('Video upload', (group) => {
   let guest: Guest
   let video: Video
   const videoPath = 'tests/assets/videos/testVideo.mp4'
-  const finalVideoPath = path.join(app.makePath(), 'uploads/videos/testVideo.mp4')
+  const finalVideoPath = path.join(app.makePath(), 'tests/uploads/videos/testVideo.mp4')
 
   group.setup(async () => {
     user = await User.firstOrCreate({
@@ -44,12 +44,16 @@ test.group('Video upload', (group) => {
   })
 
   group.teardown(async () => {
-    //if (video) await video.delete()
+    if (video) await video.delete()
     if (guest) await guest.delete()
     if (user) await user.delete()
+    if (fs.existsSync(finalVideoPath)) fs.unlink(finalVideoPath, () => {})
   })
 
   test('upload a video and send email', async ({ assert, mailer }) => {
+    // Fake the email service
+    const email = mailer.fake()
+
     const token = 'test-token'
     const expiresAt = DateTime.now().plus({ minutes: 15 })
 
@@ -69,9 +73,6 @@ test.group('Video upload', (group) => {
       expiresAt,
       status: 'sended',
     })
-
-    // Mock the email sending
-    const email = mailer.fake()
 
     await mail.send((message) => {
       message
@@ -96,6 +97,7 @@ test.group('Video upload', (group) => {
     assert.include(recentEmail.html, 'Verify Video')
     assert.include(recentEmail.html, `token=${token}`)
 
+    // Restore the mailer
     mailer.restore()
 
     // Ensure the video exists

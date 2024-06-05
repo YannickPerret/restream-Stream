@@ -7,8 +7,10 @@ import Video from '#models/video'
 import app from '@adonisjs/core/services/app'
 import path from 'node:path'
 import * as fs from 'node:fs'
+import { execSync } from 'node:child_process'
+import logger from '@adonisjs/core/services/logger'
 
-test.group('Stream remove', (group) => {
+test.group('Stream create, start, and restart', (group) => {
   let user: User
   let stream: Stream
   let timeline: Timeline
@@ -31,7 +33,6 @@ test.group('Stream remove', (group) => {
       title: 'Test Video 1',
       description: 'This is the first test video',
       path: app.makePath('tests/assets/videos/testVideo.mp4'),
-      duration: 120,
       status: 'published',
       showInLive: 1,
       userId: user.id,
@@ -41,7 +42,6 @@ test.group('Stream remove', (group) => {
       title: 'Test Video 2',
       description: 'This is the second test video',
       path: app.makePath('tests/assets/videos/testVideo.mp4'),
-      duration: 180,
       status: 'published',
       showInLive: 1,
       userId: user.id,
@@ -85,7 +85,7 @@ test.group('Stream remove', (group) => {
 
     stream = await Stream.create({
       name: 'Test Stream',
-      restartTimes: 1777700,
+      restartTimes: 5000, // Set to a small value for testing
       type: 'ffmpeg',
       userId: user.id,
       timelineId: timeline.id,
@@ -101,6 +101,10 @@ test.group('Stream remove', (group) => {
   })
 
   group.teardown(async () => {
+    if (stream) {
+      await stream.stop()
+      await stream.delete()
+    }
     if (timeline) await timeline.delete()
     if (video1) await video1.delete()
     if (video2) await video2.delete()
@@ -117,24 +121,82 @@ test.group('Stream remove', (group) => {
     }
   })
 
-  test('remove a created stream', async ({ assert }) => {
-    // Verify the stream exists before deletion
+  test('create and start a new stream', async ({ assert }) => {
+    // Load the timeline and providers
+    await stream.load('timeline')
+    await stream.load('providers')
+
+    // Verify the stream exists before starting
     let streamExists = await Stream.find(stream.id)
-    assert.exists(streamExists, 'Stream should exist before deletion')
+    assert.exists(streamExists, 'Stream should exist before starting')
 
-    // Verify the assets exist before deletion
-    assert.isTrue(fs.existsSync(finalLogoPath), 'Logo should exist before deletion')
-    assert.isTrue(fs.existsSync(finalOverlayPath), 'Overlay should exist before deletion')
+    logger.info('oui')
+    // Start the stream
+    await stream.run()
 
-    // Delete the stream
-    await stream.delete()
-
-    // Verify the stream does not exist after deletion
+    // Verify the stream status is active after starting
     streamExists = await Stream.find(stream.id)
-    assert.isNull(streamExists, 'Stream should not exist after deletion')
+    assert.exists(streamExists, 'Stream should exist after starting')
+    assert.equal(streamExists!.status, 'active', 'Stream should be active after starting')
 
-    // Verify the assets do not exist after deletion
-    assert.isFalse(fs.existsSync(finalLogoPath), 'Logo should not exist after deletion')
-    assert.isFalse(fs.existsSync(finalOverlayPath), 'Overlay should not exist after deletion')
+    // Verify that the ffmpeg process is running with the correct PID
+    const pid = streamExists!.pid
+    assert.isTrue(pid > 0, 'FFmpeg process should have a valid PID')
+
+    try {
+      const output = execSync(`ps -p ${pid}`).toString()
+      assert.include(output, `ffmpeg`, 'FFmpeg process should be running')
+    } catch (error) {
+      assert.fail(`FFmpeg process with PID ${pid} is not running`)
+    }
+  })
+
+  test('restart stream after restartTimes', async ({ assert }) => {
+    // Load the timeline and providers
+    await stream.load('timeline')
+    await stream.load('providers')
+
+    // Verify the stream exists before starting
+    let streamExists = await Stream.find(stream.id)
+    assert.exists(streamExists, 'Stream should exist before starting')
+
+    // Start the stream
+    await stream.run()
+
+    // Verify the stream status is active after starting
+    streamExists = await Stream.find(stream.id)
+    assert.exists(streamExists, 'Stream should exist after starting')
+    assert.equal(streamExists!.status, 'active', 'Stream should be active after starting')
+
+    // Verify that the ffmpeg process is running with the correct PID
+    let pid = streamExists!.pid
+    assert.isTrue(pid > 0, 'FFmpeg process should have a valid PID')
+
+    try {
+      let output = execSync(`ps -p ${pid}`).toString()
+      assert.include(output, `ffmpeg`, 'FFmpeg process should be running')
+    } catch (error) {
+      assert.fail(`FFmpeg process with PID ${pid} is not running`)
+    }
+
+    // Simulate time passing by waiting longer than restartTimes
+    await new Promise((resolve) => setTimeout(resolve, stream.restartTimes + 2000))
+
+    // Verify that the stream has been restarted
+    streamExists = await Stream.find(stream.id)
+    assert.exists(streamExists, 'Stream should exist after restart')
+    assert.equal(streamExists!.status, 'active', 'Stream should be active after restart')
+
+    // Verify that the ffmpeg process has a new PID
+    const newPid = streamExists!.pid
+    assert.isTrue(newPid > 0, 'FFmpeg process should have a valid new PID')
+    assert.notEqual(newPid, pid, 'FFmpeg process should have a different PID after restart')
+
+    try {
+      const output = execSync(`ps -p ${newPid}`).toString()
+      assert.include(output, `ffmpeg`, 'FFmpeg process should be running after restart')
+    } catch (error) {
+      assert.fail(`FFmpeg process with new PID ${newPid} is not running after restart`)
+    }
   })
 })

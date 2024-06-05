@@ -31,7 +31,7 @@ test.group('Stream create and start', (group) => {
     video1 = await Video.create({
       title: 'Test Video 1',
       description: 'This is the first test video',
-      path: '/Users/tchoune/Documents/dev/js/coffeeStream/backend/tests/assets/videos/testVideo.mp4',
+      path: app.makePath('tests/assets/videos/testVideo.mp4'),
       status: 'published',
       showInLive: 1,
       userId: user.id,
@@ -40,7 +40,7 @@ test.group('Stream create and start', (group) => {
     video2 = await Video.create({
       title: 'Test Video 2',
       description: 'This is the second test video',
-      path: '/Users/tchoune/Documents/dev/js/coffeeStream/backend/tests/assets/videos/testVideo.mp4',
+      path: app.makePath('tests/assets/videos/testVideo.mp4'),
       status: 'published',
       showInLive: 1,
       userId: user.id,
