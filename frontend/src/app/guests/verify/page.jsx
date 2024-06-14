@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function GuestAuthorize() {
+function GuestAuthorize() {
     const searchParams = useSearchParams()
     const token = searchParams.get('token')
     const [status, setStatus] = useState('Verifying...')
@@ -49,5 +49,13 @@ export default function GuestAuthorize() {
                 </div>
             </div>
         </section>
+    )
+}
+
+export default function Page() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <GuestAuthorize />
+        </Suspense>
     )
 }

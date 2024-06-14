@@ -37,6 +37,7 @@ export const useStreamStore = createSelectors(create((set, get) => ({
                     : [...state.streams, stream],
                 selectedStream: stream,
             }));
+            console.log('Fetched stream', stream);
             return stream;
         } catch (error) {
             console.error('Failed to fetch stream', error);

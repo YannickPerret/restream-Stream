@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "deploy": "pnpm run build && rsync --exclude=.git -azP . root@ip:/var/www/nextjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
