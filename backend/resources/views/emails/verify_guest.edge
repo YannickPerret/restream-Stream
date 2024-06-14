@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Coffee-Stream - Video Upload Verification</title>
+</head>
+<body>
+  <h1>Hello, {{ guest.displayName }}</h1>
+  <p>Thank you for uploading your video. Please click the link below to verify your upload:</p>
+  <a href="{{ FRONTEND_URL }}/guests/verify?token={{ token }}">Verify Video</a>
+  <p>This link will expire in 15 minutes.</p>
+</body>
+</html>
