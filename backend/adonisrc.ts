@@ -38,7 +38,6 @@ export default defineConfig({
     () => import('@adonisjs/lucid/database_provider'),
     () => import('@adonisjs/auth/auth_provider'),
     () => import('@adonisjs/transmit/transmit_provider'),
-    () => import('#providers/scheduler_provider'),
     {
       file: () => import('adonisjs-scheduler/scheduler_provider'),
       environment: ['console', 'web'],

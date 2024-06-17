@@ -9,7 +9,6 @@ import * as fs from 'node:fs'
 scheduler
   .call(async () => {
     const streamManager = Stream_manager.getAllStreams()
-    // 28 may 2024 - Perret - Fetch created by Quentin Neves
     const value = await fetch('https://www.coingecko.com/price_charts/30105/usd/24_hours.json', {
       method: 'GET',
     })
@@ -38,10 +37,6 @@ scheduler
     }
   })
   .everyHours(1)
-
-/*
- 23 May 2024 - Perret - Code to start the scheduler when server up by Tom Gobich https://discord.com/channels/423256550564691970/423256550564691972/1242858943185682586
- */
 
 if (app.getEnvironment() === 'web') {
   // boot ace, if already running it will ignore

@@ -49,4 +49,9 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   LOGO_DIRECTORY: Env.schema.string(),
   OVERLAY_DIRECTORY: Env.schema.string(),
+
+  OD_ACCESS_KEY_ID: Env.schema.string(),
+  OD_SECRET_ACCESS_KEY: Env.schema.string(),
+
+  DRIVE_DISK: Env.schema.enum(['fs'] as const),
 })

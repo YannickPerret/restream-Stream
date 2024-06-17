@@ -1,7 +1,7 @@
 import Provider from '#models/provider'
 
-export default class Twitch extends Provider {
-  private static instance: Twitch
+export default class Tiktok extends Provider {
+  private static instance: Tiktok
 
   constructor(provider: Provider) {
     super()
@@ -57,10 +57,10 @@ export default class Twitch extends Provider {
     return response.json();
   }
 
-  static getInstance(): Twitch {
-    if (!Twitch.instance) {
-      Twitch.instance = new Twitch()
+  static getInstance(): Tiktok {
+    if (!Tiktok.instance) {
+      Tiktok.instance = new Tiktok()
     }
-    return Twitch.instance
+    return Tiktok.instance
   }
 }

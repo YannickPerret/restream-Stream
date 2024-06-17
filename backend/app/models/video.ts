@@ -2,7 +2,6 @@ import { DateTime } from 'luxon'
 import {
   BaseModel,
   beforeCreate,
-  beforeDelete,
   belongsTo,
   column,
   manyToMany,
@@ -42,6 +41,9 @@ export default class Video extends BaseModel {
 
   @column()
   declare guestId: number | null
+
+  @column()
+  declare ip: string
 
   @manyToMany(() => Playlist, {
     pivotTable: 'playlist_videos',
