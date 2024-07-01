@@ -59,4 +59,16 @@ export class TimelineApi extends Api {
             throw new Error('Error while deleting stream');
         }
     }
+
+    static async generateNewTimeline(id, type) {
+        const response = await fetch(`${this.baseUrl}/api/timelines/${id}/generate`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify({type}),
+        });
+        if(!response.ok) {
+            throw new Error('Error while generating new timeline');
+        }
+        return await response.json();
+    }
 }

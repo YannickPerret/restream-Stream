@@ -2,7 +2,17 @@ import vine from '@vinejs/vine'
 
 export const registerValidator = vine.compile(
   vine.object({
-    fullName: vine.string().minLength(3).maxLength(64),
+    firstName: vine.string().minLength(3).maxLength(64).optional(),
+    lastName: vine.string().minLength(3).maxLength(64).optional(),
+    phone: vine.string().minLength(10).maxLength(15).optional(),
+    username: vine
+      .string()
+      .minLength(3)
+      .maxLength(32)
+      .unique(async (query, field) => {
+        const user = await query.from('users').where('username', field).first()
+        return !user
+      }),
     email: vine
       .string()
       .email()

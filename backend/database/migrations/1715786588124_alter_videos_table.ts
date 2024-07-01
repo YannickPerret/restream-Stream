@@ -6,7 +6,7 @@ export default class extends BaseSchema {
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
       table
-        .enum('status', ['published', 'unpublished', 'pending'])
+        .enum('status', ['published', 'unpublished', 'pending', 'encoding'])
         .defaultTo('published')
         .after('show_in_live')
 

@@ -1,4 +1,4 @@
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
 
 export default class Tiktok extends Provider {
   private static instance: Tiktok

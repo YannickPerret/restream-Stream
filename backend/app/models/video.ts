@@ -1,16 +1,9 @@
 import { DateTime } from 'luxon'
-import {
-  BaseModel,
-  beforeCreate,
-  belongsTo,
-  column,
-  manyToMany,
-} from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, belongsTo, column, manyToMany } from '@adonisjs/lucid/orm'
 import User from '#models/user'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
 import Playlist from '#models/playlist'
-import Guest from '#models/guest'
 import * as fs from 'node:fs'
 import app from '@adonisjs/core/services/app'
 
@@ -31,16 +24,13 @@ export default class Video extends BaseModel {
   declare duration: number
 
   @column()
-  declare status: 'published' | 'unpublished' | 'pending'
+  declare status: 'published' | 'unpublished' | 'pending' | 'encoding'
 
   @column()
   declare showInLive: number
 
   @column()
   declare userId: number | null
-
-  @column()
-  declare guestId: number | null
 
   @column()
   declare ip: string
@@ -52,9 +42,6 @@ export default class Video extends BaseModel {
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
-
-  @belongsTo(() => Guest)
-  declare guest: BelongsTo<typeof Guest>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -132,5 +119,18 @@ export default class Video extends BaseModel {
 
     this.path = folderPath
     await this.save()
+  }
+
+  serialize() {
+    return {
+      id: this.id,
+      title: this.title,
+      description: this.description,
+      path: this.path,
+      duration: this.duration,
+      status: this.status,
+      showInLive: this.showInLive,
+      userId: this.userId,
+    }
   }
 }

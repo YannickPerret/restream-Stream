@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
+import {providerValidator} from "#validators/provider";
 
 export default class ProvidersController {
   /**
@@ -73,7 +74,18 @@ export default class ProvidersController {
       broadcasterId,
       authBearer,
       streamKey,
-    } = request.all()
+    } = request.only([
+      'name',
+      'type',
+      'clientId',
+      'clientSecret',
+      'refreshToken',
+      'broadcasterId',
+      'authBearer',
+      'streamKey',
+    ])
+
+    await request.validateUsing(providerValidator)
 
     provider.name = name
     provider.type = type

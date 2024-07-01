@@ -150,4 +150,13 @@ export default class TimelinesController {
     await timeline.delete()
     return response.noContent()
   }
+
+  async generateNewTimeline({ params, response, request }: HttpContext) {
+    const { type } = request.only(['type'])
+    const timeline = await Timeline.findOrFail(params.id)
+    await timeline.removeFile()
+    await timeline.generatePlaylistFile(type || 'm3u8')
+    await timeline.save()
+    return response.json(timeline)
+  }
 }

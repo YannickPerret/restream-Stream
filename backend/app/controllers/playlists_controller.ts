@@ -55,9 +55,7 @@ export default class PlaylistsController {
       const playlist = await Playlist.query()
         .where('id', params.id)
         .preload('videos', (videoQuery) => {
-          videoQuery.preload('user')
-          videoQuery.preload('guest')
-        })
+          videoQuery.preload('user')})
         .preload('user')
         .firstOrFail()
 

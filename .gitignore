@@ -7,3 +7,9 @@
 out
 gen
 .DS_Store
+
+backend/.git
+backend/.gitignore
+backend/.vscode
+backend/.idea
+backend/public/*

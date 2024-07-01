@@ -1,5 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
 import Timeline from '#models/timeline'
 import Playlist from '#models/playlist'
 

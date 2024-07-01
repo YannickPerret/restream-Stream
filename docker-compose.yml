@@ -1,0 +1,48 @@
+services:
+  app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/.env:/app/.env
+      - video-data:/app/public/videos
+    ports:
+      - "3333:3333"
+    environment:
+      NODE_ENV: development
+    entrypoint: ["sh", "-c", "node ace migration:run && pnpm dev"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - restream-network
+
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: Suplivent27
+      MYSQL_DATABASE: restream
+      MYSQL_USER: adonis
+      MYSQL_PASSWORD: Suplivent27
+    volumes:
+      - mysqldata:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - restream-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 7s
+      timeout: 5s
+      retries: 5
+      start_period: 7s
+
+volumes:
+  mysqldata:
+  video-data:
+
+networks:
+  restream-network:

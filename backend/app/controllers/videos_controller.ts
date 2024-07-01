@@ -14,10 +14,10 @@ export default class VideosController {
   async index({ auth, response, request }: HttpContext) {
     const user = await auth.authenticate()
     const filters: { [key: string]: any } = request.only(['status', 'userId'])
-    let query = Video.query().preload('user').preload('guest')
+    let query = Video.query().preload('user')
 
     if (Object.keys(filters).length === 0) {
-      query = query.where('userId', user.id).orWhereNotNull('guestId')
+      query = query.where('userId', user.id)
     } else {
       for (let key in filters) {
         if (filters[key]) {
@@ -103,7 +103,6 @@ export default class VideosController {
       return response.forbidden('You are not authorized to view this video')
     }
     await video.load('user')
-    await video.load('guest')
     return response.json(video)
   }
 
@@ -131,7 +130,6 @@ export default class VideosController {
 
     await video.save()
     await video.load('user')
-    await video.load('guest')
 
     return response.json(video)
   }

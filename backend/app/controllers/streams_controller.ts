@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
@@ -139,6 +139,7 @@ export default class StreamsController {
       logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
       overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
+      type: "gstreamer"
     })
 
     if (stream && providersForm) {

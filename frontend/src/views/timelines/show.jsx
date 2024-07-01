@@ -2,12 +2,27 @@
 import {useTimelineStore} from "#stores/useTimelineStore.js";
 import {getDurationInFormat} from "#helpers/time.js";
 import Link from "next/link";
+import {TimelineApi} from "#api/timeline.js";
+import {useState} from "react";
 
 export default function TimelinesShowView() {
     const timeline = useTimelineStore.use.selectedTimeline();
+    const [changeTimelineFormat, setChangeTimelineFormat] = useState("");
 
     if (!timeline) {
         return <div className="text-center p-4">Loading...</div>
+    }
+
+    const handleGenerateNewTimeline = async () => {
+        if (!changeTimelineFormat) {
+            setChangeTimelineFormat("m3u8");
+        }
+        await TimelineApi.generateNewTimeline(timeline.id, changeTimelineFormat).then(() => {
+            console.log("Timeline generated successfully")
+        }
+        ).catch((error) => {
+            console.error("Error generating timeline", error)
+        });
     }
 
     return (
@@ -17,6 +32,16 @@ export default function TimelinesShowView() {
                 <p className="text-gray-950 mb-2">Timeline description: {timeline.description}</p>
                 <p className="text-gray-950 mb-2">Timeline duration: {getDurationInFormat(timeline.duration)}</p>
                 <p className="text-gray-950">Created by: {timeline.user.fullName}</p>
+                <div className="mt-4">
+                    <button onClick={() => handleGenerateNewTimeline()}
+                            className="bg-blue-500 text-white py-2 px-4 rounded mt-4">Generate new timeline
+                    </button>
+                    <select onChange={(e) => setChangeTimelineFormat(e.target.value)} value={changeTimelineFormat}
+                            className="mr-4">
+                        <option value="m3u8">m3u8</option>
+                        <option value="txt">txt</option>
+                    </select>
+                </div>
             </div>
             <div className="shadow-md rounded p-6">
                 <h2 className="text-2xl font-bold mb-4">Timeline Elements</h2>

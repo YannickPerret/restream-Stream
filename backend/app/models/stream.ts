@@ -10,16 +10,14 @@ import {
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
 import StreamFactory from '#models/streamsFactory/stream_factory'
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
-import transmit from '@adonisjs/transmit/services/main'
-import * as fs from 'node:fs'
 import { cuid } from '@adonisjs/core/helpers'
-import path from 'node:path'
-import {drive} from "#config/drive";
+import { drive } from '#config/drive'
+import emitter from '@adonisjs/core/services/emitter'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -95,236 +93,192 @@ export default class Stream extends BaseModel {
   declare nextVideoTimeout: NodeJS.Timeout | null
 
   @afterCreate()
-  public static async createBaseFiles(stream: Stream) {
-    const fsDriver = drive.use();
-    const dir: string = 'resources/datas/streams';
-
-    stream.guestFile = path.join(dir, `${cuid()}_guest.txt`);
-    stream.cryptoFile = path.join(dir, `${cuid()}_crypto.txt`);
-
-    await fsDriver.put(stream.guestFile, 'Upload by : CoffeeStream');
-    await fsDriver.put(stream.cryptoFile, 'Market : 0.00 XNeuros / $');
-
-    await stream.save();
+  static async createBaseFiles(stream: Stream) {
+    const guestKey = `datas/streams/${cuid()}_guest.txt`
+    stream.guestFile = guestKey
+    await drive.use().put(guestKey, 'Upload by : CoffeeStream')
+    await stream.save()
   }
 
   @beforeDelete()
-  public static async deleteBaseFiles(stream: Stream) {
-    stream.removeAssets();
+  static async deleteBaseFiles(stream: Stream) {
+    await stream.removeAssets()
   }
 
-  public async updateGuestText() {
-    const currentVideo = await this.timeline.getCurrentVideo(this.currentIndex);
-    await currentVideo.load('guest');
-    await currentVideo.load('user');
+  async updateGuestText() {
+    const currentVideo = await this.timeline.getCurrentVideo(this.currentIndex)
+    await currentVideo.load('user')
 
     const guestText = !currentVideo.showInLive
       ? ''
-      : currentVideo.guest
-        ? `Upload by : ${currentVideo.guest.displayName}`
-        : currentVideo.user
-          ? `Upload by : ${currentVideo.user.fullName}`
-          : 'Guest is not loaded for the current video';
+      : currentVideo.user
+        ? `Upload by : ${currentVideo.user.username}`
+        : 'Guest is not loaded for the current video'
 
-    await drive.use().put(this.guestFile, guestText);
-  }
-
-  public async updateCryptoText(value: number = 0) {
-    if (value <= 0) {
-      value = await fetch('https://www.coingecko.com/price_charts/30105/usd/24_hours.json', {
-        method: 'GET',
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          return data.stats[data.stats.length - 1][1] || 0;
-        });
-    }
-    fs.writeFileSync(this.cryptoFile, `Market : ${value} XNeuros / $`);
+    await drive.use().put(this.guestFile, guestText)
   }
 
   async nextVideo() {
     if (this.status === 'inactive' || !this.canNextVideo) {
-      logger.info('Stream is not live or not ready to switch videos.');
-      return;
+      logger.info('Stream is not live or not ready to switch videos.')
+      return
     }
+    const currentVideo: Video = await this.timeline.getCurrentVideo(this.currentIndex)
+    const durationMs: number = await currentVideo.getDurationInMilisecond()
 
-    const currentVideo: Video = await this.timeline.getCurrentVideo(this.currentIndex);
-    const durationMs: number = await currentVideo.getDurationInMilisecond();
-    logger.info(`Waiting for ${await currentVideo.getDurationInSeconde()}s until the video ${currentVideo.title} ends`);
-
-    const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds');
-    logger.info(`Temps total de stream : (${totalStreamTime} millisecondes)`);
+    const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
 
     if (totalStreamTime + durationMs > this.restartTimes) {
-      logger.info('28h de stream atteint, arrêt du stream après la vidéo en cours');
-      this.canNextVideo = false;
-      this.scheduleRestart(durationMs);
+      logger.info('28h de stream atteint, arrêt du stream après la vidéo en cours')
+      this.canNextVideo = false
+      this.scheduleRestart(durationMs)
     } else {
-      this.scheduleNextVideo(durationMs);
+      this.scheduleNextVideo(durationMs)
     }
   }
 
   private scheduleNextVideo(durationMs: number) {
     this.nextVideoTimeout = setTimeout(async () => {
       if (this.status === 'inactive') {
-        logger.info('Stream has been stopped. Not proceeding to the next video.');
-        return;
+        logger.info('Stream has been stopped. Not proceeding to the next video.')
+        return
       }
 
-      await this.moveToNextVideo();
+      await this.moveToNextVideo()
 
       if (!(await this.timeline.getCurrentVideo(this.currentIndex))) {
-        logger.info('Fin de la playlist.');
-        await this.restartStream();
-        return;
+        logger.info('Fin de la playlist.')
+        await this.restartStream()
+        return
       }
+      await emitter.emit('stream:onNextVideo', this.id)
 
-      transmit.broadcast(`streams/${this.id}/currentVideo`, {
-        currentVideo: await this.timeline.getCurrentVideo(this.currentIndex),
-      });
-      await this.updateGuestText();
-
-      await this.save();
-      await this.nextVideo();
-    }, durationMs);
+      await this.save()
+      await this.nextVideo()
+    }, durationMs)
   }
 
   private scheduleRestart(durationMs: number) {
     this.nextVideoTimeout = setTimeout(async () => {
-      await this.restartStream();
-    }, durationMs);
+      await this.restartStream()
+    }, durationMs)
   }
 
-  public async moveToNextVideo() {
-    const videos = await this.timeline.videos();
+  async moveToNextVideo() {
+    const videos = await this.timeline.videos()
     if (this.currentIndex + 1 < videos.length) {
-      this.currentIndex++;
+      this.currentIndex++
     } else {
-      this.currentIndex = 0;
+      this.currentIndex = 0
     }
   }
 
-  public async run() {
-    logger.info(`Starting stream ${this.id}`);
+  async run() {
+    logger.info(`Starting stream ${this.id}`)
 
-    const providers = await this.related('providers').query().pivotColumns(['on_primary']);
+    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
     this.providersInstance = await Promise.all(
       providers.map((provider) => Provider.createProvider(provider))
-    );
+    )
     const primary = this.providersInstance.find(
       (provider) => provider.$extras.pivot_on_primary === 1
-    );
-    this.primaryProvider = primary ?? null;
-    this.currentIndex = 0;
+    )
+    this.primaryProvider = primary ?? null
+    this.currentIndex = 0
 
     if (this.primaryProvider) {
       this.streamProvider = StreamFactory.createProvider(
-        'ffmpeg',
+        this.type,
         this.primaryProvider.baseUrl,
         this.primaryProvider.streamKey,
         this.timeline.filePath,
         this.logo || '',
         this.overlay || '',
-        this.guestFile,
-        this.cryptoFile
-      );
+        this.guestFile
+      )
+      await this.start()
+      await emitter.emit('stream:onNextVideo', this.id)
+      this.streamStartTime = DateTime.now()
+      this.canNextVideo = true
 
-      transmit.broadcast(`streams/${this.id}/currentVideo`, {
-        currentVideo: await this.timeline.getCurrentVideo(this.currentIndex),
-      });
-      await this.updateCryptoText();
-      await this.updateGuestText();
-      await this.start();
-
-      this.streamStartTime = DateTime.now();
-      this.canNextVideo = true;
-
-      await this.nextVideo();
+      await this.nextVideo()
     } else {
-      logger.warn('No primary provider found');
+      logger.warn('No primary provider found')
     }
-    await this.save();
+    await this.save()
   }
 
-  public async start(): Promise<void> {
-    this.pid = this.streamProvider ? this.streamProvider.startStream() : process.pid;
-    this.startTime = DateTime.now();
-    this.status = 'active';
+  async start(): Promise<void> {
+    this.pid = this.streamProvider ? this.streamProvider.startStream() : process.pid
+    this.startTime = DateTime.now()
+    this.status = 'active'
 
-    await this.save();
+    await this.save()
   }
 
-  public async stop(): Promise<void> {
-    logger.info(`Stopping streams ${this.id}`);
-    clearTimeout(this.nextVideoTimeout as NodeJS.Timeout);
+  async stop(): Promise<void> {
+    logger.info(`Stopping streams ${this.id}`)
+    clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
 
     if (this.streamProvider) {
-      this.streamProvider.stopStream(this.pid);
+      this.streamProvider.stopStream(this.pid)
     } else {
       if (this.pid > 0) {
-        process.kill(this.pid, 'SIGKILL');
+        process.kill(this.pid, 'SIGKILL')
       }
     }
-    this.endTime = DateTime.now();
-    this.status = 'inactive';
-    this.pid = 0;
+    this.endTime = DateTime.now()
+    this.status = 'inactive'
+    this.pid = 0
 
-    await this.save();
+    await this.save()
   }
 
-  public async restartStream() {
-    logger.info('Redémarrage du stream');
-    await this.stop();
+  async restartStream() {
+    logger.info('Redémarrage du stream')
+    await this.stop()
 
-    const remainingTime = await this.timeline.getTimeRestOfVideos(this.currentIndex);
-    logger.warn(`Temps restant : ${remainingTime}`);
+    const remainingTime = await this.timeline.getTimeRestOfVideos(this.currentIndex)
+    logger.warn(`Temps restant : ${remainingTime}`)
     if (remainingTime > this.restartTimes) {
-      await this.timeline.generatePlaylistFile('m3u8', this.currentIndex);
+      await this.timeline.generatePlaylistFile('m3u8', this.currentIndex)
     } else {
-      await this.timeline.generatePlaylistFileWithRepetition('m3u8', this.currentIndex);
+      await this.timeline.generatePlaylistFileWithRepetition('m3u8', this.currentIndex)
     }
     setTimeout(async () => {
-      await this.run();
-    }, 10000);
+      await this.run()
+    }, 10000)
   }
 
-  public async getPrimaryProvider() {
-    const providers = await this.related('providers').query().pivotColumns(['on_primary']);
-    const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1);
-    return primary ?? null;
+  async getPrimaryProvider() {
+    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
+    const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1)
+    return primary ?? null
   }
 
-  public removeAssets() {
+  private async removeAssets() {
     if (this.logo) {
-      fs.unlink(this.logo, (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+      try {
+        await drive.use().delete(this.logo)
+      } catch (err) {
+        logger.error(err)
+      }
     }
 
     if (this.overlay) {
-      fs.unlink(this.overlay, (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+      try {
+        await drive.use().delete(this.overlay)
+      } catch (err) {
+        logger.error(err)
+      }
     }
 
     if (this.guestFile) {
-      fs.unlink(this.guestFile, (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
-    }
-
-    if (this.cryptoFile) {
-      fs.unlink(this.cryptoFile, (err) => {
-        if (err) {
-          logger.error(err);
-        }
-      });
+      try {
+        await drive.use().delete(this.guestFile)
+      } catch (err) {
+        logger.error(err)
+      }
     }
   }
 }

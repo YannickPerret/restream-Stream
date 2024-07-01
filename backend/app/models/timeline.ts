@@ -57,7 +57,7 @@ export default class Timeline extends BaseModel {
 
   @beforeDelete()
   static async deletePlaylistFile(timeline: Timeline) {
-    if (timeline.filePath) {
+    if (timeline.filePath && fs.existsSync(timeline.filePath)) {
       await fs.promises.unlink(timeline.filePath)
     }
   }
@@ -69,54 +69,62 @@ export default class Timeline extends BaseModel {
 
     let content = ''
     this.filePath = path.join(
-      app.makePath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
+      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
     )
 
     if (fs.existsSync(this.filePath)) {
       await fs.promises.unlink(this.filePath)
     }
 
-    if (type === 'm3u8') {
-      content = '#EXTM3U\n'
-
-      const addItemToContent = async (item: TimelineItem) => {
-        if (item.type === 'video') {
-          const video = await Video.find(item.itemId)
-          if (video && video.path) {
-            const relativePath = path.relative('/', video.path)
-            logger.info(`Adding video Id ${item.itemId} to playlist ${this.id}`)
+    const addItemToContent = async (item: TimelineItem) => {
+      if (item.type === 'video') {
+        const video = await Video.find(item.itemId)
+        if (video && video.path) {
+          const relativePath = path.relative('/', video.path)
+          const absolutePath = `file://${path.resolve(video.path)}`
+          logger.info(`Adding video Id ${item.itemId} to playlist ${this.id}`)
+          if (type === 'm3u8') {
             content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
             content += `file '/${relativePath}'\n`
-          } else {
-            logger.warn(`Video with id ${item.itemId} not found or does not have a filePath.`)
+          } else if (type === 'txt') {
+            content += `${absolutePath}\n`
           }
-        } else if (item.type === 'playlist') {
-          const playlist = await Playlist.find(item.itemId)
-          if (playlist) {
-            await playlist.load('videos')
-            for (const video of playlist.videos) {
-              if (video && video.path) {
-                const relativePath = path.relative('/', video.path)
-                logger.info(
-                  `Adding video Id ${video.id} from playlist ${playlist.id} to timeline ${this.id}`
-                )
+        } else {
+          logger.warn(`Video with id ${item.itemId} not found or does not have a filePath.`)
+        }
+      } else if (item.type === 'playlist') {
+        const playlist = await Playlist.find(item.itemId)
+        if (playlist) {
+          await playlist.load('videos')
+          for (const video of playlist.videos) {
+            if (video && video.path) {
+              const relativePath = path.relative('/', video.path)
+              const absolutePath = `file://${path.resolve(video.path)}`
+              logger.info(
+                `Adding video Id ${video.id} from playlist ${playlist.id} to timeline ${this.id}`
+              )
+              if (type === 'm3u8') {
                 content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
                 content += `file '/${relativePath}'\n`
-              } else {
-                logger.warn(`Video with id ${video.id} not found or does not have a filePath.`)
+              } else if (type === 'txt') {
+                content += `${absolutePath}\n`
               }
+            } else {
+              logger.warn(`Video with id ${video.id} not found or does not have a filePath.`)
             }
-          } else {
-            logger.warn(`Playlist with id ${item.itemId} not found.`)
           }
+        } else {
+          logger.warn(`Playlist with id ${item.itemId} not found.`)
         }
       }
+    }
 
-      for (let i = currentIndex; i < this.items.length; i++) {
-        await addItemToContent(this.items[i])
-      }
-    } else {
-      throw new Error(`Unknown playlist file type: ${type}`)
+    if (type === 'm3u8') {
+      content = '#EXTM3U\n'
+    }
+
+    for (let i = currentIndex; i < this.items.length; i++) {
+      await addItemToContent(this.items[i])
     }
 
     const dirPath = path.dirname(this.filePath)
@@ -131,7 +139,7 @@ export default class Timeline extends BaseModel {
 
     let content = ''
     this.filePath = path.join(
-      app.makePath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
+      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
     )
 
     if (fs.existsSync(this.filePath)) {
@@ -276,5 +284,11 @@ export default class Timeline extends BaseModel {
     }
 
     return items
+  }
+
+  async removeFile() {
+    if (this.filePath && fs.existsSync(this.filePath)) {
+      await fs.promises.unlink(this.filePath)
+    }
   }
 }

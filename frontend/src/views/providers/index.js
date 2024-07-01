@@ -31,7 +31,7 @@ export default function ProviderIndex() {
                     <tr>
                         <th scope="col" className="px-6 py-3">Name</th>
                         <th scope="col" className="px-6 py-3">Type</th>
-                        <th scope="col" className="px-6 py-3">Stream Key</th>
+                        <th scope="col" className="px-6 py-3">Stream Key (encoded)</th>
                         <th scope="col" className="px-6 py-3">Actions</th>
                     </tr>
                 </thead>
@@ -45,7 +45,7 @@ export default function ProviderIndex() {
                                 </Link>
                             </th>
                             <td>{provider.type}</td>
-                            <td>{provider.streamKey}</td>
+                            <td>{provider.streamKey.substring(0, 25)}</td>
                             <td>
                                 <button className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
                                         onClick={() => setSelectedProvider(provider)}>Edit</button>

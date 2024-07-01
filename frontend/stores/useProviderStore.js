@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ProviderApi } from "#api/provider.js";
+import {ProviderApi} from "#api/provider.js";
 
 const createSelectors = (_store) => {
     let store = _store;
@@ -10,9 +10,18 @@ const createSelectors = (_store) => {
     return store;
 };
 
-export const useProviderStore = createSelectors(create((set, get) => ({
+export const useProviderStore = createSelectors(create((set) => ({
     providers: [],
     selectedProvider: null,
+    tokens: null,
+
+    setProvider: (provider) => {
+        set((state) => ({ providers: [...state.providers, provider] }));
+    },
+
+    setTokens: (tokens) => {
+        set({ tokens });
+    },
 
     fetchProviders: async () => {
         try {

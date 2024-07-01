@@ -1,4 +1,4 @@
-import Provider from '#models/provider'
+import Provider from '#models/providers/provider'
 
 export default class Youtube extends Provider {
   private static instance: Youtube
@@ -6,55 +6,97 @@ export default class Youtube extends Provider {
   constructor(provider: Provider) {
     super()
     Object.assign(this, provider)
-    this.baseUrl = 'rtmp://live.twitch.tv/app'
+    this.baseUrl = 'https://www.googleapis.com/youtube/v3'
   }
 
-  async changeTitle(title:String) {
-    const response = await fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Client-ID': this.clientId,
-        'Authorization': `Bearer ${this.accessToken}`,
-      },
-      body: JSON.stringify({ title: title }),
-    });
-    if (!response.ok) {
-      return new Error('Failed to change title');
+  async changeTitle(title: String) {
+    try {
+      const response = await fetch(`${this.baseUrl}/liveBroadcasts?part=snippet&id=${this.broadcasterId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify({
+          id: this.broadcasterId,
+          snippet: {
+            title: title,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json()
+        console.error('Failed to change title:', errorDetails)
+        throw new Error('Failed to change title')
+      }
+
+      console.log('Title changed successfully')
+      return response.json()
+    } catch (error) {
+      console.error('Error changing title:', error)
+      throw new Error('Failed to change title')
     }
-    return response.json();
   }
 
   async changeCategory(categoryId: String) {
-    const response = await fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Client-ID': this.clientId,
-        'Authorization': `Bearer ${this.accessToken}`,
-      },
-      body: JSON.stringify({ game_id: categoryId }),
-    });
-    if (!response.ok) {
-      return new Error('Failed to change category');
+    try {
+      const response = await fetch(`${this.baseUrl}/liveBroadcasts?part=snippet&id=${this.broadcasterId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify({
+          id: this.broadcasterId,
+          snippet: {
+            categoryId: categoryId,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json()
+        console.error('Failed to change category:', errorDetails)
+        throw new Error('Failed to change category')
+      }
+
+      console.log('Category changed successfully')
+      return response.json()
+    } catch (error) {
+      console.error('Error changing category:', error)
+      throw new Error('Failed to change category')
     }
-    return response.json();
   }
 
   async changeStreamNotification(message: String) {
-    const response = await fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Client-ID': this.clientId,
-        'Authorization': `Bearer ${this.accessToken}`,
-      },
-      body: JSON.stringify({ status: message }),
-    });
-    if (!response.ok) {
-      return new Error('Failed to change stream notification');
+    try {
+      const response = await fetch(`${this.baseUrl}/liveBroadcasts?part=snippet&id=${this.broadcasterId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.accessToken}`,
+        },
+        body: JSON.stringify({
+          id: this.broadcasterId,
+          snippet: {
+            description: message,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorDetails = await response.json()
+        console.error('Failed to change stream notification:', errorDetails)
+        throw new Error('Failed to change stream notification')
+      }
+
+      console.log('Stream notification changed successfully')
+      return response.json()
+    } catch (error) {
+      console.error('Error changing stream notification:', error)
+      throw new Error('Failed to change stream notification')
     }
-    return response.json();
   }
 
   static getInstance(): Youtube {

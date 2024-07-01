@@ -26,8 +26,8 @@ export default function RootLayout({ children, error }) {
                               </Link>
                           </header>
                           <Navigator/>
-                          <div className="bg-sky-900 text-white p-5 text-sm">
-                              © 2024 Axonite - All rights reserved
+                          <div className="bg-sky-900 text-white p-5 text-sm text-center">
+                              <p>© 2024 {process.env.NEXT_PUBLIC_SITE_NAME}  - <br />All rights reserved - <br />We are not associated with Twitch or YouTube platforms</p>
                           </div>
                       </>
                   </div>

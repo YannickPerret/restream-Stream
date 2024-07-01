@@ -12,7 +12,7 @@ import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
-const GuestsController = () => import('#controllers/guests_controller')
+const HealthChecksController = () => import('#controllers/health_checks_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
 const VideosController = () => import('#controllers/videos_controller')
@@ -22,6 +22,7 @@ const StreamsController = () => import('#controllers/streams_controller')
 const AuthController = () => import('#controllers/auth_controller')
 
 router.get('/', async ({ response }) => response.ok({ uptime: Math.round(process.uptime()) }))
+router.get('/health', [HealthChecksController])
 
 router
   .group(() => {
@@ -30,15 +31,11 @@ router
         router.post('register', [AuthController, 'register'])
         router.post('login', [AuthController, 'login'])
         router.post('logout', [AuthController, 'logout']).use(middleware.auth())
+        router.post('refresh', [AuthController, 'refreshToken'])
+        router.post('forgot-password', [AuthController, 'resetPassword'])
+        router.post('verify-account', [AuthController, 'verify'])
       })
       .prefix('auth')
-
-    router
-      .group(() => {
-        router.post('upload', [GuestsController, 'upload'])
-        router.get('verify/:token', [GuestsController, 'validateToken'])
-      })
-      .prefix('guests')
 
     router
       .group(() => {
@@ -92,18 +89,9 @@ router
             router.get(':id', [TimelinesController, 'show'])
             router.put(':id', [TimelinesController, 'update'])
             router.delete(':id', [TimelinesController, 'destroy'])
+            router.post(':id/generate', [TimelinesController, 'generateNewTimeline'])
           })
           .prefix('timelines')
-
-        router
-          .group(() => {
-            router.get('/', [GuestsController, 'index'])
-            router.post('/', [GuestsController, 'store'])
-            router.get(':id', [GuestsController, 'show'])
-            router.put(':id', [GuestsController, 'update'])
-            router.delete(':id', [GuestsController, 'destroy'])
-          })
-          .prefix('guests')
 
         router
           .group(() => {

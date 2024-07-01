@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restream-backend
+  labels:
+    app: restream-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: restream-backend
+  template:
+    metadata:
+      labels:
+        app: restream-backend
+    spec:
+      containers:
+        - name: restream-backend
+          image: tchoune/restream-backend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - mountPath: /data
+              name: volv
+          ports:
+            - containerPort: 3333
+              name: web
+              protocol: TCP
+          env:
+            - name: TZ
+              value: "UTC"
+            - name: PORT
+              value: "3333"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: APP_KEY
+              value: "JYuzdamLXfNzNkCwCkk_t9WGryKwxb68"
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_HOST
+              value: "127.0.0.1"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              value: "root"
+            - name: DB_PASSWORD
+              value: "Suplivent27"
+            - name: DB_DATABASE
+              value: "restream"
+            - name: VIDEO_DIRECTORY
+              value: "public/videos"
+            - name: VIDEO_PROCESSING_DIRECTORY
+              value: "public/videos/processings"
+            - name: VIDEO_GUEST_PENDING_DIRECTORY
+              value: "public/assets/videos/pending"
+            - name: TIMELINE_PLAYLIST_DIRECTORY
+              value: "assets/playlists"
+            - name: SMTP_HOST
+              value: "smtp.resend.com"
+            - name: SMTP_PORT
+              value: "25"
+            - name: SMTP_USERNAME
+              value: "resend"
+            - name: SMTP_PASSWORD
+              value: "re_CtQuJnbJ_GYMsEGEBLBeFFcA9pEQFEEF6"
+            - name: RESEND_API_KEY
+              value: "re_CtQuJnbJ_GYMsEGEBLBeFFcA9pEQFEEF6"
+            - name: FRONTEND_URL
+              value: "http://localhost:3000"
+            - name: LOGO_DIRECTORY
+              value: "assets/logos"
+            - name: OVERLAY_DIRECTORY
+              value: "assets/overlays"
+            - name: OD_ACCESS_KEY_ID
+              value: "test"
+            - name: OD_SECRET_ACCESS_KEY
+              value: "test"
+            - name: DRIVE_DISK
+              value: "fs"
+          readinessProbe:
+            httpGet:
+              port: web
+              path: /
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: volv
+          persistentVolumeClaim:
+            claimName: nfs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: restream-backend-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: restream-backend
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+      nodePort: 31117

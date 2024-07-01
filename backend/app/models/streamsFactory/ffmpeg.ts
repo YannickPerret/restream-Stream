@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
+import encryption from '@adonisjs/core/services/encryption'
 
 export interface StreamProvider {
   startStream(): number
@@ -16,12 +17,22 @@ export default class Ffmpeg implements StreamProvider {
     private timelinePath: string,
     private logo: string,
     private overlay: string,
-    private guestFile: string,
-    private cryptoFile: string
+    private guestFile: string
   ) {}
 
   startStream(): number {
-    let parameters = ['-nostdin', '-re', '-f', 'concat', '-safe', '0', '-i', this.timelinePath]
+    let parameters = [
+      '-nostdin',
+      '-re',
+      '-f',
+      'concat',
+      '-safe',
+      '0',
+      '-vsync',
+      'cfr',
+      '-i',
+      `concat:${app.publicPath(this.timelinePath)}`,
+    ]
 
     let filterComplex = ''
 
@@ -37,13 +48,11 @@ export default class Ffmpeg implements StreamProvider {
       filterComplex += '[2:v]scale=-1:ih[overlay];[main][overlay]overlay=0:H-h[main];'
     }
 
-    filterComplex += `[main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.guestFile}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${this.cryptoFile}:reload=1:x=w-text_w-10:y=h-text_h-10:fontsize=16:fontcolor=white`
+    filterComplex += `[main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${app.publicPath(this.guestFile)}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white`
 
     parameters.push(
       '-filter_complex',
       filterComplex,
-      '-vsync',
-      'cfr',
       '-copyts',
       '-pix_fmt',
       'yuv420p',
@@ -71,7 +80,7 @@ export default class Ffmpeg implements StreamProvider {
       'aac',
       '-f',
       'flv',
-      `${this.baseUrl}/${this.streamKey}`
+      `${this.baseUrl}/${encryption.decrypt(this.streamKey)}`
     )
 
     this.instance = spawn('ffmpeg', parameters, {

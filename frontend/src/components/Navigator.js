@@ -80,28 +80,19 @@ export default function Navigator() {
                             className="absolute left-0 hidden group-hover:block flex flex-col text-white z-10 bg-sky-600 w-full">
                             <Link href="/videos/create"
                                   className="flex px-4 py-2 hover:bg-gray-700 rounded-t-md text-l"><Plus/>Create</Link>
-                            <Link href="/videos/validate"
-                                  className="flex px-4 py-2 hover:bg-gray-700 rounded-t-md text-l"><Check/>Validate</Link>
                         </div>
                     </div>
 
-                    <div className="relative group">
-                        <Link href="/guests" className="flex gap-2 p-2 text-xl text-white hover:bg-gray-700 rounded-md"><Users />Guests</Link>
-                        <div
-                            className="absolute left-0 hidden group-hover:block flex flex-col text-white z-10 bg-sky-600 w-full">
-                            <Link href="/guests/create"
-                                  className="flex px-4 py-2 hover:bg-gray-700 rounded-t-md text-l"><Plus/>Create</Link>
-                        </div>
-                    </div>
                     <LogoutForm/>
                 </>
             ) : (
                 <>
-                    <Link href="/videos/upload"
-                          className="flex gap-2 p-2 text-xl text-white hover:bg-gray-700 rounded-md"><CloudUpload/>Upload
-                        own video</Link>
-                    <Link href="/login"
+                    <Link href="/auth/login"
                           className="flex gap-2 text-xl p-2 text-white hover:bg-gray-700 rounded-md"><LogIn/> Login</Link>
+
+                    <Link href={"/auth/register"} className="flex gap-2 p-2 text-xl text-white hover:bg-gray-700 rounded-md">
+                        <Users/> Register
+                    </Link>
                 </>
             )}
         </nav>

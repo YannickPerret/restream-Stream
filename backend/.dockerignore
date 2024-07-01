@@ -131,6 +131,4 @@ dist
 .pnp.*
 
 
-public/assets
-resources/assets/playlists
-resources/datas/streams
+public/

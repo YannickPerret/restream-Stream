@@ -6,11 +6,11 @@ import ProviderIndex from "@/views/providers";
 
 export default function ProvidersPage() {
 
-    const getPlaylists = useProviderStore.use.fetchProviders()
+    const getProviders = useProviderStore.use.fetchProviders()
 
     useEffect(() => {
         const fetchProviders = async () => {
-            await getPlaylists();
+            await getProviders();
         }
         fetchProviders();
     }, []);
