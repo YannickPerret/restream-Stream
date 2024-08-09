@@ -1,13 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: restream-backend-ingress
-  namespace: default
+  name: restream-ingress
+  namespace: restream
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
 spec:
   rules:
-    - host: beyondspeedrun.com
+    - host: beyondspeedruns.com
       http:
         paths:
           - path: /
@@ -17,3 +17,7 @@ spec:
                 name: restream-backend
                 port:
                   number: 80
+  tls:
+    - hosts:
+        - beyondspeedruns.com
+      secretName: restream-tls

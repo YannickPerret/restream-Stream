@@ -28,7 +28,7 @@ services:
       MYSQL_USER: adonis
       MYSQL_PASSWORD: Suplivent27
     volumes:
-      - mysqldata:/var/lib/mysql
+      -  mysql-data:/var/lib/mysql
     ports:
       - "3307:3306"
     networks:
@@ -39,9 +39,14 @@ services:
       timeout: 5s
       retries: 5
       start_period: 7s
+  mailer:
+    image: axllent/mailpit:v1.16
+    ports:
+      - 1025:1025
+      - 8025:8025
 
 volumes:
-  mysqldata:
+  mysql-data:
   video-data:
 
 networks:

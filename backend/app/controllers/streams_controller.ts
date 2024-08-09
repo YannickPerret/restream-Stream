@@ -139,7 +139,7 @@ export default class StreamsController {
       logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
       overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
-      type: "gstreamer"
+      type: 'ffmpeg',
     })
 
     if (stream && providersForm) {

@@ -1,7 +1,6 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { UserFactory } from '#database/factories/user_factory'
 import Users from '#models/user'
-import { DateTime } from 'luxon'
 
 export default class extends BaseSeeder {
   async run() {

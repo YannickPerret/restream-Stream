@@ -1,8 +1,7 @@
 import { spawn } from 'node:child_process';
 import logger from '@adonisjs/core/services/logger';
-import fs from 'fs';
 import encryption from '@adonisjs/core/services/encryption';
-import app from "@adonisjs/core/services/app";
+import app from '@adonisjs/core/services/app'
 
 export interface StreamProvider {
   startStream(): number;
@@ -26,12 +25,16 @@ export default class Gstreamer implements StreamProvider {
     console.log('absolutePlaylistPath', absolutePlaylistPath);
     console.log('streamUrl', streamUrl);
     console.log('overlayUrl', overlayUrl);
+
     const parameters = [
       'uriplaylistbin', `uri=file://${absolutePlaylistPath}`,
       '!', 'decodebin',
       '!', 'videoconvert',
       '!', 'mix.',
-      'wpesrc', `location=${overlayUrl}`,
+      'gstcefsrc', `url=${overlayUrl}`,
+      '!', 'video/x-raw,width=1920,height=1080,framerate=60/1',
+      '!', 'cefdemux', 'name=d',
+      'd.video', '!', 'queue', 'max-size-bytes=0', 'max-size-buffers=0', 'max-size-time=3000000000',
       '!', 'videoconvert',
       '!', 'alpha', 'method=custom', 'alpha=0.5',
       '!', 'mix.',
@@ -43,6 +46,10 @@ export default class Gstreamer implements StreamProvider {
       'audioconvert',
       '!', 'audioresample',
       '!', 'voaacenc', 'bitrate=128000',
+      '!', 'mux.',
+      'd.audio', '!', 'queue', 'max-size-bytes=0', 'max-size-buffers=0', 'max-size-time=3000000000',
+      '!', 'audioconvert',
+      '!', 'audiomixer', 'name=audiomix',
       '!', 'mux.'
     ];
 
