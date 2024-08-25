@@ -1,5 +1,4 @@
-# Utilisez l'image Docker pré-construite avec GStreamer
-FROM tchoune/corebase:latest AS base
+FROM node:20.12.2-alpine3.18 AS base
 
 RUN npm install -g pnpm
 
@@ -22,8 +21,6 @@ COPY --from=deps /app/node_modules /app/node_modules
 COPY . .
 RUN pnpm run build --ignore-ts-errors
 
-# Vérifier les fichiers générés
-RUN ls -la /app/build
 
 # Stage de production
 FROM base AS production
@@ -33,13 +30,3 @@ COPY --from=production-deps /app/node_modules /app/node_modules
 COPY --from=build /app/build /app/build
 EXPOSE 3333
 CMD ["node", "build/bin/server.js"]
-
-# Stage pour le développement
-FROM base AS development
-ENV NODE_ENV=development
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
-COPY . .
-EXPOSE 3333
-CMD ["pnpm", "dev"]

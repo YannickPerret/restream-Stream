@@ -1,7 +1,7 @@
 export default function DashBoard(){
     return(
-        <div>
+        <section>
             <h1>Dashboard auth</h1>
-        </div>
+        </section>
     )
 }

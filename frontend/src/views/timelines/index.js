@@ -1,7 +1,9 @@
+'use client';
 import { getDurationInFormat } from "#helpers/time";
 import { boolenStringFormat } from "#helpers/string";
 import { useTimelineStore } from "#stores/useTimelineStore";
 import Link from "next/link";
+import Table from "#components/table/Table";
 
 export default function TimelineIndexView() {
     const timelines = useTimelineStore.use.timelines();
@@ -28,44 +30,31 @@ export default function TimelineIndexView() {
         }, 0);
     };
 
+    const columns = [
+        { title: "Name", key: "title", render: (text, timeline) => <Link href={`/timelines/${timeline.id}`}>{text}</Link> },
+        { title: "Description", key: "description" },
+        { title: "Is Published", key: "isPublished", render: (value) => boolenStringFormat(value) },
+        { title: "Duration", key: "duration", render: (_, timeline) => getDurationInFormat(calculateTotalDuration(timeline)) },
+        {
+            title: "Actions",
+            key: "actions",
+            render: (_, timeline) => (
+                <div className="flex space-x-4">
+                    <Link className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
+                          href={`/timelines/${timeline.id}/edit`}>Edit
+                    </Link>
+                    <button
+                        className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
+                        onClick={() => handleRemove(timeline.id)}>Delete
+                    </button>
+                </div>
+            )
+        }
+    ];
 
     return (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">
-            <table className="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                <tr>
-                    <th scope="col" className="px-6 py-3">Name</th>
-                    <th scope="col" className="px-6 py-3">Description</th>
-                    <th scope="col" className="px-6 py-3">Is Published</th>
-                    <th scope="col" className="px-6 py-3">Duration</th>
-                    <th scope="col" className="px-6 py-3">Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {timelines.map(timeline => {
-                    const totalDuration = calculateTotalDuration(timeline);
-                    return (
-                        <tr key={timeline.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                <Link href={`/timelines/${timeline.id}`}>{timeline.title}</Link>
-                            </th>
-                            <td>{timeline.description}</td>
-                            <td>{boolenStringFormat(timeline.isPublished)}</td>
-                            <td>{getDurationInFormat(totalDuration)}</td>
-                            <td>
-                                <Link className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded"
-                                      href={`/timelines/${timeline.id}/edit`}>Edit
-                                </Link>
-                                <button
-                                    className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded"
-                                    onClick={() => handleRemove(timeline.id)}>Delete
-                                </button>
-                            </td>
-                        </tr>
-                    )
-                })}
-                </tbody>
-            </table>
+            <Table columns={columns} data={timelines} />
         </div>
-    )
+    );
 }

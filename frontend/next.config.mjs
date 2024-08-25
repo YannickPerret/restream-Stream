@@ -4,18 +4,19 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: 'http',
-                hostname: 'localhost',
+                hostname: '0.0.0.0',
                 port: '3333',
                 pathname: '/images/**',
             },
             {
                 protocol: 'https',
-                hostname: 'localhost',
+                hostname: '0.0.0.0',
                 port: '3333',
                 pathname: '/images/**',
             },
         ],
     },
+    output: "standalone",
     eslint: {
         ignoreDuringBuilds: true,
     },

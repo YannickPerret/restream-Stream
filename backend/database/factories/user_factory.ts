@@ -5,7 +5,10 @@ import { DateTime } from 'luxon'
 export const UserFactory = factory
   .define(User, async ({ faker }) => {
     return {
-      fullName: faker.internet.displayName(),
+      username: faker.internet.userName(),
+      lastName: faker.person.lastName(),
+      firstName: faker.person.firstName(),
+      phone: faker.phone.number(),
       email: faker.internet.email(),
       password: faker.internet.password(),
     }

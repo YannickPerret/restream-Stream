@@ -6,7 +6,8 @@
       "#api/*": ["api/*"],
       "#components/*": ["src/components/*"],
       "#helpers/*": ["helpers/*"],
-      "#libs/*": ["libs/*"]
+      "#libs/*": ["libs/*"],
+      "#public/*": ["./public/*"]
     }
   }
 }

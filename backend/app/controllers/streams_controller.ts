@@ -233,7 +233,7 @@ export default class StreamsController {
       return response.notFound({ error: 'Stream not found' })
     }
 
-    stream.removeAssets()
+    await stream.removeAssets()
     streamManager.removeStream(params.id)
     await stream.delete()
     return response.noContent()

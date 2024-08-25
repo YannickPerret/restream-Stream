@@ -2,7 +2,7 @@
   import { useRouter } from 'next/navigation'
   import { useEffect } from 'react';
   import {useSessionStore} from "../../../../stores/useSessionStore";
-  import LoginForm from "@/components/forms/login";
+  import LoginForm from "#components/forms/login.jsx";
 
   export default function Page() {
     const router = useRouter();
@@ -15,12 +15,9 @@
     }, [isAuthenticated, router]);
 
     return (
-        <section className="container mx-auto px-4 bg-gray-600">
-          <div className="w-full lg:w-9/12 px-4">
-            <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg border-0">
-              <LoginForm />
-
-            </div>
+        <section className="flex items-center justify-center min-h-screen bg-gradient-to-r from-indigo-900 via-gray-900 to-black w-full">
+          <div className="bg-gradient-to-r from-purple-900 via-gray-800 to-gray-900 p-10 rounded-lg shadow-lg max-w-2xl w-full">
+            <LoginForm />
           </div>
         </section>
     );

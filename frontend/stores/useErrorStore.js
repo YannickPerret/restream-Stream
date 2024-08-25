@@ -10,8 +10,8 @@ const createSelectors = (_store) => {
 };
 
 const useErrorStore = createSelectors(create((set) => ({
-    error: null,
-    setError: (error) => set({ error }),
+    error: {},
+    setError: (type, message) => set({ type, message }),
     clearError: () => set({ error: null }),
 })));
 

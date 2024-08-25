@@ -8,15 +8,23 @@ export default class extends BaseSeeder {
     const users: Users[] = await UserFactory.createMany(20)
 
     const adminUser = await Users.create({
-      fullName: 'Admin',
+      username: 'admin',
+      lastName: 'Admin',
+      firstName: 'Admin',
+      phone: '1234567890',
       email: 'admin@coffeestream.com',
       password: 'admin',
+      isVerified: true,
     })
 
     const devUser = await Users.create({
-      fullName: 'Yannick Perret',
+      username: 'tchoune',
+      lastName: 'Perret',
+      firstName: 'Yannick',
+      phone: '0123456789',
       email: 'dev@coffeestream.com',
       password: '12345678',
+      isVerified: true,
     })
     users.push(adminUser)
     users.push(devUser)

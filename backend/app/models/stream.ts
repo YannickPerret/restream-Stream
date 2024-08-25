@@ -256,7 +256,7 @@ export default class Stream extends BaseModel {
     return primary ?? null
   }
 
-  private async removeAssets() {
+  async removeAssets() {
     if (this.logo) {
       try {
         await drive.use().delete(this.logo)
