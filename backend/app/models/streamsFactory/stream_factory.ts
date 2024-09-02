@@ -10,14 +10,16 @@ export default class StreamFactory {
     timelinePath: string,
     logo: string,
     overlay: string,
-    guestFile: string
+    guestFile: string,
+    enableBrowser: boolean,
+    webpageUrl: string
   ): StreamProvider {
-    console.log(type)
     switch (type) {
       case 'ffmpeg':
-        return new Ffmpeg(baseUrl, streamKey, timelinePath, logo, overlay, guestFile)
+        return new Ffmpeg(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, enableBrowser,webpageUrl)
       case 'gstreamer':
-        return new Gstreamer(baseUrl, streamKey, timelinePath, logo, overlay, guestFile)
+        //return new Gstreamer(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, enableBrowser)
+        null
       default:
         throw new Error(`Unsupported provider type: ${type}`)
     }

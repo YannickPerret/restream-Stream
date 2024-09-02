@@ -4,6 +4,7 @@ import { useStreamStore } from "#stores/useStreamStore";
 import Link from "next/link";
 import StreamsEditView from "@/views/streams/edit.jsx";
 import Table from "#components/table/Table";
+import {StreamApi} from "#api/stream.js";
 
 export default function StreamPageIndex() {
     const streams = useStreamStore.use.streams();
@@ -59,11 +60,15 @@ export default function StreamPageIndex() {
     ];
 
     const handleStart = async (id) => {
-        await updateStreamStatus(id, 'active');
+        await StreamApi.start(id).then(async () => {
+            updateStreamStatus(id, 'active');
+        });
     };
 
     const handleStop = async (id) => {
-        await updateStreamStatus(id, 'inactive');
+        await StreamApi.stop(id).then(async () => {
+            updateStreamStatus(id, 'inactive');
+        });
     };
 
     const handleRestart = async (id) => {
@@ -71,8 +76,11 @@ export default function StreamPageIndex() {
     };
 
     const handleRemove = async (id) => {
-        await deleteStreamById(id);
+        await StreamApi.delete(id).then(() => {
+            deleteStreamById(id);
+        });
     };
+
 
     return (
         <div className="relative overflow-x-auto shadow-md sm:rounded-lg">

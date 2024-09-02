@@ -46,7 +46,7 @@ export default class VideoEncoder extends BaseModel {
       if (endTimeCode) {
         encode = encode.outputOptions('-to', endTimeCode)
       }
-      const outputPath = `${app.makePath(env.get('VIDEO_DIRECTORY'))}/${cuid()}.mp4`
+      const outputPath = `${app.publicPath(env.get('VIDEO_DIRECTORY'))}/${cuid()}.mp4`
 
       encode
         .on('start', () => {

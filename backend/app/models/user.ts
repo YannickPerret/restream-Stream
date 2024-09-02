@@ -7,6 +7,8 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import Stream from '#models/stream'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Role from '#models/role'
+import env from "#start/env";
+import mail from "@adonisjs/mail/services/main";
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -60,10 +62,37 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare updatedAt: DateTime | null
 
   static accessTokens = DbAccessTokensProvider.forModel(User, {
-    expiresIn: '14 days',
+    expiresIn: '1 days',
     prefix: 'oat_',
     table: 'auth_access_tokens',
     type: 'auth_token',
-    tokenSecretLength: 40,
+    tokenSecretLength: 45,
   })
+
+  async sendResetPasswordEmail(ipAddress: string) {
+    const tokenType = await TokenType.findBy('name', 'reset_password')
+    const token = await Token.generate(
+      DateTime.now().plus({ hours: 1 }),
+      tokenType,
+      this,
+      ipAddress
+    )
+
+    await mail.send((message) => {
+      message
+        .from('noreply@one-conseils.ch')
+        .to(this.email)
+        .subject('One-conseils - Réinitialisation de votre mot de passe')
+        .htmlView('emails/users/reset_password', {
+          user: this,
+          token: token,
+          frontendUrl: env.get('FRONTEND_URL'),
+        })
+    })
+  }
+
+  async updatePassword(newPassword: string) {
+    this.password = newPassword
+    await this.save()
+  }
 }

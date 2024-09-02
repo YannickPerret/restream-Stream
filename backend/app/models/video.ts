@@ -50,6 +50,14 @@ export default class Video extends BaseModel {
   declare updatedAt: DateTime
 
   @beforeCreate()
+  static async checkIfPublicExist(): Promise<void> {
+    const publicPath = app.publicPath()
+    if (!fs.existsSync(publicPath)) {
+      fs.mkdirSync(publicPath, { recursive: true })
+    }
+  }
+
+  @beforeCreate()
   static async setDuration(video: Video) {
     if (video.path === null) return
     video.duration = (await Video.getDuration(video.path)) || 0
@@ -129,8 +137,9 @@ export default class Video extends BaseModel {
       path: this.path,
       duration: this.duration,
       status: this.status,
-      showInLive: this.showInLive,
-      userId: this.userId,
+      showInLive: this.showInLive ? true : false,
+      createdAt: DateTime.fromISO(this.createdAt).toFormat('dd-MM-yyyy HH:mm'),
+      user: this.user,
     }
   }
 }

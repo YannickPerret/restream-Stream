@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import {ProviderApi} from "#api/provider.js";
+import { ProviderApi } from "#api/provider.js";
 
 const createSelectors = (_store) => {
     let store = _store;
@@ -10,7 +10,7 @@ const createSelectors = (_store) => {
     return store;
 };
 
-export const useProviderStore = createSelectors(create((set) => ({
+export const useProviderStore = createSelectors(create((set, get) => ({
     providers: [],
     selectedProvider: null,
     tokens: null,

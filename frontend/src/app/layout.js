@@ -3,6 +3,7 @@ import "../../styles/globals.css";
 import Footer from "#components/layout/footer/Footer.jsx";
 import Header from "#components/layout/header/Header.jsx";
 import TopBanner from "#components/banner/TopBanner.jsx";
+import ClientTokenChecker from "#components/ClientTokenChecker.jsx";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
     return (
         <html lang="fr">
             <body className={`${inter.className}`}>
+            <ClientTokenChecker />
             <TopBanner
                 message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "
                 linkText="Sign-up now !"

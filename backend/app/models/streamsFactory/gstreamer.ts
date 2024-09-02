@@ -14,7 +14,8 @@ export default class Gstreamer implements StreamProvider {
   constructor(
     private baseUrl: string,
     private streamKey: string,
-    private playlistPath: string
+    private playlistPath: string,
+    private enableBrowser: boolean
   ) {}
 
   startStream(): number {

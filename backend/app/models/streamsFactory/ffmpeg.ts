@@ -1,15 +1,21 @@
-import { spawn } from 'node:child_process'
-import logger from '@adonisjs/core/services/logger'
-import app from '@adonisjs/core/services/app'
-import encryption from '@adonisjs/core/services/encryption'
+import { spawn } from 'node:child_process';
+import logger from '@adonisjs/core/services/logger';
+import app from '@adonisjs/core/services/app';
+import encryption from '@adonisjs/core/services/encryption';
+import puppeteer from 'puppeteer';
+import fs from 'node:fs';
 
 export interface StreamProvider {
-  startStream(): number
-  stopStream(pid: number): void
+  startStream(onBitrateUpdate: (bitrate: number) => void): number;
+  stopStream(pid: number): void;
 }
 
+const SCREENSHOT_FIFO = '/tmp/screenshot_fifo';
+const OUTPUT_FIFO = '/tmp/puppeteer_stream';
+
 export default class Ffmpeg implements StreamProvider {
-  private instance: any = null
+  private instance: any = null;
+  private browserStarted: boolean = false;
 
   constructor(
     private baseUrl: string,
@@ -17,111 +23,229 @@ export default class Ffmpeg implements StreamProvider {
     private timelinePath: string,
     private logo: string,
     private overlay: string,
-    private guestFile: string
+    private guestFile: string,
+    private enableBrowser: boolean,
+    private webpageUrl: string
   ) {}
 
-  startStream(): number {
-    let parameters = [
-      '-nostdin',
-      '-re',
-      '-f',
-      'concat',
-      '-safe',
-      '0',
-      '-vsync',
-      'cfr',
-      '-i',
-      `concat:${app.publicPath(this.timelinePath)}`,
-    ]
+  startStream(onBitrateUpdate: (bitrate: number) => void): number {
+    this.createFifos();
 
-    let filterComplex = ''
+    const parameters = [
+      '-hwaccel', 'auto',
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', `concat:${app.publicPath(this.timelinePath)}`,
+      '-r', '30',
+    ];
 
-    if (this.logo) {
-      parameters.push('-i', app.publicPath(this.logo))
-      filterComplex += '[1:v]scale=200:-1[logo];[0:v][logo]overlay=W-w-5:5[main];'
+    let filterComplex: string[] = [];
+
+    if (this.enableBrowser) {
+      this.startBrowserCapture();
+      parameters.push('-i', SCREENSHOT_FIFO);
+
+      filterComplex.push(
+        '[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=30[ckout];',
+        '[0:v][ckout]overlay=0:0,fps=fps=30[v1]'
+      );
     } else {
-      filterComplex += '[0:v]'
+      filterComplex.push('[0:v]fps=fps=30[v1]');
     }
-
-    if (this.overlay) {
-      parameters.push('-i', app.publicPath(this.overlay))
-      filterComplex += '[2:v]scale=-1:ih[overlay];[main][overlay]overlay=0:H-h[main];'
-    }
-
-    filterComplex += `[main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:textfile=${app.publicPath(this.guestFile)}:reload=1:x=(w-text_w)/2:y=h-text_h-10:fontsize=18:fontcolor=white[main]; [main]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='%{localtime\\:%X}':x=10:y=h-text_h-10:fontsize=16:fontcolor=white`
 
     parameters.push(
-      '-filter_complex',
-      filterComplex,
-      '-copyts',
-      '-pix_fmt',
-      'yuv420p',
-      '-s',
-      '1920x1080',
-      '-c:v',
-      'libx264',
-      '-profile:v',
-      'high',
-      '-preset',
-      'veryfast',
-      '-b:v',
-      '6000k',
-      '-maxrate',
-      '7000k',
-      '-minrate',
-      '5000k',
-      '-bufsize',
-      '9000k',
-      '-g',
-      '120',
-      '-r',
-      '60',
-      '-c:a',
-      'aac',
-      '-f',
-      'flv',
+      '-filter_complex', filterComplex.join(''),
+      '-map', '[v1]',
+      '-map', '0:a?',
+      '-analyzeduration', '1',
+      '-s', '1920x1080',
+      '-c:a', 'aac',
+      '-c:v', 'libx264',
+      '-keyint_min', (30 * 2).toString(),
+      '-preset', 'ultrafast',
+      '-b:v', '6000K',
+      '-tune', 'zerolatency',
+      '-flags', 'low_delay',
+      '-maxrate', '6000K',
+      '-crf', '29',
+      '-r', '30',
+      '-f', 'flv',
       `${this.baseUrl}/${encryption.decrypt(this.streamKey)}`
-    )
+    );
 
     this.instance = spawn('ffmpeg', parameters, {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
-    })
+    });
 
-    this.handleProcessOutputs(this.instance)
+    this.handleProcessOutputs(this.instance, onBitrateUpdate);
+    return Number.parseInt(this.instance.pid.toString(), 10);
+  }
 
-    return Number.parseInt(this.instance.pid.toString(), 10)
+  private buildFilterComplex(): string {
+    let filterComplex: string[] = [];
+
+    if (this.enableBrowser) {
+      try {
+        this.startBrowserCapture();
+        filterComplex.push(
+          '[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=30[ckout];',
+          '[0:v][ckout]overlay=0:0,fps=fps=30[v1]'
+        );
+        this.browserStarted = true;
+      } catch (error) {
+        logger.error('Failed to start browser capture: ', error);
+        this.browserStarted = false;
+      }
+    }
+
+    if (!this.browserStarted) {
+      // If the browser is not started, fallback to simpler filter
+      filterComplex.push('[0:v]fps=fps=30[v1]');
+    }
+
+    return filterComplex.join('');
+  }
+
+  private async startBrowserCapture() {
+    const minimalArgs = [
+      '--autoplay-policy=user-gesture-required',
+      '--disable-background-networking',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-breakpad',
+      '--disable-client-side-phishing-detection',
+      '--disable-component-update',
+      '--disable-default-apps',
+      '--disable-dev-shm-usage',
+      '--disable-domain-reliability',
+      '--disable-extensions',
+      '--disable-features=AudioServiceOutOfProcess',
+      '--disable-hang-monitor',
+      '--disable-ipc-flooding-protection',
+      '--disable-notifications',
+      '--disable-offer-store-unmasked-wallet-cards',
+      '--disable-popup-blocking',
+      '--disable-print-preview',
+      '--disable-prompt-on-repost',
+      '--disable-renderer-backgrounding',
+      '--disable-setuid-sandbox',
+      '--disable-speech-api',
+      '--disable-sync',
+      '--hide-scrollbars',
+      '--ignore-gpu-blacklist',
+      '--metrics-recording-only',
+      '--mute-audio',
+      '--no-default-browser-check',
+      '--no-first-run',
+      '--no-pings',
+      '--no-sandbox',
+      '--no-zygote',
+      '--password-store=basic',
+      '--use-gl=swiftshader',
+      '--use-mock-keychain',
+    ];
+    const browser = await puppeteer.launch({
+      args: [
+        '--window-size=640,480',
+        '--window-position=640,0',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-web-security',
+        ...minimalArgs,
+      ],
+      ignoreDefaultArgs: ['--enable-automation'],
+    });
+
+    const page = await browser.newPage();
+    await page.goto(this.webpageUrl);
+
+    let writeStream;
+    try {
+      writeStream = fs.createWriteStream(SCREENSHOT_FIFO, { flags: 'a' });
+
+      writeStream.on('error', (error) => {
+        logger.error('Write stream error:', error.message);
+        this.enableBrowser = false;
+      });
+
+      while (this.enableBrowser) {
+        try {
+          const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
+          writeStream.write(screenshot);
+          await new Promise((resolve) => setTimeout(resolve, 1));
+        } catch (error) {
+          logger.error('Error capturing screenshot or writing to FIFO:', error.message);
+          this.enableBrowser = false;
+          break;
+        }
+      }
+    } catch (error) {
+      logger.error('Error initializing write stream:', error.message);
+    } finally {
+      if (writeStream) {
+        writeStream.end();
+      }
+      await browser.close();
+    }
+  }
+
+  private createFifos() {
+    [SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
+      if (fs.existsSync(fifo)) {
+        fs.unlinkSync(fifo);
+      }
+      spawn('mkfifo', [fifo]);
+    });
+  }
+
+  private removeFifos() {
+    [SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
+      try {
+        if (fs.existsSync(fifo)) {
+          fs.unlinkSync(fifo);
+          console.log(`FIFO ${fifo} removed successfully.`);
+        } else {
+          console.warn(`FIFO ${fifo} does not exist, skipping unlink.`);
+        }
+      } catch (error) {
+        console.error(`Failed to remove FIFO ${fifo}:`, error.message);
+      }
+    });
   }
 
   stopStream(pid: number): void {
     if (this.instance && pid > 0) {
-      logger.info(`Stopping FFmpeg with PID: ${pid}`)
-      this.instance.kill('SIGKILL')
+      logger.info(`Stopping FFmpeg with PID: ${pid}`);
+      this.instance.kill('SIGKILL');
     } else {
-      logger.error('Cannot stop FFmpeg: instance is undefined or invalid, force stopping process')
-      if (pid > 0) process.kill(pid, 'SIGKILL')
+      logger.error('Cannot stop FFmpeg: instance is undefined or invalid, force stopping process');
+      if (pid > 0) process.kill(pid, 'SIGKILL');
     }
+    this.removeFifos();
   }
 
-  private handleProcessOutputs(instance: any) {
-    if (instance?.stderr) {
-      instance.stderr.on('data', (data: any) => {
-        logger.info(data.toString())
-      })
-    }
+  private handleProcessOutputs(instance: any, onBitrateUpdate: (bitrate: number) => void) {
+    instance.stderr.on('data', (data: any) => {
+      const output = data.toString();
+      logger.info(output);
 
-    if (instance?.stdout) {
-      instance.stdout.on('data', (data: any) => {
-        logger.error(data.toString())
-      })
-    }
+      // Tentative de capturer le bitrate à partir des logs FFmpeg
+      const bitrateMatch = output.match(/bitrate=\s*(\d+\.?\d*)\s*kbits\/s/);
+      if (bitrateMatch) {
+        const bitrate = Number.parseFloat(bitrateMatch[1]);
+        onBitrateUpdate(bitrate);
+      }
+    });
 
     instance.on('error', (error: any) => {
-      logger.error(error)
-    })
+      logger.error(error);
+    });
 
     instance.on('close', (code: any) => {
-      logger.info(`FFmpeg process closed with code: ${code}`)
-    })
+      logger.info(`FFmpeg process closed with code: ${code}`);
+      this.removeFifos();
+    });
   }
 }

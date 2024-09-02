@@ -1,6 +1,6 @@
 import { defineConfig } from '@adonisjs/transmit'
 
 export default defineConfig({
-  pingInterval: '5s',
+  pingInterval: '3s',
   transport: null,
 })

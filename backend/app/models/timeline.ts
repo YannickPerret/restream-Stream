@@ -68,12 +68,16 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    this.filePath = path.join(
+    /*this.filePath = path.join(
       app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
+    )*/
+    this.filePath = `${crypto.randomUUID()}-${this.id}.${type}`
+    const currentPath = path.join(
+      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `${this.filePath}`)
     )
 
-    if (fs.existsSync(this.filePath)) {
-      await fs.promises.unlink(this.filePath)
+    if (fs.existsSync(currentPath)) {
+      await fs.promises.unlink(currentPath)
     }
 
     const addItemToContent = async (item: TimelineItem) => {
@@ -127,9 +131,9 @@ export default class Timeline extends BaseModel {
       await addItemToContent(this.items[i])
     }
 
-    const dirPath = path.dirname(this.filePath)
+    const dirPath = path.dirname(currentPath)
     await fs.promises.mkdir(dirPath, { recursive: true })
-    await fs.promises.writeFile(this.filePath, content)
+    await fs.promises.writeFile(currentPath, content)
   }
 
   async generatePlaylistFileWithRepetition(type: string = 'm3u8', currentIndex: number = 0) {
@@ -138,12 +142,13 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    this.filePath = path.join(
-      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
+    this.filePath = `${crypto.randomUUID()}-${this.id}.${type}`
+    const currentPath = path.join(
+      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `${this.filePath}`)
     )
 
-    if (fs.existsSync(this.filePath)) {
-      await fs.promises.unlink(this.filePath)
+    if (fs.existsSync(currentPath)) {
+      await fs.promises.unlink(currentPath)
     }
 
     if (type === 'm3u8') {
@@ -196,9 +201,9 @@ export default class Timeline extends BaseModel {
       throw new Error(`Unknown playlist file type: ${type}`)
     }
 
-    const dirPath = path.dirname(this.filePath)
+    const dirPath = path.dirname(currentPath)
     await fs.promises.mkdir(dirPath, { recursive: true })
-    await fs.promises.writeFile(this.filePath, content)
+    await fs.promises.writeFile(currentPath, content)
   }
 
   async getCurrentVideo(currentIndex: number) {

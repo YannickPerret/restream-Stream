@@ -22,11 +22,11 @@ export default function VideosShowView(){
                 <p>Video status : {video.status}</p>
                 {video.guest ? (
                     <>
-                        {video.user && <span>Validate by: {video.user?.fullName}</span>}<br />
+                        {video.user && <span>Validate by: {video.user?.username}</span>}<br />
                         {video.guest && <span>Upload by Guest: {video.guest.displayName}</span>}
                     </>
                 ) : (
-                    <span>Upload by: {video.user.fullName}</span>
+                    <span>Upload by: {video.user.username}</span>
                 )}
             </div>
 

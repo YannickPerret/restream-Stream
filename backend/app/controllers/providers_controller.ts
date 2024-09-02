@@ -40,7 +40,7 @@ export default class ProvidersController {
       broadcasterId,
       authBearer: authToken,
       streamKey,
-      user_id: user.id,
+      userId: user.id,
     })
 
     if (provider) {

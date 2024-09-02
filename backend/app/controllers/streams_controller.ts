@@ -69,6 +69,7 @@ export default class StreamsController {
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
+
     await streamInstance.run()
     return response.ok({ message: 'Stream started' })
   }
@@ -139,8 +140,12 @@ export default class StreamsController {
       logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
       overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
-      type: 'ffmpeg',
+      enableBrowser: true,
+      webpageUrl:
+        'https://dashboard.twitch.tv/widgets/alertbox#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGVydF9zZXRfaWQiOiIxOWVkMzhiMC0yZTVjLTRlMTgtYjYyNy1kNDE5MTg5NjdjMzAiLCJ1c2VyX2lkIjoiNDczNzQ5MTgifQ.4xkFoUyJGye34aj4ZrvDTnARV_imT0epWWw08JBD95I',
     })
+
+    console.log(stream)
 
     if (stream && providersForm) {
       for (const provider of providersForm) {

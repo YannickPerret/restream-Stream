@@ -18,6 +18,9 @@ import Video from '#models/video'
 import { cuid } from '@adonisjs/core/helpers'
 import { drive } from '#config/drive'
 import emitter from '@adonisjs/core/services/emitter'
+import pidusage from 'pidusage'
+import si from 'systeminformation';
+import transmit from "@adonisjs/transmit/services/main";
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -62,6 +65,12 @@ export default class Stream extends BaseModel {
   @column()
   declare logo: string | null | undefined
 
+  @column()
+  declare enableBrowser: boolean
+
+  @column()
+  declare webpageUrl: string
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -91,6 +100,9 @@ export default class Stream extends BaseModel {
   declare primaryProvider: Provider | null
   declare streamStartTime: DateTime
   declare nextVideoTimeout: NodeJS.Timeout | null
+  private analyticsInterval: NodeJS.Timeout | null = null
+  private currentBitrate: number = 0
+
 
   @afterCreate()
   static async createBaseFiles(stream: Stream) {
@@ -194,8 +206,11 @@ export default class Stream extends BaseModel {
         this.timeline.filePath,
         this.logo || '',
         this.overlay || '',
-        this.guestFile
+        this.guestFile,
+        this.enableBrowser,
+        this.webpageUrl
       )
+
       await this.start()
       await emitter.emit('stream:onNextVideo', this.id)
       this.streamStartTime = DateTime.now()
@@ -209,11 +224,54 @@ export default class Stream extends BaseModel {
   }
 
   async start(): Promise<void> {
-    this.pid = this.streamProvider ? this.streamProvider.startStream() : process.pid
+    this.pid = this.streamProvider ? this.streamProvider.startStream(this.updateBitrate.bind(this)) : process.pid
     this.startTime = DateTime.now()
     this.status = 'active'
+    await this.sendAnalytics()
 
     await this.save()
+  }
+
+  private updateBitrate(bitrate: number) {
+    this.currentBitrate = bitrate;
+  }
+
+  sendAnalytics = async () => {
+    if (this.status === 'inactive') return;
+
+    pidusage(this.pid, async (err, stats) => {
+      if (err || this.pid === 0) {
+        if (this.analyticsInterval) {
+          clearTimeout(this.analyticsInterval);
+          this.analyticsInterval = null;
+        }
+        return;
+      }
+
+      // Utiliser systeminformation pour obtenir les statistiques réseau
+      const networkStats = await si.networkStats();
+      const inputBytes = networkStats[0]?.rx_bytes || 0;  // Octets reçus
+      const outputBytes = networkStats[0]?.tx_bytes || 0; // Octets envoyés
+
+      // Conversion des octets en Mbps
+      const inputMbps = (inputBytes * 8) / 1_000_000;  // en Mbps
+      const outputMbps = (outputBytes * 8) / 1_000_000; // en Mbps
+
+      const analyticsData = {
+        cpu: stats.cpu,
+        memory: stats.memory / 1024 / 1024,
+        bitrate: this.currentBitrate,
+        network: {
+          input: inputMbps,
+          output: outputMbps
+        }
+      };
+      // Envoyer les statistiques au frontend via WebSocket ou autre méthode
+      transmit.broadcast(`streams/${this.id}/analytics`, { stats: analyticsData });
+
+      // Mettre à jour les analytics chaque seconde
+      this.analyticsInterval = setTimeout(() => this.sendAnalytics(), 8000);
+    });
   }
 
   async stop(): Promise<void> {

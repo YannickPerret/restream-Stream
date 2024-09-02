@@ -66,6 +66,9 @@ export default class Provider extends BaseModel {
       case 'twitch':
         const Twitch = (await import('#models/providers/twitch')).default
         return new Twitch(provider)
+      case 'youtube':
+        const Youtube = (await import('#models/providers/youtube')).default
+        return new Youtube(provider)
       default:
         throw new Error(`Provider type ${provider.type} not supported`)
     }
