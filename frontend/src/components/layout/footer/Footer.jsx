@@ -5,7 +5,7 @@ import logo from "#public/coffeeStream.png";
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-900 text-gray-400 py-44 w-full">
+        <footer className="bg-gray-900 text-gray-400 py-32 w-full">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row justify-between">
                     <div className="mb-8 md:mb-0">
@@ -102,7 +102,7 @@ const Footer = () => {
                         </div>
                     </div>
                 </div>
-                <div className="mt-8 border-t border-gray-800 pt-24">
+                <div className="mt-8 border-t border-gray-800 pt-8">
                     <p className="text-gray-400 text-center">
                         © 2024 CoffeeStream, Inc. All rights reserved.
                     </p>
@@ -113,3 +113,4 @@ const Footer = () => {
 };
 
 export default Footer;
+

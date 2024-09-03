@@ -15,20 +15,21 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="fr">
-            <body className={`${inter.className}`}>
-            <ClientTokenChecker />
-            <TopBanner
-                message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "
-                linkText="Sign-up now !"
-                linkUrl="/auth/register"/>
-                <Header />
+        <body className={`${inter.className} flex flex-col min-h-screen`}>
+        <ClientTokenChecker/>
+        <TopBanner
+            message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "
+            linkText="Sign-up now !"
+            linkUrl="/auth/register"/>
+        <Header />
 
-            <main className="px-0 pt-0 min-h-screen w-full flex justify-center flex-col items-center">
-                {children}
-            </main>
+        <main className="flex-grow w-full flex flex-col items-center">
+            {children}
+        </main>
 
-            <Footer/>
-            </body>
+        <Footer />
+        </body>
         </html>
     );
 }
+

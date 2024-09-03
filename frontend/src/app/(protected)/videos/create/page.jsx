@@ -1,6 +1,6 @@
 'use client';
-import VideoCreateForm from "#components/forms/create/video.js";
-import VideoPreview from "@/components/videos/preview";
+import VideoCreateForm from "#components/forms/create/video";
+import VideoPreview from "#components/videos/preview";
 import {useState} from "react";
 
 export default function VideoCreatePage() {

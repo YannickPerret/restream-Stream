@@ -21,13 +21,14 @@ export default function RootLayout({ children, error }) {
     }
 
     return (
-        <div className="flex flex-row w-full h-screen">
+        <div className="flex flex-row w-full">
             <SideNavigation />
-            <div className="flex flex-col justify-center items-center w-full">
-                <div className="w-full max-w-4xl p-6 rounded h-auto text-black">
+            <div className="flex flex-col flex-grow justify-start items-center w-full">
+                <div className="w-full p-6 rounded h-auto text-black">
                     {children}
                 </div>
             </div>
         </div>
     );
 }
+

@@ -13,11 +13,10 @@ const Newsletter = () => {
         <section className="relative bg-gradient-to-b from-gray-900 to-gray-800 py-16 md:py-24 px-6 text-white rounded-b-lg">
             <div className="max-w-3xl mx-auto text-center">
                 <h2 className="text-3xl md:text-4xl font-bold">
-                    Get notified when we're launching.
+                    Stay in the Loop – Be the First to Know !
                 </h2>
                 <p className="text-gray-400 mt-4">
-                    Reprehenderit ad esse et non officia in nulla. Id proident tempor
-                    incididunt nostrud nulla et culpa.
+                    Don’t miss out on our launch! Sign up now to receive exclusive updates, early access to features, and special offers. Get notified as soon as we go live
                 </p>
                 <form onSubmit={handleSubmit} className="mt-8 flex justify-center">
                     <input

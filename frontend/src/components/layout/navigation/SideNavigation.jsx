@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
-import { Home, Users, Folder, Calendar, FileText, PieChart } from 'lucide-react';
+import { Home, Users, Folder, Calendar, FileText } from 'lucide-react';
 
 const navItems = [
     { href: '/streams', label: 'Streams', icon: Home },
@@ -16,8 +16,8 @@ const SideNavigation = () => {
     const pathname = usePathname();
 
     return (
-        <aside className="w-44 bg-gray-900 py-44 flex flex-col items-start rounded-lg h-full">
-            <nav className="flex flex-col space-y-8 w-full">
+        <aside className="w-44 self-center ml-4 my-8 mb-8">
+            <nav className="flex flex-col space-y-8 w-full bg-gray-900 py-6 rounded-lg">
                 {navItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href;

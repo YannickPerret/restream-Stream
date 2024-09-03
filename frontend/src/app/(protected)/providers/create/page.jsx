@@ -6,7 +6,7 @@ import FormGroup from "#components/_forms/FormGroup";
 import Select from "#components/_forms/Select";
 import Button from "#components/_forms/Button";
 import TwitchLoginButton from "#components/Twitch/TwitchLoginButton";
-import YouTubeLoginButton from "#components/YouTube/YouTubeLoginButton"; // Ajoutez ce composant
+import YouTubeLoginButton from "#components/Youtube/YoutubeLoginButton.jsx";
 
 export default function ProvidersCreatePage() {
     const [providerType, setProviderType] = useState("");

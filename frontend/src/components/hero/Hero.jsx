@@ -20,11 +20,12 @@ const HeroSection = () => {
                         Stream when you're offline and Maximize Your Reach !
                     </h1>
                     <p className="text-lg text-gray-300">
-                        Stream live, then keep your audience engaged with continuous reruns on your Twitch channel. Connect your YouTube, Twitch, Facebook, and TikTok accounts, and let our automated system handle your schedules. Grow your audience, increase ad revenue, and never miss an opportunity to gain new subscribers all while expanding your reach 24/7.
-                    </p>
+                        Turn your content into a revenue machine! With our cutting-edge platform, schedule your VODs to stream on your own Twitch, YouTube, TikTok, and Facebook channels, even while you're offline. Upgrade to premium plans to broadcast on multiple channels simultaneously. <br />
+                        Our high-availability servers ensure your replays keep running smoothly, allowing you to earn subscriptions, donations, and ad revenue around the clock. <br />
+                        Let our automated system handle the heavy lifting—just set your schedule and watch your community grow, day and night.</p>
                     <div className="flex space-x-4">
                         <Link href={"/auth/register"} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg no-underline">
-                            Request your access
+                            Start Earning Now
                         </Link>
                         <Link href={"/#features"} className="bg-transparent border border-gray-700 text-gray-300 hover:text-white font-semibold py-3 px-6 rounded-lg">
                             Learn more →

@@ -1,6 +1,8 @@
 import React from 'react';
+import {useRouter} from "next/navigation";
 
 const PriceCard = ({
+                        id,
                        title,
                        monthlyPrice,
                        annualPrice,
@@ -12,7 +14,12 @@ const PriceCard = ({
                    }) => {
     const monthlyCost = `$${monthlyPrice}`;
     const annualCost = `$${annualPrice}`;
-    const monthlyTotal = `$${(monthlyPrice * 12).toFixed(2)}`;
+    const annualTotalWithDiscount = (annualPrice * (100 - discount) / 100).toFixed(0);
+    const router = useRouter();
+
+    const handleCheckout = () => {
+        router.push(`/shop/checkout?productId=${id}&recurring=${isMonthly}`);
+    };
 
     return (
         <div className={`bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-sm ${isHighlighted ? 'bg-white text-black' : ''}`}>
@@ -25,16 +32,16 @@ const PriceCard = ({
                     </div>
                 ) : (
                     <div>
-                        <span className="text-sm text-red-500 line-through">{monthlyTotal}</span>
+                        <span className="text-sm text-red-500 line-through">{annualCost}</span>
                         <div>
-                            <span className="text-5xl font-extrabold">{annualCost}</span>
+                            <span className="text-5xl font-extrabold">{annualTotalWithDiscount}</span>
                             <span className="text-xl ml-2"> / Annually</span>
                             <span className="text-sm text-green-500 ml-2">({discount}% off)</span>
                         </div>
                     </div>
                 )}
             </div>
-            <button className={`mt-8 w-full py-2 rounded ${isHighlighted ? 'bg-indigo-600 text-white' : 'bg-gray-600 text-white'} font-semibold`}>
+            <button className={`mt-8 w-full py-2 rounded ${isHighlighted ? 'bg-indigo-600 text-white' : 'bg-gray-600 text-white'} font-semibold`} onClick={handleCheckout}>
                 {buttonText}
             </button>
             <ul className="mt-6 space-y-2">

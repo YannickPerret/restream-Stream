@@ -72,6 +72,7 @@
     "pino-pretty": "^11.2.2",
     "puppeteer": "^23.2.1",
     "reflect-metadata": "^0.2.2",
+    "stripe": "^16.9.0",
     "systeminformation": "^5.23.5"
   },
   "hotHook": {

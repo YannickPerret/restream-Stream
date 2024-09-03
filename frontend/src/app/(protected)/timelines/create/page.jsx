@@ -2,14 +2,14 @@
 import TimelineForm from "#components/forms/create/timeline.js";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useVideoStore } from "#stores/useVideoStore.js";
-import { usePlaylistStore } from "#stores/usePlaylistStore.js";
-import { TimelineApi } from "#api/timeline.js";
-import VideoCardItem from "#components/cards/VideoCardItem.jsx";
-import PlaylistCardItem from "#components/cards/PlaylistCardItem.jsx";
-import SimpleCardList from "#components/cards/SimpleCardList.jsx";
+import { useVideoStore } from "#stores/useVideoStore";
+import { usePlaylistStore } from "#stores/usePlaylistStore";
+import { TimelineApi } from "#api/timeline";
+import VideoCardItem from "#components/cards/VideoCardItem";
+import PlaylistCardItem from "#components/cards/PlaylistCardItem";
+import SimpleCardList from "#components/cards/SimpleCardList";
 import CardList from "#components/cards/CardList";
-import { getDurationInFormat } from "#helpers/time.js";
+import { getDurationInFormat } from "#helpers/time";
 
 export default function TimelineCreatePage() {
     const [timeline, setTimeline] = useState({

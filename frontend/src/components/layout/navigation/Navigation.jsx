@@ -1,11 +1,7 @@
 'use client';
 import Link from "next/link";
 
-import {
-    Home,
-    LogIn,
-    Users,
-} from "lucide-react";
+import {Home} from "lucide-react";
 
 export default function Navigation() {
 
@@ -17,13 +13,13 @@ export default function Navigation() {
             <Link href="/#features" className="text-gray-400 hover:text-white">
                 <Home className="inline-block mr-2" /> features
             </Link>
-            <Link href="/" className="text-gray-400 hover:text-white">
-                <Home className="inline-block mr-2" /> Price
+            <Link href="/#pricing" className="text-gray-400 hover:text-white">
+                <Home className="inline-block mr-2" /> Pricing
             </Link>
-            <Link href="/" className="text-gray-400 hover:text-white">
+            <Link href="/#review" className="text-gray-400 hover:text-white">
                 <Home className="inline-block mr-2" /> Review
             </Link>
-            <Link href="/" className="text-gray-400 hover:text-white">
+            <Link href="/#contact" className="text-gray-400 hover:text-white">
                 <Home className="inline-block mr-2" /> Contact
             </Link>
         </nav>
