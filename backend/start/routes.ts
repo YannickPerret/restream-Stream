@@ -14,6 +14,8 @@ import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
 import ProductsController from "#controllers/products_controller";
 import PaymentsController from "#controllers/payments_controller";
+import OrdersController from "#controllers/orders_controller";
+import SubscriptionsController from "#controllers/subscriptions_controller";
 const HealthChecksController = () => import('#controllers/health_checks_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
@@ -39,10 +41,12 @@ router
       })
       .prefix('auth')
 
-    router.group(() => {
-      router.get('/', [ProductsController, 'index'])
-      router.get(':id', [ProductsController, 'show'])
-    }).prefix('products')
+    router
+      .group(() => {
+        router.get('/', [ProductsController, 'index'])
+        router.get(':id', [ProductsController, 'show'])
+      })
+      .prefix('products')
 
     router
       .group(() => {
@@ -100,9 +104,21 @@ router
           })
           .prefix('timelines')
 
-        router.group(() => {
-          router.post('/create', [PaymentsController, 'createPaymentIntent'])
-        }).prefix('payments')
+        router.group(() => {}).prefix('payments')
+
+        router
+          .group(() => {
+            router.post('/', [OrdersController, 'create'])
+          })
+          .prefix('orders')
+
+        router
+          .group(() => {
+            router.post('/', [SubscriptionsController, 'create'])
+            router.get('/', [SubscriptionsController, 'index'])
+          })
+          .prefix('subscriptions')
+
         router
           .group(() => {
             router.get('streamManager', ({ response }) => {

@@ -18,7 +18,7 @@ const PriceCard = ({
     const router = useRouter();
 
     const handleCheckout = () => {
-        router.push(`/shop/checkout?productId=${id}&recurring=${isMonthly}`);
+        router.push(`/shop/checkout?productId=${id}&isMonthly=${isMonthly}`);
     };
 
     return (

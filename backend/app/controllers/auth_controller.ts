@@ -54,7 +54,7 @@ export default class AuthController {
     const token = await User.accessTokens.create(user)
     return response.ok({
       token: token,
-      user: user.serialize(),
+      user: user,
     })
   }
 

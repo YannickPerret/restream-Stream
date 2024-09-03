@@ -10,6 +10,7 @@ const navItems = [
     { href: '/timelines', label: 'Timelines', icon: Calendar },
     { href: '/playlists', label: 'Playlists', icon: Folder },
     { href: '/videos', label: 'Videos', icon: FileText },
+    { href: '/subscriptions', label: 'Subscriptions', icon: FileText },
 ];
 
 const SideNavigation = () => {

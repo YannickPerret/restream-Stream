@@ -7,8 +7,9 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import Stream from '#models/stream'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Role from '#models/role'
-import env from "#start/env";
-import mail from "@adonisjs/mail/services/main";
+import env from '#start/env'
+import mail from '@adonisjs/mail/services/main'
+import Subscription from '#models/subscription'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -21,15 +22,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column()
   declare username: string
-
-  @column()
-  declare firstName: string
-
-  @column()
-  declare lastName: string
-
-  @column()
-  declare phone: string
 
   @column()
   declare email: string
@@ -48,6 +40,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @column()
   declare roleId: number
+
+  @hasMany(() => Subscription)
+  declare subscriptions: HasMany<typeof Subscription>
 
   @belongsTo(() => Role)
   declare role: BelongsTo<typeof Role>
@@ -91,8 +86,32 @@ export default class User extends compose(BaseModel, AuthFinder) {
     })
   }
 
-  async updatePassword(newPassword: string) {
-    this.password = newPassword
-    await this.save()
+  async getActiveSubscriptions() {
+    const now = DateTime.now().toSQL() // Conversion en chaîne de caractères SQL compatible
+
+    return this.related('subscriptions').query()
+      .where('status', 'active')
+      .where('expires_at', '>', now)
+  }
+
+  async haveSubscriptionByProductId(productId: number): Promise<boolean> {
+    const now = DateTime.now().toSQL() // Convertir en format SQL
+
+    const activeSubscription = await this.related('subscriptions').query()
+      .where('product_id', productId)
+      .andWhere('status', 'active')
+      .andWhere('expires_at', '>', now) // Utilisation correcte de la date/heure
+      .first()
+
+    return !!activeSubscription
+  }
+
+  serialize() {
+    return {
+      username: this.username,
+      email: this.email,
+      subscriptions: this.getActiveSubscriptions(),
+      isVerified: this.isVerified,
+    }
   }
 }

@@ -1,28 +1,34 @@
-import React, {useState} from "react";
-import {CardElement, useElements, useStripe} from "@stripe/react-stripe-js";
-import {useRouter} from "next/navigation.js";
+'use client'
+import React, {useEffect} from "react";
+import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { useRouter } from "next/navigation.js";
 import Form from "#components/_forms/Form.jsx";
 import FormGroup from "#components/_forms/FormGroup.jsx";
 import Input from "#components/_forms/Input.jsx";
 import Button from "#components/_forms/Button.jsx";
+import useCheckoutStore from "#stores/useCheckoutStore.js";
+import useOrderStore from "#stores/useOrderStore.js";
+import OrderApi from "#api/order.js";
+import {useSessionStore} from "#stores/useSessionStore.js";
 
-export const CheckoutForm = ({ product }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-    });
+export const CheckoutForm = ({ product, isMonthly }) => {
+    const { formData, setFormData, isProcessing, setIsProcessing, setPaymentError } = useCheckoutStore();
+    const { setOrderData } = useOrderStore();
+    const {session} = useSessionStore()
     const stripe = useStripe();
     const elements = useElements();
     const router = useRouter();
-    const [isProcessing, setIsProcessing] = useState(false);
+
+    // Pre-fill the email from the session when the component mounts
+    useEffect(() => {
+        if (session && session.user && session.user.email) {
+            setFormData({ email: session.user.email });
+        }
+    }, [session, setFormData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        setFormData({ [name]: value });
     };
 
     const handleSubmit = async (e) => {
@@ -34,58 +40,82 @@ export const CheckoutForm = ({ product }) => {
 
         setIsProcessing(true);
 
-        const { error, paymentMethod } = await stripe.createPaymentMethod({
-            type: 'card',
-            card: elements.getElement(CardElement),
-            billing_details: {
-                name: formData.name,
-                email: formData.email,
-                address: {
-                    line1: formData.address,
-                    city: formData.city,
-                    state: formData.state,
-                    postal_code: formData.zip,
+        try {
+            const { error, paymentMethod } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: elements.getElement(CardElement),
+                billing_details: {
+                    name: `${formData.firstName} ${formData.lastName}`,
+                    phone: formData.phone,
+                    email: formData.email,
+                    address: {
+                        line1: formData.address,
+                        city: formData.city,
+                        state: formData.state,
+                        postal_code: formData.zip,
+                        country: formData.country,
+                    },
                 },
-            },
-        });
+            });
 
-        if (error) {
-            console.error(error);
-            setIsProcessing(false);
-            return;
-        }
+            if (error) {
+                throw error;
+            }
 
-        const response = await fetch('/api/payments/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            const returnUrl = `${window.location.origin}/shop/checkout/success`;
+
+            // Create an order with a single product item
+            const orderResponse = await OrderApi.create({
+                items: [
+                    {
+                        productId: product.id,
+                        quantity: 1,
+                    },
+                ],
+                isMonthly,
                 paymentMethodId: paymentMethod.id,
-                amount: product.isMonthly ? product.monthlyPrice : product.annualPrice,
                 currency: 'usd',
-                productId: product.id,
-            }),
-        });
+                returnUrl,
+                address: formData,
+            });
 
-        const paymentIntentData = await response.json();
+            if (!orderResponse.success) {
+                throw new Error('Order creation failed');
+            }
 
-        if (paymentIntentData.error) {
-            console.error(paymentIntentData.error);
+            const { order, paymentIntent } = orderResponse;
+
+            // Store the order and payment data in the Zustand store
+            setOrderData(order, paymentIntent);
+
             setIsProcessing(false);
-            return;
-        }
 
-        router.push('/checkout/success');
+            // Navigate to the success page
+            router.push('/shop/checkout/success');
+
+        } catch (error) {
+            console.error('Error processing payment:', error);
+            setPaymentError(error.message);
+            setIsProcessing(false);
+        }
     };
 
     return (
         <Form onSubmit={handleSubmit}>
             <FormGroup title="Personal Information">
                 <Input
-                    label="Full Name"
-                    name="name"
-                    value={formData.name}
+                    label="FirstName"
+                    name="firstName"
+                    value={formData.firstName}
                     onChange={handleChange}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your firstname"
+                />
+                <Input
+                    label="LastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    placeholder="Enter your lastname"
                 />
                 <Input
                     label="Email Address"
@@ -94,10 +124,18 @@ export const CheckoutForm = ({ product }) => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email address"
+                    disabled={true}
                 />
             </FormGroup>
 
             <FormGroup title="Billing Address">
+                <Input
+                    label="Phone Number"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="Enter your phone number"
+                />
                 <Input
                     label="Address"
                     name="address"
@@ -122,9 +160,18 @@ export const CheckoutForm = ({ product }) => {
                 <Input
                     label="ZIP/Postal Code"
                     name="zip"
+                    type="number"
                     value={formData.zip}
                     onChange={handleChange}
                     placeholder="Enter your ZIP/postal code"
+                />
+
+                <Input
+                    label="Country"
+                    name="country"
+                    value={formData.country}
+                    onChange={handleChange}
+                    placeholder="Enter your country"
                 />
             </FormGroup>
 
@@ -143,13 +190,14 @@ export const CheckoutForm = ({ product }) => {
                                 color: '#e5424d',
                             },
                         },
+                        hidePostalCode:true,
                     }}
                 />
             </FormGroup>
 
             <div className="flex justify-between">
                 <Button type="submit" label={isProcessing ? "Processing..." : "Complete Purchase"} disabled={isProcessing} />
-                <Button type="reset" label="Reset Form" />
+                <Button type="reset" label="Reset " />
             </div>
         </Form>
     );

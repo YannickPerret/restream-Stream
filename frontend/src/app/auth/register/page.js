@@ -32,9 +32,6 @@ export default function Page() {
         password,
         passwordRetry,
         username,
-        firstName,
-        lastName,
-        phone,
       }).then((data) => {
         setError('Thanks for registering. Check your email to confirm your account.');
       });
@@ -108,38 +105,6 @@ export default function Page() {
                   value={passwordRetry}
                   required={true}
                   onChange={(e) => setPasswordRetry(e.target.value)}
-              />
-            </FormGroup>
-
-            <FormGroup type="column" title={"Personal Information"}>
-              <label htmlFor="firstName" className="block text-white mt-4">First Name (optional)</label>
-              <input
-                  type="text"
-                  id="firstName"
-                  placeholder="First Name"
-                  className="w-full p-3 mt-2 mb-4 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-              />
-
-              <label htmlFor="lastName" className="block text-white mt-4">Last Name (optional)</label>
-              <input
-                  type="text"
-                  id="lastName"
-                  placeholder="Last Name"
-                  className="w-full p-3 mt-2 mb-4 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-              />
-
-              <label htmlFor="phone" className="block text-white mt-4">Phone (optional)</label>
-              <input
-                  type="text"
-                  id="phone"
-                  placeholder="Phone"
-                  className="w-full p-3 mt-2 mb-4 bg-gray-800 border border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
               />
             </FormGroup>
 

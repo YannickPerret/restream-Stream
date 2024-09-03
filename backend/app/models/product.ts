@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import {afterFetch, afterFind, BaseModel, beforeSave, column} from '@adonisjs/lucid/orm'
+import { afterFetch, afterFind, BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
 
 export default class Product extends BaseModel {
   @column({ isPrimary: true })
@@ -9,19 +9,19 @@ export default class Product extends BaseModel {
   declare title: string
 
   @column()
-  declare monthlyPrice : number
+  declare monthlyPrice: number
 
   @column()
-  declare annualPrice : number
+  declare annualPrice: number
 
   @column()
-  declare directDiscount : number
+  declare directDiscount: number
 
   @column()
   declare features: string | string[]
 
   @column()
-  declare isActive : boolean
+  declare isActive: boolean
 
   @column()
   declare showOnHomepage: boolean
