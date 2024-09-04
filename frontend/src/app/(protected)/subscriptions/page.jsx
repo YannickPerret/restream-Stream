@@ -15,7 +15,7 @@ const SubscriptionPage = () => {
         { key: 'productName', title: 'Product' },
         { key: 'status', title: 'Status' },
         { key: 'expiresAt', title: 'Expires At' },
-        { key: 'createdAt', title: 'Created At' },
+        { key: 'createdAt', title: 'Purchase At' },
     ];
 
     const data = subscriptions.map(subscription => ({

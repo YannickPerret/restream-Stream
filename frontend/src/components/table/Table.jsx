@@ -1,5 +1,5 @@
 'use client'
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 
 /****** To use it*****/
 /*
@@ -79,7 +79,7 @@ const Table = ({ columns, data }) => {
                         {columns.map((col) => (
                             <td
                                 key={col.key}
-                                className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-300"
+                                className="px-6 py-4 text-sm font-medium text-gray-300 break-words"
                             >
                                 {col.render ? col.render(row[col.key], row) : row[col.key]}
                             </td>

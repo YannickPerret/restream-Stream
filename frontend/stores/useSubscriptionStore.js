@@ -1,4 +1,4 @@
-import create from 'zustand';
+import { create } from 'zustand'
 import SubscriptionApi from '#api/subscription';
 
 const createSelectors = (_store) => {

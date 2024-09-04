@@ -15,7 +15,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
     return (
         <html lang="fr">
-        <body className={`${inter.className} flex flex-col min-h-screen`}>
+        <body className={`${inter.className} flex flex-col min-h-screen max-w-screen`}>
         <ClientTokenChecker/>
         <TopBanner
             message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "

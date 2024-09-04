@@ -11,8 +11,11 @@ const createSelectors = (_store) => {
 };
 
 export const useTimelineStore = createSelectors(create((set, get) => ({
-    timelines: [],
-    selectedTimeline: null,
+    timelines: [], // Liste des timelines
+    selectedTimeline: null, // Timeline actuellement sélectionnée
+    timelineItems: [], // Liste des éléments (vidéos) de la timeline actuelle
+    addAutoTransition: false, // Indicateur pour ajouter automatiquement des transitions
+    videoTransition: null, // Vidéo de transition
 
     fetchTimelines: async () => {
         try {
@@ -26,7 +29,7 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
     fetchTimelineById: async (id) => {
         const existingTimeline = get().timelines.find((timeline) => timeline.id === id);
         if (existingTimeline) {
-            set({ selectedTimeline: existingTimeline });
+            set({ selectedTimeline: existingTimeline, timelineItems: existingTimeline.items || [] });
             return existingTimeline;
         }
         try {
@@ -36,6 +39,7 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
                     ? state.timelines.map((t) => (t.id === timeline.id ? timeline : t))
                     : [...state.timelines, timeline],
                 selectedTimeline: timeline,
+                timelineItems: timeline.items || [],
             }));
             return timeline;
         } catch (error) {
@@ -43,6 +47,63 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
             return null;
         }
     },
+
+    addVideoToTimeline: (video) => {
+        const timelineItems = get().timelineItems;
+        const now = new Date();
+        let startTime;
+
+        if (timelineItems.length === 0) {
+            // Si la timeline est vide, commencez à maintenant
+            startTime = new Date(now);
+        } else {
+            // Sinon, commencez à la fin de la dernière vidéo ajoutée
+            const lastItem = timelineItems[timelineItems.length - 1];
+            startTime = new Date(lastItem.endTime);
+        }
+
+        const endTime = new Date(startTime);
+        endTime.setMinutes(endTime.getMinutes() + video.duration);
+
+        const newTimelineItem = {
+            video,
+            startTime,
+            endTime,
+        };
+
+        set({ timelineItems: [...timelineItems, newTimelineItem] });
+
+        if (get().addAutoTransition && get().videoTransition) {
+            const transitionVideo = get().videoTransition;
+            if (transitionVideo) {
+                const transitionItem = {
+                    video: transitionVideo,
+                    startTime: endTime,
+                    endTime: new Date(endTime.getTime() + transitionVideo.duration * 60000),
+                };
+                set({ timelineItems: [...get().timelineItems, transitionItem] });
+            }
+        }
+    },
+
+    removeVideoFromTimeline: (index) => {
+        const timelineItems = get().timelineItems;
+        const newTimelineItems = [...timelineItems];
+        newTimelineItems.splice(index, 1);
+        set({ timelineItems: newTimelineItems });
+    },
+
+    moveVideoInTimeline: (fromIndex, toIndex) => {
+        const timelineItems = get().timelineItems;
+        const newTimelineItems = [...timelineItems];
+        const [movedItem] = newTimelineItems.splice(fromIndex, 1);
+        newTimelineItems.splice(toIndex, 0, movedItem);
+        set({ timelineItems: newTimelineItems });
+    },
+
+    setAddAutoTransition: (value) => set({ addAutoTransition: value }),
+
+    setVideoTransition: (video) => set({ videoTransition: video }),
 
     createTimeline: async (data) => {
         try {
@@ -72,9 +133,14 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
     deleteTimelineById: async (id) => {
         try {
             await TimelineApi.delete(id);
-            set((state) => ({ timelines: state.timelines.filter((timeline) => timeline.id !== id) }));
+            set((state) => ({
+                timelines: state.timelines.filter((timeline) => timeline.id !== id),
+                selectedTimeline: state.selectedTimeline?.id === id ? null : state.selectedTimeline,
+                timelineItems: state.selectedTimeline?.id === id ? [] : state.timelineItems,
+            }));
         } catch (error) {
             console.error("Failed to delete timeline", error);
         }
     },
+
 })));

@@ -44,17 +44,22 @@ const IndexProductPage = () => {
     }));
 
     return (
-        <div className="container mx-auto py-12 text-white">
-            <h1 className="text-3xl font-bold mb-6">Products</h1>
-            <div className="flex justify-end mb-4">
-                <Link href="/admin/products/create">
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
-                        Create New Product
-                    </button>
-                </Link>
+        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
+            <div className="container mx-auto">
+                <header className="flex justify-between items-center mb-6">
+                    <h1 className="text-4xl font-bold text-white">Products</h1>
+                        <Link href="/admin/products/create">
+                            <button
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
+                                Create New Product
+                            </button>
+                        </Link>
+                </header>
+                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+
+                <Table columns={columns} data={data}/>
             </div>
-            <Table columns={columns} data={data} />
-        </div>
+        </section>
     );
 };
 
