@@ -45,6 +45,8 @@ router
       .group(() => {
         router.get('/', [ProductsController, 'index'])
         router.get(':id', [ProductsController, 'show'])
+        router.post('/', [ProductsController, 'store'])
+        router.put(':id', [ProductsController, 'update'])
       })
       .prefix('products')
 

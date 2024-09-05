@@ -29,7 +29,11 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
     const handleSearch = async () => {
         try {
             const data = { domain: searchUrl, query };
-            const results = await SearchApi.search(data);
+            const response = await SearchApi.search(data);
+
+            // Accéder aux résultats réels dans la réponse
+            const results = response.results || [];
+
             setResults(results);
             setShowResults(true);
         } catch (error) {
@@ -50,6 +54,7 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
             setShowResults(false); // Hide results after selection if not multiple
         }
     };
+
 
     const handleRemove = (itemId) => {
         const newSelectedItems = selectedItems.filter(item => item.id !== itemId);
@@ -95,7 +100,7 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
             {showResults && results.length > 0 && (
                 <div
                     ref={resultsRef}
-                    className="absolute z-10 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-h-64 overflow-y-auto mt-2 w-full border border-violet-500"
+                    className="absolute z-10 bg-gray-900 text-white p-4 rounded-lg shadow-lg max-h-64 overflow-y-auto mt-2 w-full border border-violet-500 z-50"
                 >
                     <ul>
                         {results.map(item => (

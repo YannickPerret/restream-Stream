@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
-import { Home, Users, Folder, Calendar, FileText } from 'lucide-react';
+import { Home, Users, Folder, Calendar, FileText, Video, SubscriptIcon } from 'lucide-react';
 import { useSessionStore } from '#stores/useSessionStore';
 import { useSubscriptionStore } from '#stores/useSubscriptionStore';
 
@@ -34,7 +34,7 @@ const navItems = [
     {
         href: '/videos',
         label: 'Videos',
-        icon: FileText,
+        icon: Video,
         condition: () => true,
     },
     {
@@ -46,6 +46,19 @@ const navItems = [
     {
         href: '/admin/products',
         label: 'Gérer les produits',
+        icon: FileText,
+        condition: () => true,
+    },
+    {
+        href: '/admin/subscriptions',
+        label: 'Gérer les souscriptions',
+        icon: FileText,
+        condition: () => true,
+    },
+
+    {
+        href: '/admin/users',
+        label: 'Gérer les utilisateurs',
         icon: FileText,
         condition: () => true,
     },

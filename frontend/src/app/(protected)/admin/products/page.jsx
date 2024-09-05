@@ -17,21 +17,29 @@ const IndexProductPage = () => {
         { key: 'annualPrice', title: 'Annual Price ($)' },
         { key: 'directDiscount', title: 'Discount (%)' },
         {
-            key: 'features',
+            key: 'labelFeatures',
             title: 'Features',
-            render: (features) => features.join(', ') // Rendering array of features as a comma-separated string
+            render: (labelFeatures) => labelFeatures?.join(', ') // Rendering array of features as a comma-separated string
         },
         {
             key: 'action',
             title: 'Actions',
             render: (text, record) => (
-                <Link href={`/admin/products/${record.id}`}>
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg">
-                        View
-                    </button>
-                </Link>
+                <>
+                    <Link href={`/admin/products/${record.id}`}>
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg mr-2">
+                            View
+                        </button>
+                    </Link>
+                    <Link href={`/admin/products/${record.id}/edit`}>
+                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg">
+                            Edit
+                        </button>
+                    </Link>
+                </>
             )
         },
+
     ];
 
     const data = products.map(product => ({
@@ -40,7 +48,7 @@ const IndexProductPage = () => {
         monthlyPrice: product.monthlyPrice,
         annualPrice: product.annualPrice,
         directDiscount: product.directDiscount,
-        features: product.features,
+        labelFeatures: product.labelFeatures,
     }));
 
     return (

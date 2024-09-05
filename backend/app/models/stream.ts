@@ -20,7 +20,7 @@ import { drive } from '#config/drive'
 import emitter from '@adonisjs/core/services/emitter'
 import pidusage from 'pidusage'
 import si from 'systeminformation';
-import transmit from "@adonisjs/transmit/services/main";
+import transmit from '@adonisjs/transmit/services/main'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })

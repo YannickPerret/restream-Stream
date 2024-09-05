@@ -8,7 +8,7 @@ const PriceCard = ({
                        annualPrice,
                        discount,
                        isMonthly,
-                       features,
+                       labelFeatures,
                        buttonText,
                        isHighlighted
                    }) => {
@@ -45,7 +45,7 @@ const PriceCard = ({
                 {buttonText}
             </button>
             <ul className="mt-6 space-y-2">
-                {features.map((feature, index) => (
+                {labelFeatures.map((feature, index) => (
                     <li key={index} className="flex items-center">
                         <span className={`mr-2 ${isHighlighted ? 'text-indigo-600' : 'text-white'}`}>✓</span>
                         <span>{feature}</span>

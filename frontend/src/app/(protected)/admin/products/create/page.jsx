@@ -1,4 +1,3 @@
-
 'use client'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -16,7 +15,23 @@ const CreateProductPage = () => {
     const [monthlyPrice, setMonthlyPrice] = useState('');
     const [annualPrice, setAnnualPrice] = useState('');
     const [directDiscount, setDirectDiscount] = useState('');
-    const [features, setFeatures] = useState('');
+    const [labelFeatures, setLabelFeatures] = useState([]);
+    const [features, setFeatures] = useState([]);
+
+    const handleAddFeature = () => {
+        setFeatures([...features, { name: '', value: '' }]);
+    };
+
+    const handleFeatureChange = (index, field, value) => {
+        const updatedFeatures = features.map((feature, i) =>
+            i === index ? { ...feature, [field]: value } : feature
+        );
+        setFeatures(updatedFeatures);
+    };
+
+    const handleRemoveFeature = (index) => {
+        setFeatures(features.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,7 +40,11 @@ const CreateProductPage = () => {
             monthlyPrice: parseInt(monthlyPrice),
             annualPrice: parseInt(annualPrice),
             directDiscount: parseInt(directDiscount),
-            features: features.split(','), // Convert comma-separated string into an array
+            labelFeatures,
+            features: features.map((feature) => ({
+                name: feature.name,
+                value: feature.value,
+            })), // Format features as an array of objects
         };
 
         await addProduct(productData);
@@ -41,8 +60,31 @@ const CreateProductPage = () => {
                     <Input label="Monthly Price" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
                     <Input label="Annual Price" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} />
                     <Input label="Direct Discount (%)" type="number" value={directDiscount} onChange={(e) => setDirectDiscount(e.target.value)} />
-                    <Input label="Features" placeholder="Separate features with commas" value={features} onChange={(e) => setFeatures(e.target.value)} />
+                    <Input label="Label Features"  value={labelFeatures.join(', ')} onChange={(e) => setLabelFeatures(e.target.value)} />
+
                 </FormGroup>
+
+                <FormGroup title="Product Features">
+                    {features.map((feature, index) => (
+                        <div key={index} className="flex items-center mb-4">
+                            <Input
+                                label={`Feature ${index + 1} Name`}
+                                value={feature.name}
+                                onChange={(e) => handleFeatureChange(index, 'name', e.target.value)}
+                                className="mr-4"
+                            />
+                            <Input
+                                label={`Feature ${index + 1} Value`}
+                                value={feature.value}
+                                onChange={(e) => handleFeatureChange(index, 'value', e.target.value)}
+                                className="mr-4"
+                            />
+                            <Button type="button" label="Remove" onClick={() => handleRemoveFeature(index)} className="text-red-500" />
+                        </div>
+                    ))}
+                    <Button type="button" label="Add Feature" onClick={handleAddFeature} className="mt-4" />
+                </FormGroup>
+
                 <div className="flex justify-end">
                     <Button label="Create Product" type="submit" />
                 </div>

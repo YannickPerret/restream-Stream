@@ -26,7 +26,6 @@ const useProductStore = createSelectors(create((set, get) => ({
     },
 
     // Fonction pour récupérer un produit spécifique
-    // Fonction pour récupérer un produit spécifique
     fetchProductById: async (id) => {
         set({ isLoading: true, error: null });
         try {

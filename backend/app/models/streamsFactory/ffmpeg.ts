@@ -4,6 +4,7 @@ import app from '@adonisjs/core/services/app';
 import encryption from '@adonisjs/core/services/encryption';
 import puppeteer from 'puppeteer';
 import fs from 'node:fs';
+import env from "#start/env";
 
 export interface StreamProvider {
   startStream(onBitrateUpdate: (bitrate: number) => void): number;
@@ -35,7 +36,7 @@ export default class Ffmpeg implements StreamProvider {
       '-hwaccel', 'auto',
       '-f', 'concat',
       '-safe', '0',
-      '-i', `concat:${app.publicPath(this.timelinePath)}`,
+      '-i', `concat:${app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'),this.timelinePath)}`,
       '-r', '30',
     ];
 
@@ -206,8 +207,6 @@ export default class Ffmpeg implements StreamProvider {
         if (fs.existsSync(fifo)) {
           fs.unlinkSync(fifo);
           console.log(`FIFO ${fifo} removed successfully.`);
-        } else {
-          console.warn(`FIFO ${fifo} does not exist, skipping unlink.`);
         }
       } catch (error) {
         console.error(`Failed to remove FIFO ${fifo}:`, error.message);

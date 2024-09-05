@@ -10,7 +10,7 @@ export default class extends BaseSchema {
       table.integer('monthly_price').notNullable()
       table.integer('annual_price').notNullable()
       table.integer('direct_discount').nullable()
-      table.json('features').notNullable()
+      table.json('label_features').notNullable()
       table.boolean('is_active').defaultTo(true)
       table.boolean('show_on_homepage').defaultTo(true)
       table.timestamp('created_at')

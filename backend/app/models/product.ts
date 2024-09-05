@@ -1,5 +1,17 @@
 import { DateTime } from 'luxon'
-import { afterFetch, afterFind, BaseModel, beforeSave, column } from '@adonisjs/lucid/orm'
+import {
+  afterFetch,
+  afterFind,
+  BaseModel,
+  beforeSave,
+  column,
+  computed,
+  hasMany,
+  manyToMany,
+} from '@adonisjs/lucid/orm'
+import Subscription from '#models/subscription'
+import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
+import Feature from '#models/feature'
 
 export default class Product extends BaseModel {
   @column({ isPrimary: true })
@@ -18,13 +30,22 @@ export default class Product extends BaseModel {
   declare directDiscount: number
 
   @column()
-  declare features: string | string[]
+  declare labelFeatures: string | string[]
 
   @column()
   declare isActive: boolean
 
   @column()
   declare showOnHomepage: boolean
+
+  @manyToMany(() => Feature, {
+    pivotTable: 'product_features',
+    pivotColumns: ['value'],
+  })
+  declare features: ManyToMany<typeof Feature>
+
+  @hasMany(() => Subscription)
+  declare subscriptions: HasMany<typeof Subscription>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -34,8 +55,8 @@ export default class Product extends BaseModel {
 
   @beforeSave()
   public static async serializeFeatures(product: Product) {
-    if (Array.isArray(product.features)) {
-      product.features = JSON.stringify(product.features)
+    if (Array.isArray(product.labelFeatures)) {
+      product.labelFeatures = JSON.stringify(product.labelFeatures)
     }
   }
 
@@ -43,8 +64,8 @@ export default class Product extends BaseModel {
   @afterFetch()
   public static async parseFeatures(products: Product | Product[]) {
     const parse = (product: Product) => {
-      if (typeof product.features === 'string') {
-        product.features = JSON.parse(product.features)
+      if (typeof product.labelFeatures === 'string') {
+        product.labelFeatures = JSON.parse(product.labelFeatures)
       }
     }
 
@@ -55,6 +76,8 @@ export default class Product extends BaseModel {
     }
   }
 
+
+
   serialize() {
     return {
       id: this.id,
@@ -62,11 +85,12 @@ export default class Product extends BaseModel {
       monthlyPrice: this.monthlyPrice,
       annualPrice: this.annualPrice,
       directDiscount: this.directDiscount,
-      features: this.features,
+      labelFeatures: this.labelFeatures,
       isActive: this.isActive,
       showOnHomepage: this.showOnHomepage,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
+      features: this.features,
     }
   }
 }

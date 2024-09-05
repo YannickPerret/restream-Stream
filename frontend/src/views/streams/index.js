@@ -9,9 +9,10 @@ import {StreamApi} from "#api/stream.js";
 export default function StreamPageIndex() {
     const streams = useStreamStore.use.streams();
     const updateStreamStatus = useStreamStore.use.updateStreamStatus();
-    const updateCurrentVideo = useStreamStore.use.updateCurrentVideo();
     const deleteStreamById = useStreamStore.use.deleteStreamById();
     const [selectedStream, setSelectedStream] = useState(null);
+
+    console.log(streams)
 
     const columns = [
         { title: "Name", key: "name", render: (name, stream) => <Link href={`/streams/${stream.id}`}>{name}</Link> },

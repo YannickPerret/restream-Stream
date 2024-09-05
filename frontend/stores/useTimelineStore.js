@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { TimelineApi } from "#api/timeline.js";
+import { DateTime } from 'luxon';
 
 const createSelectors = (_store) => {
     let store = _store;
@@ -50,25 +51,23 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
 
     addVideoToTimeline: (video) => {
         const timelineItems = get().timelineItems;
-        const now = new Date();
         let startTime;
 
         if (timelineItems.length === 0) {
             // Si la timeline est vide, commencez à maintenant
-            startTime = new Date(now);
+            startTime = DateTime.now();
         } else {
             // Sinon, commencez à la fin de la dernière vidéo ajoutée
             const lastItem = timelineItems[timelineItems.length - 1];
-            startTime = new Date(lastItem.endTime);
+            startTime = DateTime.fromISO(lastItem.endTime);
         }
 
-        const endTime = new Date(startTime);
-        endTime.setMinutes(endTime.getMinutes() + video.duration);
+        const endTime = startTime.plus({ minutes: video.duration });
 
         const newTimelineItem = {
             video,
-            startTime,
-            endTime,
+            startTime: startTime.toISO(),
+            endTime: endTime.toISO(),
         };
 
         set({ timelineItems: [...timelineItems, newTimelineItem] });
@@ -78,10 +77,58 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
             if (transitionVideo) {
                 const transitionItem = {
                     video: transitionVideo,
-                    startTime: endTime,
-                    endTime: new Date(endTime.getTime() + transitionVideo.duration * 60000),
+                    startTime: endTime.toISO(),
+                    endTime: endTime.plus({ minutes: transitionVideo.duration }).toISO(),
                 };
                 set({ timelineItems: [...get().timelineItems, transitionItem] });
+            }
+        }
+    },
+
+    addPlaylistToTimeline: (playlist) => {
+        const timelineItems = get().timelineItems;
+        let startTime;
+
+        if (timelineItems.length === 0) {
+            // Si la timeline est vide, commencez à maintenant
+            startTime = DateTime.now();
+        } else {
+            // Sinon, commencez à la fin de la dernière vidéo ajoutée
+            const lastItem = timelineItems[timelineItems.length - 1];
+            startTime = DateTime.fromISO(lastItem.endTime);
+        }
+
+        playlist.videos.forEach((video) => {
+            const endTime = startTime.plus({ minutes: video.duration });
+
+            const newTimelineItem = {
+                video,
+                startTime: startTime.toISO(), // Conversion en ISO pour garder un format standardisé
+                endTime: endTime.toISO(),
+            };
+
+            set((state) => ({
+                timelineItems: [...state.timelineItems, newTimelineItem],
+            }));
+
+            // Mettre à jour startTime pour la prochaine vidéo
+            startTime = endTime;
+        });
+
+        if (get().addAutoTransition && get().videoTransition) {
+            const transitionVideo = get().videoTransition;
+            if (transitionVideo) {
+                const endTime = startTime.plus({ minutes: transitionVideo.duration });
+
+                const transitionItem = {
+                    video: transitionVideo,
+                    startTime: startTime.toISO(),
+                    endTime: endTime.toISO(),
+                };
+
+                set((state) => ({
+                    timelineItems: [...state.timelineItems, transitionItem],
+                }));
             }
         }
     },
@@ -129,6 +176,8 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
             console.error("Failed to update timeline", error);
         }
     },
+    clearTimeline: () => set({ timelineItems: [] }),
+
 
     deleteTimelineById: async (id) => {
         try {

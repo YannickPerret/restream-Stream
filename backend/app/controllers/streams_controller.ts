@@ -145,8 +145,6 @@ export default class StreamsController {
         'https://dashboard.twitch.tv/widgets/alertbox#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGVydF9zZXRfaWQiOiIxOWVkMzhiMC0yZTVjLTRlMTgtYjYyNy1kNDE5MTg5NjdjMzAiLCJ1c2VyX2lkIjoiNDczNzQ5MTgifQ.4xkFoUyJGye34aj4ZrvDTnARV_imT0epWWw08JBD95I',
     })
 
-    console.log(stream)
-
     if (stream && providersForm) {
       for (const provider of providersForm) {
         await stream.related('providers').attach({

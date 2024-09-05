@@ -5,23 +5,11 @@ import { useVideoStore } from "#stores/useVideoStore";
 import TimelineContainer from "#components/timeline/TimelineContainer";
 
 export default function TimelineCreatePage() {
-    const [timeline, setTimeline] = useState([]);
     const {fetchVideos, videos} = useVideoStore()
 
     useEffect(() => {
         fetchVideos();
     }, [fetchVideos]);
-
-    const calculateStartTimes = () => {
-        let currentTime = new Date();
-        return timeline.map((item, index) => {
-            const startTime = new Date(currentTime);
-            currentTime.setMinutes(currentTime.getMinutes() + item.video.duration); // Add duration to current time
-            return { ...item, startTime };
-        });
-    };
-
-    const timelineWithStartTimes = calculateStartTimes();
 
     return (
         <section className="flex flex-col w-full h-full p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black rounded-2xl shadow-2xl">

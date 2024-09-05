@@ -3,6 +3,8 @@ import Timeline from '#models/timeline'
 import TimelineItem from '#models/timeline_item'
 import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
+import app from "@adonisjs/core/services/app";
+import env from "#start/env";
 
 export default class TimelinesController {
   /**
@@ -34,12 +36,12 @@ export default class TimelinesController {
    */
   async store({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
-    const { title, description, items } = request.all()
+    const { title, items } = request.all()
 
     const timeline = await Timeline.create({
       title,
       filePath: '',
-      description,
+      description: '',
       userId: user.id,
     })
 
@@ -141,9 +143,11 @@ export default class TimelinesController {
       return response.forbidden('You are not authorized to delete this timeline')
     }
 
-    fs.unlink(timeline.filePath, (err) => {
-      if (err) {
-        logger.error(err)
+    fs.unlink(
+      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY') + '/' + timeline.filePath),
+      (err) => {
+        if (err) {
+          logger.error(err)
       }
     })
 

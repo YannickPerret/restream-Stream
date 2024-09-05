@@ -1,15 +1,15 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
-import Product from "#models/product";
+import Product from '#models/product'
 
 export default class ProductSeeder extends BaseSeeder {
-  public async run() {
+  async run() {
     await Product.createMany([
       {
         title: 'Starter',
         monthlyPrice: 9,
         annualPrice: 100,
         directDiscount: 16,
-        features: ['Basic invoicing', 'Easy to use accounting', 'Multi-accounts'],
+        labelFeatures: ['Basic invoicing', 'Easy to use accounting', 'Multi-accounts'],
         isActive: true,
         showOnHomepage: true,
       },
@@ -18,7 +18,14 @@ export default class ProductSeeder extends BaseSeeder {
         monthlyPrice: 39,
         annualPrice: 430,
         directDiscount: 16,
-        features: ['Advanced invoicing', 'Easy to use accounting', 'Multi-accounts', 'Tax planning toolkit', 'VAT & VATMOSS filing', 'Free bank transfers'],
+        labelFeatures: [
+          'Advanced invoicing',
+          'Easy to use accounting',
+          'Multi-accounts',
+          'Tax planning toolkit',
+          'VAT & VATMOSS filing',
+          'Free bank transfers',
+        ],
         isActive: true,
         showOnHomepage: true,
       },
@@ -27,7 +34,12 @@ export default class ProductSeeder extends BaseSeeder {
         monthlyPrice: 99,
         annualPrice: 1000,
         directDiscount: 16,
-        features: ['Basic invoicing', 'Easy to use accounting', 'Multi-accounts', 'Tax planning toolkit'],
+        labelFeatures: [
+          'Basic invoicing',
+          'Easy to use accounting',
+          'Multi-accounts',
+          'Tax planning toolkit',
+        ],
         isActive: true,
         showOnHomepage: true,
       }

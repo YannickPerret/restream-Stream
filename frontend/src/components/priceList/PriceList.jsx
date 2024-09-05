@@ -14,6 +14,7 @@ const PriceList = () => {
 
     if (isLoading) return <div>Loading...</div>;
 
+    console.log(products)
     return (
         <div className="bg-gray-900 text-white py-36">
             <div className="container mx-auto text-center">
@@ -34,7 +35,7 @@ const PriceList = () => {
                             annualPrice={product.annualPrice}
                             discount={product.directDiscount}
                             isMonthly={isMonthly}
-                            features={product.features}
+                            labelFeatures={product.labelFeatures}
                             buttonText="Buy this plan"
                             isHighlighted={index === 1 ? true : false}
                         />

@@ -20,7 +20,7 @@ export default function PlaylistIndexPage() {
             <div className="container mx-auto">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">Your Playlists</h1>
-                    <Link href="/playlists/new">
+                    <Link href="/playlists/create">
                         <button
                             className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
                             Add New Playlist

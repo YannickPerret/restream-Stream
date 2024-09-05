@@ -1,9 +1,10 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import {BaseModel, belongsTo, column, hasMany} from '@adonisjs/lucid/orm'
 import User from '#models/user'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import type {BelongsTo, HasMany} from '@adonisjs/lucid/types/relations'
 import Product from '#models/product'
 import Order from '#models/order'
+import SubscriptionFeature from "#models/subscription_feature";
 
 export default class Subscription extends BaseModel {
   @column({ isPrimary: true })
@@ -32,6 +33,9 @@ export default class Subscription extends BaseModel {
 
   @belongsTo(() => Order)
   declare order: BelongsTo<typeof Order>
+
+  @hasMany(() => SubscriptionFeature)
+  declare features: HasMany<typeof SubscriptionFeature>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

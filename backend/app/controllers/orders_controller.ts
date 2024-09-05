@@ -1,11 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Order from '#models/Order'
 import OrderItem from '#models/order_item'
 import Payment from '#models/payment'
 import Product from '#models/product'
 import UserAddress from '#models/user_address'
 import { DateTime } from 'luxon'
-import Subscription from "#models/subscription";
+import Order from '#models/order'
+import Subscription from '#models/subscription'
 
 export default class OrdersController {
   /**
