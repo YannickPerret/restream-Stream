@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A new order request your interest</title>
+</head>
+<body>
+  <h1>Hello {{ user.firstName }}!</h1>
+
+  <p>Thank you for your order #{{ order.id }}.</p>
+  <p>To complete your purchase, please click the link below to finalize your payment:</p>
+
+  <a href="{{ paymentLink }}">Complete Payment</a>
+
+  <p>If you have any questions, feel free to reach out to our support team.</p>
+
+  <p>Thank you!</p>
+  <p>Your App Team</p>
+</body>
+</html>

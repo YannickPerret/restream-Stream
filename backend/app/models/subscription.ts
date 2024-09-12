@@ -171,8 +171,8 @@ export default class Subscription extends BaseModel {
       product: this.product,
       orderId: this.orderId,
       status: this.status,
-      expiresAt: new Date(this.expiresAt).toLocaleDateString(),
-      createdAt: new Date(this.createdAt).toLocaleDateString(),
+      expiresAt: DateTime.fromJSDate(new Date(this.expiresAt)).toFormat('dd/MM/yyyy'),
+      createdAt: DateTime.fromJSDate(new Date(this.createdAt)).toFormat('dd/MM/yyyy'),
       features: this.getSubscriptionWithFeatures(),
     }
   }

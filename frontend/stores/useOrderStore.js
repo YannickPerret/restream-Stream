@@ -11,21 +11,25 @@ const createSelectors = (_store) => {
 };
 
 const useOrderStore = createSelectors(create((set, get) => ({
-    orders: null,
+    orders: [], // Initialiser les commandes avec un tableau vide
     paymentIntent: null,
     setOrderData: (orders, paymentIntent) => set({ orders, paymentIntent }),
-    clearOrderData: () => set({ orders: null, paymentIntent: null }),
+    clearOrderData: () => set({ orders: [], paymentIntent: null }),
+
+    setOrders: (orders) => set({ orders }),
 
     fetchOrders: async () => {
         try {
             const orders = await OrderApi.getAll();
             console.log(orders)
-            set({ orders });
+            set({ orders })
             return orders;
         } catch (error) {
             console.error("Failed to fetch orders", error);
         }
     },
+
+
 })))
 
 export default useOrderStore;

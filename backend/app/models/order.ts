@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, hasMany, hasOne } from '@adonisjs/lucid/orm'
+import {BaseModel, belongsTo, column, hasMany, hasOne, scope} from '@adonisjs/lucid/orm'
 import Payment from '#models/payment'
 import User from '#models/user'
 import type { BelongsTo, HasMany, HasOne } from '@adonisjs/lucid/types/relations'
@@ -35,4 +35,16 @@ export default class Order extends BaseModel {
 
   @hasOne(() => Payment)
   declare payment: HasOne<typeof Payment>
+
+  static applyFilters = scope((query, filters) => {
+    Object.keys(filters).forEach((key) => {
+      const value = filters[key];
+      if (Array.isArray(value)) {
+        query.whereIn(key, value);
+      } else {
+        query.where(key, value);
+      }
+    });
+  });
+
 }

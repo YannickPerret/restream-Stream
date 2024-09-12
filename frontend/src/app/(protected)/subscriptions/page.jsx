@@ -14,15 +14,16 @@ const SubscriptionPage = () => {
     const columns = [
         { key: 'productName', title: 'Product' },
         { key: 'status', title: 'Status' },
-        { key: 'expiresAt', title: 'Expires At' },
         { key: 'createdAt', title: 'Purchase At' },
+        { key: 'expiresAt', title: 'Expires At' },
     ];
 
     const data = subscriptions.map(subscription => ({
+
         productName: subscription.product.title || "Unknown Product",
         status: subscription.status,
-        expiresAt: new Date(subscription.expiresAt).toLocaleDateString(),
-        createdAt: new Date(subscription.createdAt).toLocaleDateString(),
+        expiresAt: subscription.expiresAt,
+        createdAt: subscription.createdAt,
     }));
 
     console.log(subscriptions)

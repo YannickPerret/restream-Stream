@@ -56,20 +56,25 @@ const navItems = [
     },
     {
         href: '/admin/products',
-        label: 'Gérer les produits',
+        label: 'Manage products',
         icon: FileText,
         condition: (user) => user?.role?.name === 'admin',
+    },
+    {
+        href: '/admin/orders',
+        label: 'Manage orders',
+        icon: FileText,
+        condition: () => true,
     },
     {
         href: '/admin/subscriptions',
-        label: 'Gérer les souscriptions',
+        label: 'Manage subscriptions',
         icon: FileText,
         condition: (user) => user?.role?.name === 'admin',
     },
-
     {
         href: '/admin/users',
-        label: 'Gérer les utilisateurs',
+        label: 'Manage users',
         icon: FileText,
         condition: (user) => user?.role?.name === 'admin',
     },

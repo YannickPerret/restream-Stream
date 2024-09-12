@@ -1,8 +1,8 @@
-import Api from './api';
+import Api from '../api';
 
-export default class OrderApi extends Api {
+export default class OrderAdminApi extends Api {
     static async getAll() {
-        const response = await fetch(`${this.baseUrl}/api/orders`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/orders`, {
             method: 'GET',
             headers: this.getHeaders(),
         });
@@ -14,21 +14,8 @@ export default class OrderApi extends Api {
         return await response.json();
     }
 
-    static async getAllByAdmin() {
-        const response = await fetch(`${this.baseUrl}/api/admin/orders`, {
-            method: 'GET',
-            headers: this.getHeaders(),
-        });
-        if (!response.ok) {
-            const errorBody = await response.text();
-            console.error('Error status:', response.status, 'Error body:', errorBody);
-            throw new Error('Error while fetching admin orders');
-        }
-        return await response.json();
-    }
-
     static async getOne(id) {
-        const response = await fetch(`${this.baseUrl}/api/orders/${id}`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/orders/${id}`, {
             method: 'GET',
             headers: this.getHeaders(),
         });
@@ -39,7 +26,7 @@ export default class OrderApi extends Api {
     }
 
     static async create(data) {
-        const response = await fetch(`${this.baseUrl}/api/orders`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/orders`, {
             method: 'POST',
             headers: this.getHeaders(),
             body: JSON.stringify(data),
@@ -51,7 +38,7 @@ export default class OrderApi extends Api {
     }
 
     static async update(id, data) {
-        const response = await fetch(`${this.baseUrl}/api/orders/${id}`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/orders/${id}`, {
             method: 'PUT',
             headers: this.getHeaders(),
             body: JSON.stringify(data),
@@ -63,7 +50,7 @@ export default class OrderApi extends Api {
     }
 
     static async delete(id) {
-        const response = await fetch(`${this.baseUrl}/api/orders/${id}`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/orders/${id}`, {
             method: 'DELETE',
             headers: this.getHeaders(),
         });
