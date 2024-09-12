@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from 'next/navigation';
-import { Home, Users, Folder, Calendar, FileText, Video, SubscriptIcon } from 'lucide-react';
-import { useSessionStore } from '#stores/useSessionStore';
-import { useSubscriptionStore } from '#stores/useSubscriptionStore';
+import {Home, Users, Folder, Calendar, FileText, Video, SubscriptIcon, TvIcon} from 'lucide-react';
+import { useAuthStore } from '#stores/useAuthStore.js';
 
 const navItems = [
     {
+        href: '/dashboard',
+        label: 'Dashboard',
+        icon: Home,
+        condition: () => true,
+    },
+    {
         href: '/streams',
         label: 'Streams',
-        icon: Home,
+        icon: TvIcon,
         condition: () => true,
     },
     {
@@ -38,6 +43,12 @@ const navItems = [
         condition: () => true,
     },
     {
+        href: '/orders',
+        label: 'Orders',
+        icon: FileText,
+        condition: () => true,
+    },
+    {
         href: '/subscriptions',
         label: 'Subscriptions',
         icon: FileText,
@@ -47,32 +58,33 @@ const navItems = [
         href: '/admin/products',
         label: 'Gérer les produits',
         icon: FileText,
-        condition: () => true,
+        condition: (user) => user?.role?.name === 'admin',
     },
     {
         href: '/admin/subscriptions',
         label: 'Gérer les souscriptions',
         icon: FileText,
-        condition: () => true,
+        condition: (user) => user?.role?.name === 'admin',
     },
 
     {
         href: '/admin/users',
         label: 'Gérer les utilisateurs',
         icon: FileText,
-        condition: () => true,
+        condition: (user) => user?.role?.name === 'admin',
     },
 
 ];
 
 const SideNavigation = () => {
     const pathname = usePathname();
+    const {user} = useAuthStore();
 
     return (
         <aside className="w-44 self-center ml-4 my-8 mb-8">
             <nav className="flex flex-col space-y-8 w-full bg-gray-900 py-6 rounded-lg">
                 {navItems.map((item) => {
-                    if (!item.condition()) {
+                    if (!item.condition(user)) {
                         return null; // Skip rendering this item if condition is false
                     }
                     const Icon = item.icon;

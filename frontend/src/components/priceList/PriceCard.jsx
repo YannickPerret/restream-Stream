@@ -1,8 +1,9 @@
 import React from 'react';
-import {useRouter} from "next/navigation";
+import { useRouter } from "next/navigation";
+import Image from 'next/image';
 
 const PriceCard = ({
-                        id,
+                       id,
                        title,
                        monthlyPrice,
                        annualPrice,
@@ -10,7 +11,9 @@ const PriceCard = ({
                        isMonthly,
                        labelFeatures,
                        buttonText,
-                       isHighlighted
+                       isHighlighted,
+                       borderColor, // Couleur unie
+                       borderGradient // Dégradé (optionnel)
                    }) => {
     const monthlyCost = `$${monthlyPrice}`;
     const annualCost = `$${annualPrice}`;
@@ -22,36 +25,60 @@ const PriceCard = ({
     };
 
     return (
-        <div className={`bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-sm ${isHighlighted ? 'bg-white text-black' : ''}`}>
-            <h2 className={`text-2xl font-bold ${isHighlighted ? 'text-black' : 'text-white'}`}>{title}</h2>
+        <div className="relative bg-gray-50 p-6 rounded-lg shadow-lg w-full max-w-sm border-2 border-gray-200flex flex-col justify-between" >
+            {/* Bordure supérieure avec dégradé */}
+            {borderGradient ? (
+                <div
+                    className="absolute top-0 left-0 w-full h-2 rounded-t-lg"
+                    style={{
+                        background: 'linear-gradient(90deg, #7988F2 0%, #C977B0 46%, #32BD00 100%)'
+                    }}
+                />
+            ) : (
+                <div
+                    className="absolute top-0 left-0 w-full h-2 rounded-t-lg"
+                    style={{
+                        backgroundColor: borderColor
+                    }}
+                />
+            )}
+
+            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white p-2 rounded-full">
+                <Image src="/icones/fusee.svg" alt="Rocket Icon" width={50} height={50} />
+            </div>
+
+            <h2 className={`text-xl font-bold mt-12 ${isHighlighted ? 'text-black' : 'text-gray-700'}`}>{title}</h2>
             <div className="mt-4">
                 {isMonthly ? (
                     <div>
-                        <span className="text-5xl font-extrabold">{monthlyCost}</span>
-                        <span className="text-xl"> / Monthly</span>
+                        <span className="text-4xl font-extrabold text-gray-900">{monthlyCost}</span>
+                        <span className="text-lg text-gray-700"> / Monthly</span>
                     </div>
                 ) : (
                     <div>
                         <span className="text-sm text-red-500 line-through">{annualCost}</span>
                         <div>
-                            <span className="text-5xl font-extrabold">{annualTotalWithDiscount}</span>
-                            <span className="text-xl ml-2"> / Annually</span>
+                            <span className="text-4xl font-extrabold text-gray-900">{annualTotalWithDiscount}</span>
+                            <span className="text-lg ml-2 text-gray-700"> / Annually</span>
                             <span className="text-sm text-green-500 ml-2">({discount}% off)</span>
                         </div>
                     </div>
                 )}
             </div>
-            <button className={`mt-8 w-full py-2 rounded ${isHighlighted ? 'bg-indigo-600 text-white' : 'bg-gray-600 text-white'} font-semibold`} onClick={handleCheckout}>
-                {buttonText}
-            </button>
-            <ul className="mt-6 space-y-2">
+            <hr className="mt-4 border-gray-300" />
+            <ul className="mt-6 space-y-4 text-left">
                 {labelFeatures.map((feature, index) => (
-                    <li key={index} className="flex items-center">
-                        <span className={`mr-2 ${isHighlighted ? 'text-indigo-600' : 'text-white'}`}>✓</span>
+                    <li key={index} className="flex items-center text-gray-700">
+                        <span className="mr-2">✓</span>
                         <span>{feature}</span>
                     </li>
                 ))}
             </ul>
+            <button
+                className={`mt-8 w-full py-3 rounded ${isHighlighted ? 'bg-purple-600' : 'bg-gray-500'} text-white font-semibold hover:opacity-90 transition`}
+                onClick={handleCheckout}>
+                {buttonText}
+            </button>
         </div>
     );
 };

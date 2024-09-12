@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useStreamStore } from "#stores/useStreamStore";
 import Link from "next/link";
 import StreamsEditView from "@/views/streams/edit.jsx";
@@ -7,12 +7,8 @@ import Table from "#components/table/Table";
 import {StreamApi} from "#api/stream.js";
 
 export default function StreamPageIndex() {
-    const streams = useStreamStore.use.streams();
-    const updateStreamStatus = useStreamStore.use.updateStreamStatus();
-    const deleteStreamById = useStreamStore.use.deleteStreamById();
+    const {streams, updateStreamStatus, deleteStreamById} = useStreamStore();
     const [selectedStream, setSelectedStream] = useState(null);
-
-    console.log(streams)
 
     const columns = [
         { title: "Name", key: "name", render: (name, stream) => <Link href={`/streams/${stream.id}`}>{name}</Link> },
@@ -91,7 +87,7 @@ export default function StreamPageIndex() {
                     onClose={() => setSelectedStream(null)}
                 />
             )}
-            <Table columns={columns} data={streams} />
+                <Table columns={columns} data={streams} />
         </div>
     );
 }

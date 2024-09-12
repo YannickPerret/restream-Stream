@@ -5,7 +5,6 @@ import {
   BaseModel,
   beforeSave,
   column,
-  computed,
   hasMany,
   manyToMany,
 } from '@adonisjs/lucid/orm'
@@ -75,8 +74,6 @@ export default class Product extends BaseModel {
       parse(products)
     }
   }
-
-
 
   serialize() {
     return {

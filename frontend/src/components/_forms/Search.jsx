@@ -4,10 +4,10 @@ import Input from "#components/_forms/Input";
 import { SearchApi } from "#api/search";
 import Button from "#components/_forms/Button";
 
-const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search" }) => {
-    const [query, setQuery] = useState('');
+const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search", displayFields = ['title'], showSelectedItems = true, defaultValue = '' }) => {
+    const [query, setQuery] = useState(defaultValue); // Initialize with defaultValue
     const [results, setResults] = useState([]);
-    const [selectedItems, setSelectedItems] = useState([]);
+    const [selectedItems, setSelectedItems] = useState(defaultValue ? [defaultValue] : []); // Initialize selected items if defaultValue exists
     const [showResults, setShowResults] = useState(false);
 
     const inputRef = useRef(null);
@@ -31,7 +31,7 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
             const data = { domain: searchUrl, query };
             const response = await SearchApi.search(data);
 
-            // Accéder aux résultats réels dans la réponse
+            // Access the actual results from the response
             const results = response.results || [];
 
             setResults(results);
@@ -54,7 +54,6 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
             setShowResults(false); // Hide results after selection if not multiple
         }
     };
-
 
     const handleRemove = (itemId) => {
         const newSelectedItems = selectedItems.filter(item => item.id !== itemId);
@@ -109,20 +108,24 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
                                 className="flex justify-between items-center py-2 hover:bg-gray-700 cursor-pointer rounded px-2"
                                 onClick={() => handleSelect(item)}
                             >
-                                <span>{item.title || item.name || 'No Title Available'}</span>
+                                {displayFields.map(field => (
+                                    <span key={field}>{item[field] || 'No Data Available'}</span>
+                                ))}
                             </li>
                         ))}
                     </ul>
                 </div>
             )}
 
-            {selectedItems.length > 0 && (
+            {showSelectedItems && selectedItems.length > 0 && (
                 <div className="mt-4">
                     <h3 className="text-white mb-2">Selected Items:</h3>
                     <ul className="bg-gray-900 text-white p-4 rounded-lg shadow-lg">
                         {selectedItems.map(item => (
                             <li key={item.id} className="flex justify-between items-center py-2">
-                                <span>{item.title || item.name || 'No Title Available'}</span>
+                                {displayFields.map(field => (
+                                    <span key={field}>{item[field] || 'No Data Available'}</span>
+                                ))}
                                 <Button label="Remove" onClick={() => handleRemove(item.id)} />
                             </li>
                         ))}

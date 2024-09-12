@@ -40,4 +40,22 @@ export default class AuthApi extends Api{
     if (!response.ok) throw new Error(response.statusText);
     return await response.json()
   }
+
+  static async refreshToken() {
+    const response = await fetch(`${this.baseUrl}/api/auth/refreshToken`, {
+      method: "POST",
+      headers: this.getHeaders(),
+    })
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json()
+  }
+
+  static async getCurrentUser() {
+    const response = await fetch(`${this.baseUrl}/api/auth/current-user`, {
+      method: 'GET',
+      headers: this.getHeaders(),
+    })
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json()
+  }
 }

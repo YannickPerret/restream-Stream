@@ -60,3 +60,12 @@ input, textarea, select {
 .btn-error {
   @apply bg-red-500;
 }
+
+.hero {
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

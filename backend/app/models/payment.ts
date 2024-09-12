@@ -51,6 +51,7 @@ export default class Payment extends BaseModel {
     payment: { paymentMethodId: string; returnUrl: string }
   ) {
     try {
+
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: Math.round(order.totalAmount * 100),
         currency: order.currency || 'usd',

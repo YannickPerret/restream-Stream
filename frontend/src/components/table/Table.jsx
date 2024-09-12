@@ -12,7 +12,7 @@ const data = [
 ];
  */
 
-const Table = ({ columns, data }) => {
+const Table = ({ columns, data, darkMode = false }) => {
     const [sortConfig, setSortConfig] = useState(null);
 
     const sortedData = React.useMemo(() => {
@@ -50,11 +50,27 @@ const Table = ({ columns, data }) => {
         return sortConfig.key === name ? sortConfig.direction : undefined;
     };
 
+    const tableClasses = darkMode
+        ? "bg-gray-900 text-white"
+        : "bg-white text-black";
+
+    const headerClasses = darkMode
+        ? "bg-gray-800 text-gray-400"
+        : "bg-gray-200 text-gray-700";
+
+    const rowEvenClasses = darkMode
+        ? "bg-gray-800"
+        : "bg-gray-100";
+
+    const rowOddClasses = darkMode
+        ? "bg-gray-900"
+        : "bg-white";
+
     return (
-        <div className="bg-gray-900 text-white p-8 rounded-b-lg shadow-lg overflow-x-auto">
+        <div className={`${tableClasses} p-8 rounded-b-lg overflow-x-auto`}>
             <table className="min-w-full table-auto">
                 <thead>
-                <tr className="bg-gray-800 text-gray-400">
+                <tr className={headerClasses}>
                     {columns.map((col) => (
                         <th
                             key={col.key}
@@ -66,8 +82,8 @@ const Table = ({ columns, data }) => {
                             {col.title}
                             {getClassNamesFor(col.key) && (
                                 <span className={`ml-2 ${getClassNamesFor(col.key) === 'ascending' ? 'arrow-up' : 'arrow-down'}`}>
-                                        {getClassNamesFor(col.key) === 'ascending' ? '▲' : '▼'}
-                                    </span>
+                                    {getClassNamesFor(col.key) === 'ascending' ? '▲' : '▼'}
+                                </span>
                             )}
                         </th>
                     ))}
@@ -75,11 +91,11 @@ const Table = ({ columns, data }) => {
                 </thead>
                 <tbody>
                 {sortedData.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={`border-b border-gray-700 transition-colors duration-300 hover:bg-gray-700 ${rowIndex % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900'}`}>
+                    <tr key={rowIndex} className={`border-b border-gray-700 transition-colors duration-300 hover:bg-gray-700 ${rowIndex % 2 === 0 ? rowEvenClasses : rowOddClasses}`}>
                         {columns.map((col) => (
                             <td
                                 key={col.key}
-                                className="px-6 py-4 text-sm font-medium text-gray-300 break-words"
+                                className="px-6 py-4 text-sm font-medium break-words"
                             >
                                 {col.render ? col.render(row[col.key], row) : row[col.key]}
                             </td>

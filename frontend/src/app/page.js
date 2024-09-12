@@ -7,6 +7,7 @@ import FeaturesSection from "#components/feature/FeatureSection.jsx";
 import HeroSection from "#components/hero/Hero.jsx";
 import Newsletter from "#components/newsletter/Newsletter.jsx";
 import ContactForm from "#components/contact/ContactForm.jsx";
+import ProductShowcase from "#components/productShowcase/productShowcase.jsx";
 
 export default function Home() {
     return (
@@ -14,6 +15,8 @@ export default function Home() {
             <section className="flex flex-col w-full" id={"hero"}>
                 <HeroSection />
             </section>
+
+            <ProductShowcase />
 
             <section className="flex flex-col  w-full max-w-8xl" id={"features"}>
                 <FeaturesSection />
@@ -46,7 +49,7 @@ export default function Home() {
             </section>
 
             <section className="flex flex-col w-full max-w-8xl" id={"newsletter"}>
-            <ContactForm />
+                <ContactForm />
             </section>
 
         </>

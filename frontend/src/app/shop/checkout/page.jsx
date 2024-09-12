@@ -6,14 +6,15 @@ import useProductStore from '#stores/useProductStore.js';
 import { CheckoutForm } from "#components/shop/CheckoutForm.jsx";
 import { useSearchParams } from 'next/navigation';
 import { redirect } from "next/navigation.js";
-import { useSessionStore } from "#stores/useSessionStore.js";
+import {useAuthStore, useSessionStore} from "#stores/useAuthStore.js";
+import withAuth from "../../../../hoc/withAuth.js";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY);
 
 const CheckoutPageContent = () => {
     const searchParams = useSearchParams();
     const productId = searchParams.get('productId');
-    const isMonthly = searchParams.get('isMonthly') === 'true'; // Assurez-vous que isMonthly est un booléen
+    const isMonthly = searchParams.get('isMonthly') === 'true';
     const { fetchProductById, isLoading } = useProductStore();
     const [product, setProduct] = useState(null);
 
@@ -37,10 +38,9 @@ const CheckoutPageContent = () => {
 
     return (
         <div className="flex flex-col lg:flex-row gap-16">
-            {/* Left Column - Personal Information */}
             <div className="flex-1 bg-gray-800 p-8 rounded-lg shadow-lg">
                 <Elements stripe={stripePromise}>
-                    <CheckoutForm product={product} />
+                    <CheckoutForm product={product} isMonthly={isMonthly} />
                 </Elements>
             </div>
 
@@ -60,16 +60,8 @@ const CheckoutPageContent = () => {
 };
 
 const CheckoutPage = () => {
-    const { isAuthenticated } = useSessionStore();
-
-    useEffect(() => {
-        if (!isAuthenticated()) {
-            redirect('/auth/login');
-        }
-    }, [isAuthenticated]);
-
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
+        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black pt-44">
             <div className="container mx-auto">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-3xl font-bold text-center mb-8 text-white">Payment Checkout</h1>
@@ -83,4 +75,4 @@ const CheckoutPage = () => {
     );
 };
 
-export default CheckoutPage;
+export default withAuth(CheckoutPage);

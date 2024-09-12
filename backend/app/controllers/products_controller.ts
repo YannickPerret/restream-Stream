@@ -4,12 +4,14 @@ import Feature from '#models/feature'
 
 export default class ProductsController {
   async index({ response }: HttpContext) {
-    const products = await Product.query().where('is_active', '=', true).andWhere('show_on_homepage', '=', true)
-    return response.json(products);
+    const products = await Product.query()
+      .where('is_active', '=', true)
+      .andWhere('show_on_homepage', '=', true)
+    return response.json(products)
   }
 
   async show({ response, params }: HttpContext) {
-    // Load the product with its features
+    // Charger le produit avec ses features
     const product = await Product.query()
       .where('id', params.id)
       .preload('features', (query) => {
@@ -20,8 +22,7 @@ export default class ProductsController {
     return response.json(product)
   }
 
-  async update({ params, request, response, auth }: HttpContext) {
-    const user = await auth.authenticate()
+  async update({ params, request, response }) {
     const { title, monthlyPrice, annualPrice, directDiscount, labelFeatures, features } =
       request.only([
         'title',
@@ -32,11 +33,9 @@ export default class ProductsController {
         'features',
       ])
 
-    const { id } = params
-    // Find the product
-    const product = await Product.findOrFail(id)
+    const product = await Product.findOrFail(params.id)
 
-    // Update product details
+    // Mettre à jour les détails du produit
     product.merge({
       title,
       monthlyPrice,
@@ -44,36 +43,35 @@ export default class ProductsController {
       directDiscount,
       labelFeatures,
     })
-
     await product.save()
 
-    // Process features
+    // Détacher toutes les anciennes features pour les remplacer avec les nouvelles valeurs
+    await product.related('features').detach()
+
+    // Traitement des features
     for (const featureData of features) {
       let feature = await Feature.findBy('name', featureData.name)
 
       if (!feature) {
-        // Create the feature if it doesn't exist
+        // Créer la feature si elle n'existe pas
         feature = await Feature.create({ name: featureData.name })
       }
 
-      // Attach or update the pivot table entry with the new value
-      await product.related('features').sync({
-        [feature.id]: {
-          value: featureData.value,
-        },
-      }, false)
+      // Si la valeur est un tableau, on va insérer chaque valeur comme une nouvelle ligne
+      const values = Array.isArray(featureData.value) ? featureData.value : [featureData.value]
+
+      // Attacher chaque valeur individuellement comme une nouvelle ligne dans `product_features`
+      for (const value of values) {
+        await product.related('features').attach({
+          [feature.id]: { value },
+        })
+      }
     }
 
     return response.json({ success: true, product })
   }
 
-  async destroy({ params, response }: HttpContext) {
-    const product = await Product.findOrFail(params.id)
-    if (!product) return response.badRequest()
-
-  }
-
-  async store({ request, response }: HttpContext) {
+  async store({ request, response }) {
     const { title, monthlyPrice, annualPrice, directDiscount, labelFeatures, features } =
       request.only([
         'title',
@@ -84,13 +82,12 @@ export default class ProductsController {
         'features',
       ])
 
-    // Check if a product with the same title already exists (you might want to change this check)
     const existingProduct = await Product.findBy('title', title)
     if (existingProduct) {
       return response.badRequest({ message: 'Product with this title already exists' })
     }
 
-    // Create the new product
+    // Créer le produit
     const product = await Product.create({
       title,
       monthlyPrice,
@@ -99,21 +96,24 @@ export default class ProductsController {
       labelFeatures,
     })
 
-    // Process features
+    // Traitement des features
     for (const featureData of features) {
       let feature = await Feature.findBy('name', featureData.name)
 
       if (!feature) {
-        // Create the feature if it doesn't exist
+        // Créer la feature si elle n'existe pas
         feature = await Feature.create({ name: featureData.name })
       }
 
-      // Attach the feature to the product with the value
-      await product.related('features').attach({
-        [feature.id]: {
-          value: featureData.value,
-        },
-      })
+      // Si la valeur est un tableau, on va insérer chaque valeur comme une nouvelle ligne
+      const values = Array.isArray(featureData.value) ? featureData.value : [featureData.value]
+
+      // Attacher chaque valeur individuellement comme une nouvelle ligne dans `product_features`
+      for (const value of values) {
+        await product.related('features').attach({
+          [feature.id]: { value },
+        })
+      }
     }
 
     return response.json({
@@ -122,4 +122,6 @@ export default class ProductsController {
       product,
     })
   }
+
+  async destroy({ params, response }: HttpContext) {}
 }

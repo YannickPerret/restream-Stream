@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import OrderApi from '#api/order.js';
-import { useRouter } from 'next/navigation.js';
 
 const createSelectors = (_store) => {
     let store = _store;
@@ -12,10 +11,21 @@ const createSelectors = (_store) => {
 };
 
 const useOrderStore = createSelectors(create((set, get) => ({
-    order: null,
+    orders: null,
     paymentIntent: null,
-    setOrderData: (order, paymentIntent) => set({ order, paymentIntent }),
-    clearOrderData: () => set({ order: null, paymentIntent: null }),
+    setOrderData: (orders, paymentIntent) => set({ orders, paymentIntent }),
+    clearOrderData: () => set({ orders: null, paymentIntent: null }),
+
+    fetchOrders: async () => {
+        try {
+            const orders = await OrderApi.getAll();
+            console.log(orders)
+            set({ orders });
+            return orders;
+        } catch (error) {
+            console.error("Failed to fetch orders", error);
+        }
+    },
 })))
 
 export default useOrderStore;

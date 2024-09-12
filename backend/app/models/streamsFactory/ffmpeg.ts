@@ -26,7 +26,10 @@ export default class Ffmpeg implements StreamProvider {
     private overlay: string,
     private guestFile: string,
     private enableBrowser: boolean,
-    private webpageUrl: string
+    private webpageUrl: string,
+    private bitrate: string,
+    private resolution: string,
+    private fps: number,
   ) {}
 
   startStream(onBitrateUpdate: (bitrate: number) => void): number {
@@ -34,10 +37,11 @@ export default class Ffmpeg implements StreamProvider {
 
     const parameters = [
       '-hwaccel', 'auto',
+      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
       '-f', 'concat',
       '-safe', '0',
       '-i', `concat:${app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'),this.timelinePath)}`,
-      '-r', '30',
+      '-r', this.fps,
     ];
 
     let filterComplex: string[] = [];
@@ -48,10 +52,10 @@ export default class Ffmpeg implements StreamProvider {
 
       filterComplex.push(
         '[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=30[ckout];',
-        '[0:v][ckout]overlay=0:0,fps=fps=30[v1]'
+        `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
       );
     } else {
-      filterComplex.push('[0:v]fps=fps=30[v1]');
+      filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`);
     }
 
     parameters.push(
@@ -59,17 +63,17 @@ export default class Ffmpeg implements StreamProvider {
       '-map', '[v1]',
       '-map', '0:a?',
       '-analyzeduration', '1',
-      '-s', '1920x1080',
+      '-s', this.resolution,
       '-c:a', 'aac',
       '-c:v', 'libx264',
-      '-keyint_min', (30 * 2).toString(),
+      '-keyint_min', (this.fps * 2).toString(),
       '-preset', 'ultrafast',
-      '-b:v', '6000K',
+      '-b:v', this.bitrate,
       '-tune', 'zerolatency',
       '-flags', 'low_delay',
-      '-maxrate', '6000K',
+      '-maxrate', this.bitrate,
       '-crf', '29',
-      '-r', '30',
+      '-r', this.fps,
       '-f', 'flv',
       `${this.baseUrl}/${encryption.decrypt(this.streamKey)}`
     );

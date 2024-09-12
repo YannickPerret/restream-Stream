@@ -1,6 +1,5 @@
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Ffmpeg from '#models/streamsFactory/ffmpeg'
-import Gstreamer from '#models/streamsFactory/gstreamer'
 
 export default class StreamFactory {
   static createProvider(
@@ -12,11 +11,26 @@ export default class StreamFactory {
     overlay: string,
     guestFile: string,
     enableBrowser: boolean,
-    webpageUrl: string
+    webpageUrl: string,
+    bitrate: string,
+    resolution: string,
+    fps: number,
   ): StreamProvider {
     switch (type) {
       case 'ffmpeg':
-        return new Ffmpeg(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, enableBrowser,webpageUrl)
+        return new Ffmpeg(
+          baseUrl,
+          streamKey,
+          timelinePath,
+          logo,
+          overlay,
+          guestFile,
+          enableBrowser,
+          webpageUrl,
+          bitrate,
+          resolution,
+          fps
+        )
       case 'gstreamer':
         //return new Gstreamer(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, enableBrowser)
         null

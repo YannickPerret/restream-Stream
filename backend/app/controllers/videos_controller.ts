@@ -67,7 +67,7 @@ export default class VideosController {
     })
 
     if (await videoCreated.requiresEncoding()) {
-      await videoFile.move(app.makePath(env.get('VIDEO_PROCESSING_DIRECTORY')), {
+      await videoFile.move(app.publicPath(env.get('VIDEO_PROCESSING_DIRECTORY')), {
         name: `${cuid()}.${videoFile.extname}`,
       })
       videoCreated.path = videoFile.filePath as string
@@ -83,7 +83,7 @@ export default class VideosController {
         await videoCreated.save()
       })
     } else {
-      await videoFile.move(app.makePath(env.get('VIDEO_DIRECTORY')), {
+      await videoFile.move(app.publicPath(env.get('VIDEO_DIRECTORY')), {
         name: `${cuid()}.${videoFile.extname}`,
       })
       videoCreated.path = videoFile.filePath as string
@@ -172,7 +172,7 @@ export default class VideosController {
 
     if (await video.requiresEncoding()) {
       // Move the video to the processing directory
-      const newFilePath = app.makePath(
+      const newFilePath = app.publicPath(
         env.get('VIDEO_PROCESSING_DIRECTORY'),
         `${cuid()}.${video.path.split('.').pop()}`
       )
@@ -205,7 +205,7 @@ export default class VideosController {
           return response.internalServerError(err)
         })
     } else {
-      const finalPath = app.makePath(
+      const finalPath = app.publicPath(
         env.get('VIDEO_DIRECTORY'),
         `${cuid()}.${video.path.split('.').pop()}`
       )

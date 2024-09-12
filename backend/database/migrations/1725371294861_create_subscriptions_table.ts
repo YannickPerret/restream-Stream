@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments('id')
       table.integer('user_id').unsigned().references('users.id').notNullable()
       table.integer('product_id').unsigned().references('products.id').notNullable()
-      table.integer('order_id').unsigned().references('orders.id').notNullable()
+      table.integer('order_id').unsigned().references('orders.id')
       table.enum('status', ['inactive', 'active', 'expired', 'canceled']).defaultTo('inactive')
       table.timestamp('expires_at').notNullable()
       table.timestamp('created_at')

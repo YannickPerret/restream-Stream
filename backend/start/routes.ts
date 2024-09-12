@@ -12,10 +12,9 @@ import { middleware } from '#start/kernel'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
-import ProductsController from "#controllers/products_controller";
-import PaymentsController from "#controllers/payments_controller";
-import OrdersController from "#controllers/orders_controller";
-import SubscriptionsController from "#controllers/subscriptions_controller";
+const ProductsController = () => import('#controllers/products_controller')
+const OrdersController = () => import('#controllers/orders_controller')
+const SubscriptionsController = () => import('#controllers/subscriptions_controller')
 const HealthChecksController = () => import('#controllers/health_checks_controller')
 const TimelinesController = () => import('#controllers/timelines_controller')
 const PlaylistsController = () => import('#controllers/playlists_controller')
@@ -52,6 +51,12 @@ router
 
     router
       .group(() => {
+        router
+          .group(() => {
+            router.get('current-user', [AuthController, 'currentUser'])
+          })
+          .prefix('auth')
+
         router
           .group(() => {
             router.get('/', [StreamsController, 'index'])
@@ -110,14 +115,16 @@ router
 
         router
           .group(() => {
-            router.post('/', [OrdersController, 'create'])
+            router.post('/', [OrdersController, 'store'])
           })
           .prefix('orders')
 
         router
           .group(() => {
-            router.post('/', [SubscriptionsController, 'create'])
+            router.post('/', [SubscriptionsController, 'store'])
             router.get('/', [SubscriptionsController, 'index'])
+            router.get(':id', [SubscriptionsController, 'show'])
+            router.put(':id', [SubscriptionsController, 'update'])
           })
           .prefix('subscriptions')
 
@@ -127,12 +134,15 @@ router
               const streamManager = Stream_manager
               return response.ok({ streams: streamManager.getAllStreams() })
             })
+            router.get('subscriptions/', [SubscriptionsController, 'index'])
           })
           .prefix('admin')
 
-        router.group(() => {
-          router.get('/search', [SearchesController, 'index'])
-        })
+        router
+          .group(() => {
+            router.get('/', [SearchesController, 'index'])
+          })
+          .prefix('search')
       })
       .use(middleware.auth())
   })

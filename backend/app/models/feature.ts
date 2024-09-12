@@ -31,3 +31,4 @@ export default class Feature extends BaseModel {
     return this.$extras.pivot_value
   }
 }
+

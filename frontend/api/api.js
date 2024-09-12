@@ -1,12 +1,13 @@
-import {useSessionStore} from "../stores/useSessionStore";
+import {useAuthStore} from "../stores/useAuthStore.js";
 
 export default class Api {
   static baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   static getHeaders(options = undefined) {
-    const session = useSessionStore.getState().session;
+    const _token = useAuthStore.getState().token
+
     let headers = {
-      "Authorization": session ? `Bearer ${session.token.token}` : ''
+      "Authorization": _token ? `Bearer ${_token.token}` : ''
     };
 
     if (options) {
@@ -18,5 +19,6 @@ export default class Api {
 
     return headers;
   }
+
 }
 

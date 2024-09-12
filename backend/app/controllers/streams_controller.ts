@@ -1,13 +1,19 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Stream from '#models/stream'
-import Provider from '#models/providers/provider'
 import Stream_manager from '#models/stream_manager'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
 import env from '#start/env'
+import {
+  StreamResolutionByQuality,
+  StreamQualityBiterate,
+  StreamFpsByQuality,
+} from '#enums/streams'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
+    const user = auth.getUserOrFail()
+
     const streams = await Stream.query()
       .where('userId', auth.user!.id)
       .preload('providers', (query) => {
@@ -90,42 +96,81 @@ export default class StreamsController {
   }
 
   async store({ auth, request, response }: HttpContext) {
-    const user = await auth.authenticate()
-    const { title, timeline, type } = request.all()
+    const user = auth.getUserOrFail()
+    const { title, timeline, quality, websiteUrl } = request.only([
+      'title',
+      'timeline',
+      'quality',
+      'websiteUrl'
+    ])
     const runLive = request.input('runLive') === 'true'
-    const providersForm = JSON.parse(request.input('providers')) || []
-    const logoFile = request.file('logo', {
-      size: '5mb',
-      extnames: ['jpg', 'png', 'jpeg'],
-    })
-    const overlayFile = request.file('overlay', {
-      size: '50mb',
-      extnames: ['jpg', 'png', 'jpeg'],
-    })
 
-    if (!title || !providersForm || !timeline) {
+
+    const providersForm = JSON.parse(request.input('providers')) || []
+    const logoFile = request.file('logo', { size: '5mb', extnames: ['jpg', 'png', 'jpeg'] })
+    const overlayFile = request.file('overlay', { size: '50mb', extnames: ['jpg', 'png', 'jpeg'] })
+
+    if (!title || !providersForm || !timeline || !quality) {
       return response.badRequest({ error: 'Missing required fields' })
     }
-
-    const providerPromises = providersForm.map((provider: any) => Provider.findOrFail(provider.id))
-    await Promise.all(providerPromises)
-
-    const primaryProvider = providersForm.filter((item) => item.onPrimary === true).length
-
-    if (!primaryProvider) {
-      return response.badRequest({ error: 'Primary provider is required' })
-    } else if (primaryProvider > 1) {
-      return response.badRequest({ error: 'Only one primary provider is allowed' })
+    if (websiteUrl !== '' && websiteUrl !== null) {
+      // Validate that the website URL matches the allowed patterns
+      const allowedUrlPattern = /^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/;
+      if (!allowedUrlPattern.test(websiteUrl)) {
+        return response.badRequest({
+          error: 'Invalid website URL. The URL must start with one of the following: https://dashboard.twitch.tv/widgets/, https://streamlabs.com/alert-box/, https://streamelements.com/overlay/, or https://widgets.streamelements.com/host/'
+        })
+      }
     }
 
+    // 1. Récupérer les souscriptions actives de l'utilisateur
+    const subscriptions = await user.related('subscriptions').query().where('status', 'active')
+
+    if (subscriptions.length === 0) {
+      return response.forbidden({ error: 'You do not have an active subscription' })
+    }
+
+    const subscription = subscriptions[0] // Suppose qu'il n'y a qu'une souscription active
+
+    // 2. Récupérer les features de la souscription et les fusionner avec celles du produit
+    const features = await subscription.getSubscriptionWithFeatures()
+
+    // 3. Vérifier le nombre de streams actifs par rapport à max_stream_instance
+    const maxStreamInstanceFeature = features.find(
+      (feature) => feature.name === 'max_stream_instances'
+    )
+    const maxStreamInstance = Number.parseInt(maxStreamInstanceFeature?.values[0] || '0', 10)
+
+    const activeStreamsCount = await Stream.query()
+      .where('userId', user.id)
+      .count('* as total')
+
+
+    if (activeStreamsCount[0].$extras.total >= maxStreamInstance) {
+      return response.forbidden({
+        error: `You have reached the maximum number of active streams (${maxStreamInstance}).`,
+      })
+    }
+
+    // 4. Vérifier que la qualité sélectionnée est bien disponible dans les features
+    const qualityFeature = features.find((feature) => feature.name === 'quality')
+    const availableQualities = qualityFeature?.values || []
+
+    if (!availableQualities.includes(quality)) {
+      return response.badRequest({
+        error: `The selected quality (${quality}) is not available for your subscription.`,
+      })
+    }
+
+    // Vérifier le logo et l'overlay
     if (logoFile && logoFile.isValid) {
-      await logoFile.move(app.publicPath(env.get('LOGO_DIRECTORY')), {
+      await logoFile.move(env.get('LOGO_DIRECTORY'), {
         name: `${cuid()}.${logoFile.extname}`,
       })
     }
 
     if (overlayFile && overlayFile.isValid) {
-      await overlayFile.move(app.publicPath(env.get('OVERLAY_DIRECTORY')), {
+      await overlayFile.move(env.get('OVERLAY_DIRECTORY'), {
         name: `${cuid()}.${overlayFile.extname}`,
       })
     }
@@ -135,16 +180,20 @@ export default class StreamsController {
       pid: 0,
       status: 'inactive',
       userId: user.id,
-      type: type,
+      type: 'ffmpeg',
       timelineId: timeline,
       logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
       overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
       enableBrowser: true,
       webpageUrl:
-        'https://dashboard.twitch.tv/widgets/alertbox#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGVydF9zZXRfaWQiOiIxOWVkMzhiMC0yZTVjLTRlMTgtYjYyNy1kNDE5MTg5NjdjMzAiLCJ1c2VyX2lkIjoiNDczNzQ5MTgifQ.4xkFoUyJGye34aj4ZrvDTnARV_imT0epWWw08JBD95I',
+        websiteUrl || 'https://dashboard.twitch.tv/widgets/alertbox#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGVydF9zZXRfaWQiOiIxOWVkMzhiMC0yZTVjLTRlMTgtYjYyNy1kNDE5MTg5NjdjMzAiLCJ1c2VyX2lkIjoiNDczNzQ5MTgifQ.4xkFoUyJGye34aj4ZrvDTnARV_imT0epWWw08JBD95I',
+      resolution: StreamResolutionByQuality[quality as keyof typeof StreamResolutionByQuality],
+      bitrate: StreamQualityBiterate[quality as keyof typeof StreamQualityBiterate],
+      fps: StreamFpsByQuality[quality as keyof typeof StreamFpsByQuality],
     })
 
+    // Attacher les fournisseurs sélectionnés
     if (stream && providersForm) {
       for (const provider of providersForm) {
         await stream.related('providers').attach({
@@ -155,12 +204,14 @@ export default class StreamsController {
       }
     }
 
+    // Lancer le stream en live si `runLive` est activé
     if (runLive) {
       await stream.load('timeline')
       const streamManager = Stream_manager
       const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
       await streamInstance.run()
     }
+
     return response.created(stream)
   }
 

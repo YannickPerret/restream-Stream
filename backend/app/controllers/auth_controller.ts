@@ -52,6 +52,8 @@ export default class AuthController {
       return response.badRequest({ message: 'You cannot login until you verify your account' })
     }
     const token = await User.accessTokens.create(user)
+    await user.load('role')
+
     return response.ok({
       token: token,
       user: user,
@@ -105,5 +107,17 @@ export default class AuthController {
     await user.save()
     await token.delete() // Delete the token after successful reset
     return response.ok('Password reset successfully')
+  }
+
+  async currentUser({ response, auth }: HttpContext) {
+    try {
+      const user = auth.getUserOrFail()
+      const subscriptionsWithFeatures = await user.getActiveSubscriptionsWithFeatures();
+      await user.load('role')
+
+      return response.json({ user, subscriptions: subscriptionsWithFeatures })
+    } catch (error) {
+      return response.unauthorized({ error: 'User not found' })
+    }
   }
 }

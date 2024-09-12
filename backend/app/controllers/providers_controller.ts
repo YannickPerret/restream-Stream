@@ -16,6 +16,8 @@ export default class ProvidersController {
    * Handle form submission for the create action
    */
   async store({ request, response, auth }: HttpContext) {
+
+    console.log("lol")
     const user = await auth.authenticate()
     const {
       name,

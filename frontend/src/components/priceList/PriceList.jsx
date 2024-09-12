@@ -9,12 +9,11 @@ const PriceList = () => {
     const { products, fetchProducts, isLoading } = useProductStore();
 
     useEffect(() => {
-        fetchProducts(); // Fetch products on component mount
+        fetchProducts();
     }, [fetchProducts]);
 
     if (isLoading) return <div>Loading...</div>;
 
-    console.log(products)
     return (
         <div className="bg-gray-900 text-white py-36">
             <div className="container mx-auto text-center">
@@ -38,6 +37,8 @@ const PriceList = () => {
                             labelFeatures={product.labelFeatures}
                             buttonText="Buy this plan"
                             isHighlighted={index === 1 ? true : false}
+                            borderColor={index === 0 ? '#7988F2' : (index === 2 ? '#32BD00' : null)}
+                            borderGradient={index === 1 ? true : false}
                         />
                     ))}
                 </div>

@@ -45,6 +45,15 @@ export default class Stream extends BaseModel {
   declare type: string
 
   @column()
+  declare resolution: string
+
+  @column()
+  declare fps: number
+
+  @column()
+  declare bitrate: string
+
+  @column()
   declare userId: number
 
   @column()
@@ -208,7 +217,10 @@ export default class Stream extends BaseModel {
         this.overlay || '',
         this.guestFile,
         this.enableBrowser,
-        this.webpageUrl
+        this.webpageUrl,
+        this.bitrate,
+        this.resolution,
+        this.fps
       )
 
       await this.start()

@@ -1,14 +1,13 @@
+// frontend/src/components/layout/header/Header.jsx
 'use client'
 import { useState, useEffect } from 'react';
 import Logo from "#public/coffeeStream.png";
 import Image from "next/image";
 import Navigation from "#components/layout/navigation/Navigation.jsx";
-import { useSessionStore } from "#stores/useSessionStore.js";
 import { NavigationRight } from "#components/layout/navigation/NavigationRight.jsx";
 import { Menu, X } from "lucide-react"; // Icons for burger menu
 
 const Header = () => {
-    const { isAuthenticated } = useSessionStore();
     const [authChecked, setAuthChecked] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -21,8 +20,8 @@ const Header = () => {
     };
 
     return (
-        <header className="bg-gray-900 text-gray-400 z-30">
-            <div className="container mx-auto flex justify-between items-center px-4 py-3">
+        <header className="absolute top-0 left-0 w-full z-30 text-white border-b-2 border-gray-50 border-opacity-10 bg-transparent">
+            <div className="container mx-auto flex justify-between items-center px-4 py-3 bg-transparent">
                 <div className="flex items-center">
                     <Image
                         src={Logo}

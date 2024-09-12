@@ -9,9 +9,31 @@ import Subscription from '#models/subscription'
 
 export default class OrdersController {
   /**
+   * List all orders for the authenticated user
+   */
+  async index({ response, auth }: HttpContext) {
+    const user = await auth.authenticate()
+    if (!user) return response.badRequest()
+
+    try {
+      const orders = await Order.query()
+        .where('userId', user.id)
+        .preload('items', (itemQuery) => {
+          itemQuery.preload('product')
+        })
+        .preload('payment')
+
+      return response.json({ success: true, orders })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({ error: error.message })
+    }
+  }
+
+  /**
    * Create a new order
    */
-  async create({ request, response, auth }: HttpContext) {
+  async store({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
     if (!user) return response.badRequest()
 
@@ -56,7 +78,7 @@ export default class OrdersController {
 
       for (const item of items) {
         const product = await Product.findOrFail(item.productId)
-        totalAmount += item.quantity * isMonthly ? product.monthlyPrice : product.annualPrice
+        totalAmount += item.quantity * (isMonthly ? product.monthlyPrice : product.annualPrice)
 
         orderItems.push({
           productId: product.id,
@@ -81,6 +103,8 @@ export default class OrdersController {
           orderId: order.id,
         }))
       )
+
+      console.log(returnUrl)
 
       // Create Payment Intent using the static method on Payment model
       const paymentIntent = await Payment.createPaymentIntent(order, user, {
@@ -114,7 +138,7 @@ export default class OrdersController {
             productId: product.id,
             orderId: order.id,
             status: 'active',
-            expires_at: expiresAt,
+            expiresAt: expiresAt,
           })
         }
       }
@@ -147,28 +171,6 @@ export default class OrdersController {
     } catch (error) {
       console.error(error)
       return response.status(404).json({ error: 'Order not found' })
-    }
-  }
-
-  /**
-   * List all orders for the authenticated user
-   */
-  async index({ response, auth }: HttpContext) {
-    const user = await auth.authenticate()
-    if (!user) return response.badRequest()
-
-    try {
-      const orders = await Order.query()
-        .where('user_id', user.id)
-        .preload('items', (itemQuery) => {
-          itemQuery.preload('product')
-        })
-        .preload('payment')
-
-      return response.json({ success: true, orders })
-    } catch (error) {
-      console.error(error)
-      return response.status(500).json({ error: error.message })
     }
   }
 

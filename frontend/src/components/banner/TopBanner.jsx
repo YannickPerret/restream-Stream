@@ -1,6 +1,6 @@
+// frontend/src/components/banner/TopBanner.jsx
 'use client'
 import React, { useState } from 'react';
-// Importez le composant Link de next/link si vous voulez un lien dynamique entre les pages
 import Link from 'next/link';
 
 const TopBanner = ({ message, linkText, linkUrl }) => {
@@ -11,10 +11,10 @@ const TopBanner = ({ message, linkText, linkUrl }) => {
     }
 
     return (
-        <div className="relative bg-gradient-to-r from-purple-100 via-purple-200 to-purple-300 text-gray-900 rounded-lg p-2 shadow-lg flex justify-center items-center">
-            <span className="text-center flex flex-row">
+        <div className="fixed top-0 left-0 w-full bg-gradient-to-r from-purple-100 via-purple-200 to-purple-300 text-gray-900 shadow-lg p-3 z-50 flex justify-center items-center">
+            <span className="text-center flex items-center">
                 {message}{' '}
-                <Link href={linkUrl} className="underline hover:text-gray-800 text-gray-500">
+                <Link href={linkUrl} className="underline hover:text-gray-800 text-gray-700 ml-2">
                     {linkText}
                 </Link>
             </span>

@@ -5,7 +5,7 @@ import logo from "#public/coffeeStream.png";
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-900 text-gray-400 py-32 w-full">
+        <footer className="text-gray-400 py-32 w-full" style={{background: '0E0D13'}}>
             <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row justify-between">
                     <div className="mb-8 md:mb-0">

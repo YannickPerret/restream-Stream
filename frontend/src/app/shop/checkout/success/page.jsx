@@ -1,8 +1,8 @@
 'use client';
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import useOrderStore from "#stores/useOrderStore.js";
-import useProductStore from "#stores/useProductStore.js";
+import useOrderStore from "#stores/useOrderStore";
+import useProductStore from "#stores/useProductStore";
 
 const CheckoutSuccessPage = () => {
     const { order, paymentIntent } = useOrderStore();
@@ -11,7 +11,7 @@ const CheckoutSuccessPage = () => {
     useEffect(() => {
         const fetchProducts = async () => {
             if (order && order.items && order.items.length > 0) {
-                const productId = order.items[0].productId; // Assuming there's only one item
+                const productId = order.items[0].productId;
                 await fetchProductById(productId);
             }
         };
@@ -19,46 +19,44 @@ const CheckoutSuccessPage = () => {
         fetchProducts();
     }, [order, fetchProductById]);
 
-    // Conditional check if product or payment data is not yet loaded
     if (!products.length || !order || !paymentIntent) {
         return <div>Loading...</div>;
     }
 
-    const product = products[0]; // Assuming the fetched product is the first in the array
+    const product = products[0];
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
-            <div className="container mx-auto">
-                <header className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-bold text-center text-white">Thank You for Your Purchase!</h1>
-                </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6" />
-
-                <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold text-white mb-4">Order Summary</h2>
-
-                    <div className="text-gray-300">
-                        <p className="text-lg">Order Id: {order.id}</p>
-
-                    </div>
-
-                    <div>
-                        <p className="text-lg mb-4">Product: {product?.title || 'N/A'}</p>
-                        <p className="text-lg mb-4">Amount: {order.totalAmount} {paymentIntent.currency}</p>
-                    </div>
-
-                    <hr className="my-4 border-gray-600"/>
-
-                    <p className="text-lg text-gray-400">
-                        You will receive a confirmation email shortly. Thank you for shopping with us!
+        <section className="flex flex-col w-full h-full justify-center items-center p-8 bg-gradient-to-br from-blue-900 to-gray-900 text-white pt-44">
+            <div className="w-full max-w-3xl mx-auto bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+                <div className="mb-6">
+                    <h1 className="text-5xl font-extrabold mb-4 text-white">🎉 Order Success! 🎉</h1>
+                    <p className="text-lg text-gray-300">
+                        Thank you for your purchase! We’re excited to have you as part of our community.
                     </p>
+                </div>
 
-                    <div className="mt-6">
-                        <Link href="/dashboard" className="text-indigo-500 hover:underline">
-                            Continue to Dashboard
-                        </Link>
+                <div className="bg-gray-700 rounded-lg p-6 mb-6">
+                    <h2 className="text-3xl font-semibold text-white mb-2">Order Summary</h2>
+                    <div className="text-left text-gray-300">
+                        <p className="mb-2"><span className="font-bold">Order ID:</span> {order.id}</p>
+                        <p className="mb-2"><span className="font-bold">Product:</span> {product?.title || 'N/A'}</p>
+                        <p className="mb-2"><span className="font-bold">Amount Paid:</span> {order.totalAmount} {paymentIntent.currency.toUpperCase()}</p>
                     </div>
                 </div>
+
+                <p className="text-lg text-gray-400 mb-6">
+                    A confirmation email has been sent to you with the order details. If you have any questions, feel free to contact our support team.
+                </p>
+
+                <Link href="/dashboard">
+                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300">
+                        Continue to Dashboard
+                    </button>
+                </Link>
+
+                <p className="text-sm text-gray-500 mt-4">
+                    Want to see more products? <Link href="/#pricing" className="text-indigo-400 hover:text-indigo-300">Browse our collection</Link>.
+                </p>
             </div>
         </section>
     );

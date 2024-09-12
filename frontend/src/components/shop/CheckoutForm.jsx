@@ -9,22 +9,22 @@ import Button from "#components/_forms/Button.jsx";
 import useCheckoutStore from "#stores/useCheckoutStore.js";
 import useOrderStore from "#stores/useOrderStore.js";
 import OrderApi from "#api/order.js";
-import {useSessionStore} from "#stores/useSessionStore.js";
+import {useAuthStore, useSessionStore} from "#stores/useAuthStore.js";
 
 export const CheckoutForm = ({ product, isMonthly }) => {
     const { formData, setFormData, isProcessing, setIsProcessing, setPaymentError } = useCheckoutStore();
     const { setOrderData } = useOrderStore();
-    const {session} = useSessionStore()
+    const {user} = useAuthStore()
     const stripe = useStripe();
     const elements = useElements();
     const router = useRouter();
 
     // Pre-fill the email from the session when the component mounts
     useEffect(() => {
-        if (session && session.user && session.user.email) {
-            setFormData({ email: session.user.email });
+        if (user && user.email) {
+            setFormData({ email: user.email });
         }
-    }, [session, setFormData]);
+    }, [user, setFormData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

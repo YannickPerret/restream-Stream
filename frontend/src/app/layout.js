@@ -3,7 +3,6 @@ import "../../styles/globals.css";
 import Footer from "#components/layout/footer/Footer.jsx";
 import Header from "#components/layout/header/Header.jsx";
 import TopBanner from "#components/banner/TopBanner.jsx";
-import ClientTokenChecker from "#components/ClientTokenChecker.jsx";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,17 +12,19 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+
     return (
         <html lang="fr">
         <body className={`${inter.className} flex flex-col min-h-screen max-w-screen`}>
-        <ClientTokenChecker/>
-        <TopBanner
+        {/*<TopBanner
             message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "
             linkText="Sign-up now !"
-            linkUrl="/auth/register"/>
+            linkUrl="/auth/register"
+        />*/}
+
         <Header />
 
-        <main className="flex-grow w-full flex flex-col items-center">
+        <main className="w-full ">
             {children}
         </main>
 
@@ -32,4 +33,3 @@ export default function RootLayout({ children }) {
         </html>
     );
 }
-

@@ -13,8 +13,6 @@ const TwitchLoginButton = () => {
         const scope = encodeURIComponent("user:read:email channel:read:stream_key channel:manage:broadcast");
 
         const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
-        console.log('Redirecting to:', authUrl);
-
         window.location.href = authUrl;
     };
 

@@ -43,7 +43,7 @@ export default function ProvidersCreateCallback() {
                             'client_id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID,
                             'client_secret': process.env.NEXT_PUBLIC_TWITCH_CLIENT_SECRET,
                             code,
-                            'redirect_uri': `${window.location.origin}/providers/create/callback`,
+                            'redirect_uri': `${window.location.origin}/providers/create/callback/twitch`,
                         }),
                     });
 

@@ -18,6 +18,7 @@ export const useStreamStore = createSelectors(create((set, get) => ({
         try {
             const streams = await StreamApi.getAll();
             set({ streams });
+            return streams;
         } catch (error) {
             console.error("Failed to fetch streams", error);
         }

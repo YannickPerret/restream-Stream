@@ -73,10 +73,10 @@ const EditProductPage = () => {
             features: features.map(({ name, value }) => ({ name, value })),
         };
 
-        console.log(updatedProductData);
+        console.log("twest", updatedProductData);
         try {
             await ProductApi.update(id, updatedProductData);
-            router.push('/admin/products');
+            //router.push('/admin/products');
         } catch (error) {
             console.error('Error updating product:', error);
         }

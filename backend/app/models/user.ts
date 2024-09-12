@@ -7,8 +7,6 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import Stream from '#models/stream'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import Role from '#models/role'
-import env from '#start/env'
-import mail from '@adonisjs/mail/services/main'
 import Subscription from '#models/subscription'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -64,31 +62,19 @@ export default class User extends compose(BaseModel, AuthFinder) {
     tokenSecretLength: 45,
   })
 
-  async sendResetPasswordEmail(ipAddress: string) {
-    const tokenType = await TokenType.findBy('name', 'reset_password')
-    const token = await Token.generate(
-      DateTime.now().plus({ hours: 1 }),
-      tokenType,
-      this,
-      ipAddress
-    )
 
-    await mail.send((message) => {
-      message
-        .from('noreply@one-conseils.ch')
-        .to(this.email)
-        .subject('One-conseils - Réinitialisation de votre mot de passe')
-        .htmlView('emails/users/reset_password', {
-          user: this,
-          token: token,
-          frontendUrl: env.get('FRONTEND_URL'),
-        })
-    })
+  async isAdmin() {
+    await this.load('role')
+    return this.role && this.role.name === 'admin'
+  }
+
+  async getRole(): Promise<String> {
+    await this.load('role')
+    return this.role.name
   }
 
   async getActiveSubscriptions() {
     const now = DateTime.now().toSQL() // Conversion en chaîne de caractères SQL compatible
-
     return this.related('subscriptions').query()
       .where('status', 'active')
       .where('expires_at', '>', now)
@@ -106,12 +92,43 @@ export default class User extends compose(BaseModel, AuthFinder) {
     return !!activeSubscription
   }
 
-  serialize() {
+  async getActiveSubscriptionsWithFeatures() {
+    const now = DateTime.now().toSQL();
+
+    // Récupérer les souscriptions actives de l'utilisateur
+    const activeSubscriptions = await this.related('subscriptions').query()
+      .where('status', 'active')
+      .andWhere('expires_at', '>', now)
+      .preload('product', (productQuery) => {
+        productQuery.preload('features'); // Charger les features du produit
+      })
+      .preload('subscriptionFeatures', (subscriptionFeatureQuery) => {
+        subscriptionFeatureQuery.pivotColumns(['value']); // Charger les features spécifiques à la souscription
+      });
+
+    // Fusionner les features de chaque souscription avec la logique définie
+    const subscriptionsWithMergedFeatures = await Promise.all(
+      activeSubscriptions.map(async (subscription) => {
+        const mergedFeatures = await subscription.getSubscriptionWithFeatures();
+        return {
+          ...subscription.serialize(),
+          features: mergedFeatures,
+        };
+      })
+    );
+
+    return subscriptionsWithMergedFeatures;
+  }
+
+
+ /* async serialize() {
     return {
+      id: this.id,
       username: this.username,
       email: this.email,
-      subscriptions: this.getActiveSubscriptions(),
       isVerified: this.isVerified,
+      subscriptions: this.subscriptions,
+      role: this.role,
     }
-  }
+  }*/
 }

@@ -1,32 +1,39 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { UserFactory } from '#database/factories/user_factory'
-import Users from '#models/user'
+import Role from '#models/role'
+import User from '#models/user'
 
 export default class extends BaseSeeder {
   async run() {
-    // make seeder for users with lucid
-    const users: Users[] = await UserFactory.createMany(20)
 
-    const adminUser = await Users.create({
+    const userRole = await Role.findByOrFail('name', 'user')
+    const adminRole = await Role.findByOrFail('name', 'admin')
+
+    // Seed users
+    const users = await UserFactory.createMany(20)
+
+    // Assign the user role to all other users
+    for (const user of users) {
+      user.roleId = userRole.id
+      await user.save()
+    }
+
+    // Create admin user
+    await User.create({
       username: 'admin',
-      lastName: 'Admin',
-      firstName: 'Admin',
-      phone: '1234567890',
       email: 'admin@coffeestream.com',
-      password: 'admin',
+      password: '12345678',
       isVerified: true,
+      roleId: adminRole.id, // Assign admin role to this user
     })
 
-    const devUser = await Users.create({
+    // Create developer user with user role
+    await User.create({
       username: 'tchoune',
-      lastName: 'Perret',
-      firstName: 'Yannick',
-      phone: '0123456789',
       email: 'dev@coffeestream.com',
       password: '12345678',
       isVerified: true,
+      roleId: userRole.id, // Assign user role to this user
     })
-    users.push(adminUser)
-    users.push(devUser)
   }
 }

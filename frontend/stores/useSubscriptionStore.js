@@ -12,9 +12,11 @@ const createSelectors = (_store) => {
 
 export const useSubscriptionStore = createSelectors(create((set, get) => ({
     subscriptions: [],
+    selectedSubscription: null, // Add selectedSubscription state
     isLoading: false,
     error: null,
 
+    // Fetch all subscriptions
     fetchSubscriptions: async () => {
         set({ isLoading: true, error: null });
         try {
@@ -25,6 +27,40 @@ export const useSubscriptionStore = createSelectors(create((set, get) => ({
         }
     },
 
+    // Fetch subscription by ID and set it as selected
+    fetchSubscriptionById: async (id) => {
+        set({ isLoading: true, error: null });
+        try {
+            const subscription = await SubscriptionApi.getOne(id);
+            const existingSubscriptions = get().subscriptions;
+            const updatedSubscriptions = existingSubscriptions.map(sub => sub.id === subscription.id ? subscription : sub);
+            if (!existingSubscriptions.some(sub => sub.id === subscription.id)) {
+                updatedSubscriptions.push(subscription);
+            }
+            set({ subscriptions: updatedSubscriptions, selectedSubscription: subscription, isLoading: false }); // Set the selectedSubscription
+            return subscription;
+        } catch (error) {
+            set({ error: error.message, isLoading: false });
+        }
+    },
+
+    // Set selected subscription manually (can be used to clear selection or set directly)
+    setSelectedSubscription: (subscription) => {
+        set({ selectedSubscription: subscription });
+    },
+
+    // Fetch subscriptions by filters
+    fetchSubscriptionsByFilter: async (filters = {}) => {
+        set({ isLoading: true, error: null });
+        try {
+            const subscriptions = await SubscriptionApi.getByFilter(filters);
+            set({ subscriptions, isLoading: false });
+        } catch (error) {
+            set({ error: error.message, isLoading: false });
+        }
+    },
+
+    // Add a new subscription
     addSubscription: async (data) => {
         try {
             const newSubscription = await SubscriptionApi.create(data);
@@ -34,6 +70,7 @@ export const useSubscriptionStore = createSelectors(create((set, get) => ({
         }
     },
 
+    // Update an existing subscription
     updateSubscription: async (id, data) => {
         try {
             const updatedSubscription = await SubscriptionApi.update(id, data);
@@ -47,6 +84,7 @@ export const useSubscriptionStore = createSelectors(create((set, get) => ({
         }
     },
 
+    // Delete a subscription
     deleteSubscription: async (id) => {
         try {
             await SubscriptionApi.delete(id);
@@ -57,4 +95,6 @@ export const useSubscriptionStore = createSelectors(create((set, get) => ({
             set({ error: error.message });
         }
     },
-})))
+})));
+
+export default useSubscriptionStore;

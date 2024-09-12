@@ -20,7 +20,7 @@ export default function ProvidersPage() {
             <div className="container mx-auto">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">Providers</h1>
-                    <Link href="/providers/new">
+                    <Link href="/providers/create">
                         <button
                             className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
                             Add New Provider
