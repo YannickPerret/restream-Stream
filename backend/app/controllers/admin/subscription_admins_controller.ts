@@ -1,10 +1,21 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import Subscription from '#models/subscription'
 
 export default class SubscriptionAdminsController {
   /**
    * Display a list of resource
    */
-  async index({}: HttpContext) {}
+  async index({ request, response, auth }: HttpContext) {
+    const user = auth.getUserOrFail()
+    await user.load('role')
+    if (!user.role.name === 'admin') {
+      response.badRequest("Can't have access")
+    }
+    const subscriptions = await Subscription.query().preload('product').preload('user')
+
+    console.log(subscriptions)
+    return response.json(subscriptions)
+  }
 
   /**
    * Handle form submission for the create action

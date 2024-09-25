@@ -46,7 +46,7 @@ export default class Subscription extends BaseModel {
     pivotTable: 'subscription_features',
     pivotColumns: ['value'],
   })
-  declare subscriptionFeatures: ManyToMany<typeof Feature>;
+  declare subscriptionFeatures: ManyToMany<typeof Feature>
 
   @manyToMany(() => Feature, {
     pivotTable: 'product_features',
@@ -62,7 +62,7 @@ export default class Subscription extends BaseModel {
 
   @beforeCreate()
   @beforeUpdate()
-  public static async checkDuplicateSubscription(subscription: Subscription) {
+  static async checkDuplicateSubscription(subscription: Subscription) {
     if (subscription.$dirty.productId || subscription.$dirty.userId) {
       const existingSubscription = await Subscription.query()
         .where('userId', subscription.userId)
@@ -71,100 +71,117 @@ export default class Subscription extends BaseModel {
         .first()
 
       if (existingSubscription) {
-        throw new Error('User already has an active subscription for this product.');
+        throw new Error('User already has an active subscription for this product.')
       }
     }
   }
 
   static applyFilters = scope((query, filters) => {
     Object.keys(filters).forEach((key) => {
-      const value = filters[key];
+      const value = filters[key]
       if (Array.isArray(value)) {
-        query.whereIn(key, value);
+        query.whereIn(key, value)
       } else {
-        query.where(key, value);
+        query.where(key, value)
       }
-    });
-  });
+    })
+  })
 
   async getSubscriptionWithFeatures() {
     // Charger les features de la souscription avec leurs valeurs
     await this.load('subscriptionFeatures', (query) => {
-      query.pivotColumns(['value']);
-    });
+      query.pivotColumns(['value'])
+    })
 
     // Charger les features du produit avec leurs valeurs
     await this.load('product', (productQuery) => {
       productQuery.preload('features', (featureQuery) => {
-        featureQuery.pivotColumns(['value']);
-      });
-    });
+        featureQuery.pivotColumns(['value'])
+      })
+    })
 
     // Maps pour stocker les features et leurs valeurs
-    const subscriptionFeatureMap = new Map<string, Set<any>>();
-    const productFeatureMap = new Map<string, Set<any>>();
+    const subscriptionFeatureMap = new Map<string, Set<any>>()
+    const productFeatureMap = new Map<string, Set<any>>()
 
     // Construire le map des features de la souscription
     for (const feature of this.subscriptionFeatures) {
-      const featureName = feature.name;
-      const value = feature.$extras.pivot_value;
+      const featureName = feature.name
+      const value = feature.$extras.pivot_value
 
       if (!subscriptionFeatureMap.has(featureName)) {
-        subscriptionFeatureMap.set(featureName, new Set());
+        subscriptionFeatureMap.set(featureName, new Set())
       }
-      subscriptionFeatureMap.get(featureName).add(value);
+      subscriptionFeatureMap.get(featureName).add(value)
     }
 
     // Construire le map des features du produit
     for (const feature of this.product.features) {
-      const featureName = feature.name;
-      const value = feature.$extras.pivot_value;
+      const featureName = feature.name
+      const value = feature.$extras.pivot_value
 
       if (!productFeatureMap.has(featureName)) {
-        productFeatureMap.set(featureName, new Set());
+        productFeatureMap.set(featureName, new Set())
       }
-      productFeatureMap.get(featureName).add(value);
+      productFeatureMap.get(featureName).add(value)
     }
 
     // Fusionner les features en priorisant celles de la souscription
-    const mergedFeaturesMap = new Map<string, Set<any>>();
+    const mergedFeaturesMap = new Map<string, Set<any>>()
 
     // Commencer par les features de la souscription
     for (const [featureName, valueSet] of subscriptionFeatureMap.entries()) {
-      mergedFeaturesMap.set(featureName, new Set(valueSet));
+      mergedFeaturesMap.set(featureName, new Set(valueSet))
     }
 
     // Ajouter les features du produit qui manquent
     for (const [featureName, valueSet] of productFeatureMap.entries()) {
       if (!mergedFeaturesMap.has(featureName)) {
         // Si la feature n'est pas dans la souscription, on l'ajoute depuis le produit
-        mergedFeaturesMap.set(featureName, new Set(valueSet));
+        mergedFeaturesMap.set(featureName, new Set(valueSet))
       } else {
         // Si la feature existe déjà, on ajoute les valeurs manquantes du produit
-        const mergedValueSet = mergedFeaturesMap.get(featureName);
+        const mergedValueSet = mergedFeaturesMap.get(featureName)
         for (const value of valueSet) {
           if (!mergedValueSet.has(value)) {
-            mergedValueSet.add(value);
+            mergedValueSet.add(value)
           }
         }
       }
     }
 
     // Convertir le map en tableau de features avec leurs valeurs
-    const mergedFeatures = [];
+    const mergedFeatures = []
     for (const [featureName, valueSet] of mergedFeaturesMap.entries()) {
       mergedFeatures.push({
         name: featureName,
         values: Array.from(valueSet),
-      });
+      })
     }
-
-    //console.log(mergedFeatures);
-
-    return mergedFeatures;
+    return mergedFeatures
   }
 
-  serialize(){
+  async renew(): Promise<void> {
+    if (this.status === 'active' || this.status === 'expired') {
+      // Exemple : Prolonger l'abonnement d'un mois (ceci pourrait être basé sur le produit)
+      this.expiresAt = this.expiresAt.plus({ months: 1 })
+      this.status = 'active'
+      await this.save()
+    } else {
+      throw new Error('Only active or expired subscriptions can be renewed.')
+    }
+  }
+
+  async revoke(): Promise<void> {
+    if (this.status === 'active') {
+      this.status = 'canceled'
+      await this.save()
+    } else {
+      throw new Error('Only active subscriptions can be revoked.')
+    }
+  }
+
+  serialize() {
     return {
       id: this.id,
       user: this.user,

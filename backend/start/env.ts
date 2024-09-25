@@ -45,13 +45,40 @@ export default await Env.create(new URL('../', import.meta.url), {
   SMTP_USERNAME: Env.schema.string.optional(),
   SMTP_PASSWORD: Env.schema.string.optional(),
 
-  RESEND_API_KEY: Env.schema.string.optional(),
-
   LOGO_DIRECTORY: Env.schema.string(),
   OVERLAY_DIRECTORY: Env.schema.string(),
 
   STRIPE_KEY_PUBLIC: Env.schema.string(),
   STRIPE_KEY_PRIVATE: Env.schema.string(),
 
-  DRIVE_DISK: Env.schema.enum(['fs'] as const)
+  /*
+  |----------------------------------------------------------
+  | Variables for @rlanz/bull-queue
+  |----------------------------------------------------------
+  */
+  QUEUE_REDIS_HOST: Env.schema.string({ format: 'host' }),
+  QUEUE_REDIS_PORT: Env.schema.number(),
+  QUEUE_REDIS_PASSWORD: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for @rlanz/ally-twitch
+  |----------------------------------------------------------
+  */
+  TWITCH_CLIENT_ID: Env.schema.string(),
+  TWITCH_CLIENT_SECRET: Env.schema.string(),
+  TWITCH_CALLBACK_URL: Env.schema.string(),
+
+
+  /*
+ |----------------------------------------------------------
+ | Variables for FlyDrive
+ |----------------------------------------------------------
+ */
+  DRIVE_DISK: Env.schema.enum(['s3'] as const),
+  S3_ACCESS_KEY_ID: Env.schema.string(),
+  S3_SECRET_ACCESS_KEY: Env.schema.string(),
+  S3_REGION: Env.schema.string(),
+  S3_BUCKET: Env.schema.string(),
+  S3_ENDPOINT: Env.schema.string(),
 })

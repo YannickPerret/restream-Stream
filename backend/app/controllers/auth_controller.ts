@@ -54,6 +54,11 @@ export default class AuthController {
     const token = await User.accessTokens.create(user)
     await user.load('role')
 
+    user.lastLoginAt = DateTime.now()
+    user.ipAddress = request.ip()
+
+    await user.save()
+
     return response.ok({
       token: token,
       user: user,
@@ -112,7 +117,7 @@ export default class AuthController {
   async currentUser({ response, auth }: HttpContext) {
     try {
       const user = auth.getUserOrFail()
-      const subscriptionsWithFeatures = await user.getActiveSubscriptionsWithFeatures();
+      const subscriptionsWithFeatures = await user.getActiveSubscriptionsWithFeatures()
       await user.load('role')
 
       return response.json({ user, subscriptions: subscriptionsWithFeatures })

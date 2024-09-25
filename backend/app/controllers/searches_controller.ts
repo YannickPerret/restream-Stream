@@ -2,8 +2,9 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Provider from '#models/providers/provider'
 import Timeline from '#models/timeline'
 import Playlist from '#models/playlist'
-import User from "#models/user";
-import Product from "#models/product";
+import User from '#models/user'
+import Product from '#models/product'
+import ProductGroup from "#models/product_group";
 
 export default class SearchesController {
   async index({ request, response, auth }: HttpContext) {
@@ -18,13 +19,19 @@ export default class SearchesController {
         //results = await Video.query().where('title', 'LIKE', `%${searchTerms}%`)
         break
       case 'playlists':
-        results = await Playlist.query().where('title', 'LIKE', `%${searchTerms}%`).andWhere('userId', '=', user.id)
+        results = await Playlist.query()
+          .where('title', 'LIKE', `%${searchTerms}%`)
+          .andWhere('userId', '=', user.id)
         break
       case 'timelines':
-        results = await Timeline.query().where('title', 'LIKE', `%${searchTerms}%`).andWhere('userId', '=', user.id)
+        results = await Timeline.query()
+          .where('title', 'LIKE', `%${searchTerms}%`)
+          .andWhere('userId', '=', user.id)
         break
       case 'providers':
-        results = await Provider.query().where('name', 'LIKE', `%${searchTerms}%`).andWhere('userId', '=', user.id)
+        results = await Provider.query()
+          .where('name', 'LIKE', `%${searchTerms}%`)
+          .andWhere('userId', '=', user.id)
         break
       case 'users':
         results = await User.query()
@@ -33,6 +40,9 @@ export default class SearchesController {
         break
       case 'products':
         results = await Product.query().where('title', 'LIKE', `%${searchTerms}%`)
+        break
+      case 'productGroups':
+        results = await ProductGroup.query().where('name', 'LIKE', `%${searchTerms}%`)
         break
       default:
         results = []

@@ -1,6 +1,6 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import Product from '#models/product'
-import Feature from "#models/feature";
+import Feature from '#models/feature'
 
 export default class ProductSeeder extends BaseSeeder {
   async run() {
@@ -13,6 +13,7 @@ export default class ProductSeeder extends BaseSeeder {
         labelFeatures: ['Basic invoicing', 'Easy to use accounting', 'Multi-accounts'],
         isActive: true,
         showOnHomepage: true,
+        productGroupId: 1,
       },
       {
         title: 'Scale',
@@ -29,6 +30,7 @@ export default class ProductSeeder extends BaseSeeder {
         ],
         isActive: true,
         showOnHomepage: true,
+        productGroupId: 1,
       },
       {
         title: 'Growth',
@@ -43,7 +45,8 @@ export default class ProductSeeder extends BaseSeeder {
         ],
         isActive: true,
         showOnHomepage: true,
-      }
+        productGroupId: 1,
+      },
     ])
 
     // Récupération des features existantes

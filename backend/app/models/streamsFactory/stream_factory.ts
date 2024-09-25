@@ -14,7 +14,7 @@ export default class StreamFactory {
     webpageUrl: string,
     bitrate: string,
     resolution: string,
-    fps: number,
+    fps: number
   ): StreamProvider {
     switch (type) {
       case 'ffmpeg':
@@ -31,9 +31,6 @@ export default class StreamFactory {
           resolution,
           fps
         )
-      case 'gstreamer':
-        //return new Gstreamer(baseUrl, streamKey, timelinePath, logo, overlay, guestFile, enableBrowser)
-        null
       default:
         throw new Error(`Unsupported provider type: ${type}`)
     }

@@ -4,8 +4,8 @@ import User from '#models/user'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import Product from '#models/product'
 import Order from '#models/order'
-import Stripe from "stripe";
-import env from "#start/env";
+import Stripe from 'stripe'
+import env from '#start/env'
 
 export default class Payment extends BaseModel {
   @column({ isPrimary: true })
@@ -51,7 +51,6 @@ export default class Payment extends BaseModel {
     payment: { paymentMethodId: string; returnUrl: string }
   ) {
     try {
-
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: Math.round(order.totalAmount * 100),
         currency: order.currency || 'usd',

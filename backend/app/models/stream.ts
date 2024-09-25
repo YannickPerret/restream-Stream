@@ -3,11 +3,11 @@ import {
   BaseModel,
   belongsTo,
   column,
-  manyToMany,
   afterCreate,
   beforeDelete,
+  hasMany,
 } from '@adonisjs/lucid/orm'
-import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/providers/provider'
@@ -16,11 +16,12 @@ import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
 import { cuid } from '@adonisjs/core/helpers'
-import { drive } from '#config/drive'
+import drive from '#config/drive'
 import emitter from '@adonisjs/core/services/emitter'
 import pidusage from 'pidusage'
-import si from 'systeminformation';
+import si from 'systeminformation'
 import transmit from '@adonisjs/transmit/services/main'
+import StreamSchedule from '#models/stream_schedule'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -83,6 +84,9 @@ export default class Stream extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
+  @hasMany(() => StreamSchedule)
+  declare streamSchedule: HasMany<typeof StreamSchedule>
+
   @column.dateTime()
   declare startTime: DateTime | null
 
@@ -95,23 +99,17 @@ export default class Stream extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @manyToMany(() => Provider, {
-    pivotTable: 'stream_providers',
-    pivotColumns: ['on_primary'],
-  })
-  declare providers: ManyToMany<typeof Provider>
+  @belongsTo(() => Provider)
+  declare provider: BelongsTo<typeof Provider>
 
   @belongsTo(() => Timeline)
   declare timeline: BelongsTo<typeof Timeline>
   declare streamProvider: StreamProvider | null
-  canNextVideo: boolean = false
-  declare providersInstance: Provider[]
-  declare primaryProvider: Provider | null
+  private canNextVideo: boolean = false
   declare streamStartTime: DateTime
   declare nextVideoTimeout: NodeJS.Timeout | null
   private analyticsInterval: NodeJS.Timeout | null = null
   private currentBitrate: number = 0
-
 
   @afterCreate()
   static async createBaseFiles(stream: Stream) {
@@ -128,6 +126,12 @@ export default class Stream extends BaseModel {
 
   async updateGuestText() {
     const currentVideo = await this.timeline.getCurrentVideo(this.currentIndex)
+
+    if (!currentVideo) {
+      logger.error(`No current video found at index ${this.currentIndex}.`)
+      return
+    }
+
     await currentVideo.load('user')
 
     const guestText = !currentVideo.showInLive
@@ -144,7 +148,12 @@ export default class Stream extends BaseModel {
       logger.info('Stream is not live or not ready to switch videos.')
       return
     }
-    const currentVideo: Video = await this.timeline.getCurrentVideo(this.currentIndex)
+    const currentVideo: Video | null = await this.timeline.getCurrentVideo(this.currentIndex)
+    if (!currentVideo) {
+      logger.error('No current video found.')
+      return false
+    }
+
     const durationMs: number = await currentVideo.getDurationInMilisecond()
 
     const totalStreamTime = DateTime.now().diff(this.streamStartTime).as('milliseconds')
@@ -196,47 +205,40 @@ export default class Stream extends BaseModel {
 
   async run() {
     logger.info(`Starting stream ${this.id}`)
+    await this.load('provider')
+    await this.load('timeline')
 
-    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
-    this.providersInstance = await Promise.all(
-      providers.map((provider) => Provider.createProvider(provider))
-    )
-    const primary = this.providersInstance.find(
-      (provider) => provider.$extras.pivot_on_primary === 1
-    )
-    this.primaryProvider = primary ?? null
     this.currentIndex = 0
+    const providerInstance = await Provider.createProvider(this.provider)
 
-    if (this.primaryProvider) {
-      this.streamProvider = StreamFactory.createProvider(
-        this.type,
-        this.primaryProvider.baseUrl,
-        this.primaryProvider.streamKey,
-        this.timeline.filePath,
-        this.logo || '',
-        this.overlay || '',
-        this.guestFile,
-        this.enableBrowser,
-        this.webpageUrl,
-        this.bitrate,
-        this.resolution,
-        this.fps
-      )
+    this.streamProvider = StreamFactory.createProvider(
+      this.type,
+      providerInstance.baseUrl,
+      providerInstance.streamKey,
+      this.timeline.filePath,
+      this.logo || '',
+      this.overlay || '',
+      this.guestFile,
+      this.enableBrowser,
+      this.webpageUrl,
+      this.bitrate,
+      this.resolution,
+      this.fps
+    )
 
-      await this.start()
-      await emitter.emit('stream:onNextVideo', this.id)
-      this.streamStartTime = DateTime.now()
-      this.canNextVideo = true
+    await this.start()
+    await emitter.emit('stream:onNextVideo', this.id)
+    this.streamStartTime = DateTime.now()
+    this.canNextVideo = true
 
-      await this.nextVideo()
-    } else {
-      logger.warn('No primary provider found')
-    }
+    await this.nextVideo()
     await this.save()
   }
 
   async start(): Promise<void> {
-    this.pid = this.streamProvider ? this.streamProvider.startStream(this.updateBitrate.bind(this)) : process.pid
+    this.pid = this.streamProvider
+      ? this.streamProvider.startStream(this.updateBitrate.bind(this))
+      : process.pid
     this.startTime = DateTime.now()
     this.status = 'active'
     await this.sendAnalytics()
@@ -245,29 +247,29 @@ export default class Stream extends BaseModel {
   }
 
   private updateBitrate(bitrate: number) {
-    this.currentBitrate = bitrate;
+    this.currentBitrate = bitrate
   }
 
   sendAnalytics = async () => {
-    if (this.status === 'inactive') return;
+    if (this.status === 'inactive') return
 
     pidusage(this.pid, async (err, stats) => {
       if (err || this.pid === 0) {
         if (this.analyticsInterval) {
-          clearTimeout(this.analyticsInterval);
-          this.analyticsInterval = null;
+          clearTimeout(this.analyticsInterval)
+          this.analyticsInterval = null
         }
-        return;
+        return
       }
 
-      // Utiliser systeminformation pour obtenir les statistiques réseau
-      const networkStats = await si.networkStats();
-      const inputBytes = networkStats[0]?.rx_bytes || 0;  // Octets reçus
-      const outputBytes = networkStats[0]?.tx_bytes || 0; // Octets envoyés
+      // Utiliser system information pour obtenir les statistiques réseau
+      const networkStats = await si.networkStats()
+      const inputBytes = networkStats[0]?.rx_bytes || 0 // Octets reçus
+      const outputBytes = networkStats[0]?.tx_bytes || 0 // Octets envoyés
 
       // Conversion des octets en Mbps
-      const inputMbps = (inputBytes * 8) / 1_000_000;  // en Mbps
-      const outputMbps = (outputBytes * 8) / 1_000_000; // en Mbps
+      const inputMbps = (inputBytes * 8) / 1000000 // en Mbps
+      const outputMbps = (outputBytes * 8) / 1000000 // en Mbps
 
       const analyticsData = {
         cpu: stats.cpu,
@@ -275,28 +277,43 @@ export default class Stream extends BaseModel {
         bitrate: this.currentBitrate,
         network: {
           input: inputMbps,
-          output: outputMbps
-        }
-      };
+          output: outputMbps,
+        },
+      }
       // Envoyer les statistiques au frontend via WebSocket ou autre méthode
-      transmit.broadcast(`streams/${this.id}/analytics`, { stats: analyticsData });
+      transmit.broadcast(`streams/${this.id}/analytics`, { stats: analyticsData })
 
       // Mettre à jour les analytics chaque seconde
-      this.analyticsInterval = setTimeout(() => this.sendAnalytics(), 8000);
-    });
+      this.analyticsInterval = setTimeout(() => this.sendAnalytics(), 8000)
+    })
   }
 
   async stop(): Promise<void> {
     logger.info(`Stopping streams ${this.id}`)
     clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
 
+    // Vérifiez si `this.pid` est défini et si le processus existe encore
+    if (this.pid > 0) {
+      try {
+        process.kill(this.pid, 'SIGKILL') // Tuer le processus si `this.pid` est valide
+      } catch (err: any) {
+        if (err.code === 'ESRCH') {
+          logger.error(`Le processus avec le PID ${this.pid} n'existe pas.`)
+        } else {
+          logger.error(
+            `Erreur lors de l'arrêt du processus avec le PID ${this.pid}: ${err.message}`
+          )
+        }
+      }
+    } else {
+      logger.warn(`Aucun processus n'est associé au stream avec le PID ${this.pid}.`)
+    }
+
+    // Si un streamProvider existe, arrêtez-le
     if (this.streamProvider) {
       this.streamProvider.stopStream(this.pid)
-    } else {
-      if (this.pid > 0) {
-        process.kill(this.pid, 'SIGKILL')
-      }
     }
+
     this.endTime = DateTime.now()
     this.status = 'inactive'
     this.pid = 0
@@ -318,12 +335,6 @@ export default class Stream extends BaseModel {
     setTimeout(async () => {
       await this.run()
     }, 10000)
-  }
-
-  async getPrimaryProvider() {
-    const providers = await this.related('providers').query().pivotColumns(['on_primary'])
-    const primary = providers.find((provider) => provider.$extras.pivot_on_primary === 1)
-    return primary ?? null
   }
 
   async removeAssets() {

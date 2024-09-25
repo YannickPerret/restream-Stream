@@ -206,9 +206,14 @@ export default class Timeline extends BaseModel {
     await fs.promises.writeFile(currentPath, content)
   }
 
-  async getCurrentVideo(currentIndex: number) {
+  async getCurrentVideo(currentIndex: number): Promise<Video | null> {
     const videos = await this.videos()
-    return videos[currentIndex]
+    console.log('videos', videos)
+    if (videos && videos.length > currentIndex) {
+      return videos[currentIndex]
+    } else {
+      return null
+    }
   }
 
   async videos() {

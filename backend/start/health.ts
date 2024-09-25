@@ -8,4 +8,3 @@ export const healthChecks = new HealthChecks().register([
   new DbCheck(db.connection('mysql')),
   new DbConnectionCountCheck(db.connection()),
 ])
-

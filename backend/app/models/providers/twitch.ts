@@ -36,7 +36,6 @@ export default class Twitch extends Provider {
           console.log('Unauthorized error, attempting to refresh token...')
           await this.refreshNewToken()
 
-
           // Retry the request with the new token
           response = await fetch(
             `https://api.twitch.tv/helix/channels?broadcaster_id=${this.broadcasterId}`,
@@ -112,7 +111,6 @@ export default class Twitch extends Provider {
       this.authBearer = data.access_token
       await this.save()
       console.log('Token refreshed successfully')
-
     } catch (error) {
       console.error('Error refreshing token:', error)
       throw new Error('Failed to refresh token')

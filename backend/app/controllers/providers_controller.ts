@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Provider from '#models/providers/provider'
-import {providerValidator} from "#validators/provider";
+import { providerValidator } from '#validators/provider'
 
 export default class ProvidersController {
   /**
@@ -16,8 +16,7 @@ export default class ProvidersController {
    * Handle form submission for the create action
    */
   async store({ request, response, auth }: HttpContext) {
-
-    console.log("lol")
+    console.log('lol')
     const user = await auth.authenticate()
     const {
       name,

@@ -10,6 +10,5 @@ export default class extends BaseSeeder {
       { name: 'external' },
       { name: 'comptabilite' },
     ])
-
   }
 }

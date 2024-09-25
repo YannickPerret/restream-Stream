@@ -13,60 +13,49 @@ import {
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-
     const streams = await Stream.query()
-      .where('userId', auth.user!.id)
-      .preload('providers', (query) => {
-        query.pivotColumns(['on_primary'])
-      })
+      .where('userId', user.id)
       .preload('timeline')
+      .preload('provider')
 
-    const streamsWithPrimaryProvider = await Promise.all(
+    const streamWithCurrentVideo = await Promise.all(
       streams.map(async (stream) => {
-        const primaryProvider = await stream.getPrimaryProvider()
         const currentVideo =
           stream.status === 'active'
             ? await stream.timeline.getCurrentVideo(stream.currentIndex)
             : null
         return {
           ...stream.serialize(),
-          primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
           currentVideo: currentVideo ? currentVideo.serialize() : null,
         }
       })
     )
 
-    return response.json(streamsWithPrimaryProvider)
+    return response.json(streamWithCurrentVideo)
   }
 
   async show({ params, response }: HttpContext) {
     const stream = await Stream.query()
-      .preload('providers', (query) => {
-        query.pivotColumns(['on_primary'])
-      })
+      .preload('provider')
       .preload('timeline')
       .preload('user')
       .where('id', params.id)
       .firstOrFail()
 
-    const primaryProvider = await stream.getPrimaryProvider()
     const currentVideo =
       stream.status === 'active' ? await stream.timeline.getCurrentVideo(stream.currentIndex) : null
 
     return response.json({
       ...stream.serialize(),
-      primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
       currentVideo: currentVideo ? currentVideo.serialize() : null,
     })
   }
 
-  async start({ params, response }: HttpContext) {
+  async start({ params, response, auth }: HttpContext) {
+    const user = auth.getUserOrFail()
     const stream = await Stream.query()
-      .preload('providers', (query) => {
-        query.pivotColumns(['on_primary'])
-      })
-      .preload('timeline')
       .where('id', params.id)
+      .andWhere('userId', user.id)
       .firstOrFail()
 
     const streamManager = Stream_manager
@@ -97,28 +86,29 @@ export default class StreamsController {
 
   async store({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { title, timeline, quality, websiteUrl } = request.only([
+    const { title, timeline, quality, websiteUrl, provider } = request.only([
       'title',
       'timeline',
       'quality',
-      'websiteUrl'
+      'websiteUrl',
+      'provider',
     ])
     const runLive = request.input('runLive') === 'true'
 
-
-    const providersForm = JSON.parse(request.input('providers')) || []
     const logoFile = request.file('logo', { size: '5mb', extnames: ['jpg', 'png', 'jpeg'] })
     const overlayFile = request.file('overlay', { size: '50mb', extnames: ['jpg', 'png', 'jpeg'] })
 
-    if (!title || !providersForm || !timeline || !quality) {
+    if (!title || !provider || !timeline || !quality) {
       return response.badRequest({ error: 'Missing required fields' })
     }
     if (websiteUrl !== '' && websiteUrl !== null) {
       // Validate that the website URL matches the allowed patterns
-      const allowedUrlPattern = /^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/;
+      const allowedUrlPattern =
+        /^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/
       if (!allowedUrlPattern.test(websiteUrl)) {
         return response.badRequest({
-          error: 'Invalid website URL. The URL must start with one of the following: https://dashboard.twitch.tv/widgets/, https://streamlabs.com/alert-box/, https://streamelements.com/overlay/, or https://widgets.streamelements.com/host/'
+          error:
+            'Invalid website URL. The URL must start with one of the following: https://dashboard.twitch.tv/widgets/, https://streamlabs.com/alert-box/, https://streamelements.com/overlay/, or https://widgets.streamelements.com/host/',
         })
       }
     }
@@ -141,10 +131,7 @@ export default class StreamsController {
     )
     const maxStreamInstance = Number.parseInt(maxStreamInstanceFeature?.values[0] || '0', 10)
 
-    const activeStreamsCount = await Stream.query()
-      .where('userId', user.id)
-      .count('* as total')
-
+    const activeStreamsCount = await Stream.query().where('userId', user.id).count('* as total')
 
     if (activeStreamsCount[0].$extras.total >= maxStreamInstance) {
       return response.forbidden({
@@ -186,23 +173,12 @@ export default class StreamsController {
       overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
       currentIndex: 0,
       enableBrowser: true,
-      webpageUrl:
-        websiteUrl || 'https://dashboard.twitch.tv/widgets/alertbox#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGVydF9zZXRfaWQiOiIxOWVkMzhiMC0yZTVjLTRlMTgtYjYyNy1kNDE5MTg5NjdjMzAiLCJ1c2VyX2lkIjoiNDczNzQ5MTgifQ.4xkFoUyJGye34aj4ZrvDTnARV_imT0epWWw08JBD95I',
+      webpageUrl: websiteUrl,
       resolution: StreamResolutionByQuality[quality as keyof typeof StreamResolutionByQuality],
       bitrate: StreamQualityBiterate[quality as keyof typeof StreamQualityBiterate],
       fps: StreamFpsByQuality[quality as keyof typeof StreamFpsByQuality],
+      providerId: provider,
     })
-
-    // Attacher les fournisseurs sélectionnés
-    if (stream && providersForm) {
-      for (const provider of providersForm) {
-        await stream.related('providers').attach({
-          [provider.id]: {
-            on_primary: provider.onPrimary,
-          },
-        })
-      }
-    }
 
     // Lancer le stream en live si `runLive` est activé
     if (runLive) {
@@ -257,31 +233,27 @@ export default class StreamsController {
     stream.restartTimes = restartTimes
     await stream.save()
 
-    await stream.load('providers', (query) => {
-      query.pivotColumns(['on_primary'])
-    })
     await stream.load('timeline')
 
-    const primaryProvider = await stream.getPrimaryProvider()
     const currentVideo =
       stream.status === 'active' ? await stream.timeline.getCurrentVideo(stream.currentIndex) : null
 
     return response.ok({
       ...stream.serialize(),
-      primaryProvider: primaryProvider ? primaryProvider.serialize() : null,
       currentVideo: currentVideo ? currentVideo.serialize() : null,
     })
   }
 
   async destroy({ params, response, auth }: HttpContext) {
-    const user = await auth.authenticate()
-    const stream = await Stream.findOrFail(params.id)
+    const user = auth.getUserOrFail()
+    const stream = await Stream.query()
+      .where('id', params.id)
+      .andWhere('user_id', user.id)
+      .firstOrFail()
     if (stream.status === 'active') {
       return response.badRequest({ error: 'Stream is active' })
     }
-    if (stream.userId !== user.id) {
-      return response.forbidden('You are not authorized to delete this stream')
-    }
+
     const streamManager = Stream_manager
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })

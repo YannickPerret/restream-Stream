@@ -8,6 +8,6 @@ export const videoValidator = vine.compile(
     videoFile: vine.file({
       extnames: ['mp4', 'avi', 'mov', 'mts'],
       size: '20gb',
-    })
+    }),
   })
 )

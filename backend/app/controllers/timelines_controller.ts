@@ -3,8 +3,8 @@ import Timeline from '#models/timeline'
 import TimelineItem from '#models/timeline_item'
 import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
-import app from "@adonisjs/core/services/app";
-import env from "#start/env";
+import app from '@adonisjs/core/services/app'
+import env from '#start/env'
 
 export default class TimelinesController {
   /**
@@ -148,8 +148,9 @@ export default class TimelinesController {
       (err) => {
         if (err) {
           logger.error(err)
+        }
       }
-    })
+    )
 
     await timeline.delete()
     return response.noContent()

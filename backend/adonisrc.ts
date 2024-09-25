@@ -15,6 +15,7 @@ export default defineConfig({
     () => import('@adonisjs/lucid/commands'),
     () => import('adonisjs-scheduler/commands'),
     () => import('@adonisjs/mail/commands'),
+    () => import('@rlanz/bull-queue/commands'),
   ],
 
   /*
@@ -44,7 +45,10 @@ export default defineConfig({
     },
     () => import('@adonisjs/mail/mail_provider'),
     () => import('@adonisjs/core/providers/edge_provider'),
-    () => import('@adonisjs/i18n/i18n_provider')
+    () => import('@adonisjs/i18n/i18n_provider'),
+    () => import('#providers/stream_schedule_provider'),
+    () => import('@rlanz/bull-queue/queue_provider'),
+    () => import('@adonisjs/drive/drive_provider')
   ],
 
   /*
@@ -96,6 +100,6 @@ export default defineConfig({
     {
       pattern: 'resources/lang/**/*.{json,yaml,yml}',
       reloadServer: false,
-    }
+    },
   ],
 })

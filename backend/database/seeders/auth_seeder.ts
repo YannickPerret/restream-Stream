@@ -5,7 +5,6 @@ import User from '#models/user'
 
 export default class extends BaseSeeder {
   async run() {
-
     const userRole = await Role.findByOrFail('name', 'user')
     const adminRole = await Role.findByOrFail('name', 'admin')
 

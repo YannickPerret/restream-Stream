@@ -1,25 +1,30 @@
-import { DriveManager } from 'flydrive'
-import { FSDriver } from 'flydrive/drivers/fs'
-import { S3Driver } from 'flydrive/drivers/s3'
+import env from '#start/env'
 import app from '@adonisjs/core/services/app'
-/**
- * Step 1. Define a collection of drivers you plan to use
- */
+import { defineConfig, services } from '@adonisjs/drive'
 
-export const drive = new DriveManager({
-  default: 'fs',
+const driveConfig = defineConfig({
+  default: env.get('DRIVE_DISK', 'fs'),
+
   services: {
-    fs: () =>
-      new FSDriver({
-        location: new URL(app.publicPath(), import.meta.url),
-        visibility: 'public',
-      }),
-    s3: () =>
-      new S3Driver({
-        endpoint: 'https://coffee-stream.fra1.cdn.digitaloceanspaces.com',
-        region: 'fra1',
-        bucket: 'coffee-stream',
-        visibility: 'private',
-      }),
+    fs: services.fs({
+      location: app.makePath('storage'),
+      visibility: 'public',
+      routeBasePath: '/uploads',
+      appUrl: env.get('APP_URL'),
+      serveFiles: true,
+    }),
+
+    s3: services.s3({
+      credentials: {
+        accessKeyId: env.get('S3_ACCESS_KEY_ID'),
+        secretAccessKey: env.get('S3_SECRET_ACCESS_KEY'),
+      },
+      region: env.get('S3_REGION'),
+      bucket: env.get('S3_BUCKET'),
+      endpoint: env.get('S3_ENDPOINT'),
+      visibility: 'private',
+    }),
   },
 })
+
+export default driveConfig

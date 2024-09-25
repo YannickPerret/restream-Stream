@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import {BaseModel, column, computed, hasMany, manyToMany} from '@adonisjs/lucid/orm'
+import { BaseModel, column, computed, hasMany, manyToMany } from '@adonisjs/lucid/orm'
 import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import SubscriptionFeature from '#models/subscription_feature'
 import Product from '#models/product'
@@ -27,8 +27,7 @@ export default class Feature extends BaseModel {
   declare updatedAt: DateTime
 
   @computed()
-  public get pivotValue() {
+  get pivotValue() {
     return this.$extras.pivot_value
   }
 }
-

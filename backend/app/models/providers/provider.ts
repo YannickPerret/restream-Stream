@@ -42,11 +42,8 @@ export default class Provider extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @manyToMany(() => Stream, {
-    pivotTable: 'stream_providers',
-    pivotColumns: ['on_primary'],
-  })
-  declare streams: ManyToMany<typeof Stream>
+  @belongsTo(() => Stream)
+  declare streams: BelongsTo<typeof Stream>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

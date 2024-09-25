@@ -54,6 +54,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 
+  @column.dateTime()
+  declare deletedAt: DateTime | null
+
   static accessTokens = DbAccessTokensProvider.forModel(User, {
     expiresIn: '1 days',
     prefix: 'oat_',
@@ -61,7 +64,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
     type: 'auth_token',
     tokenSecretLength: 45,
   })
-
 
   async isAdmin() {
     await this.load('role')
@@ -75,7 +77,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   async getActiveSubscriptions() {
     const now = DateTime.now().toSQL() // Conversion en chaîne de caractères SQL compatible
-    return this.related('subscriptions').query()
+    return this.related('subscriptions')
+      .query()
       .where('status', 'active')
       .where('expires_at', '>', now)
   }
@@ -83,7 +86,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   async haveSubscriptionByProductId(productId: number): Promise<boolean> {
     const now = DateTime.now().toSQL() // Convertir en format SQL
 
-    const activeSubscription = await this.related('subscriptions').query()
+    const activeSubscription = await this.related('subscriptions')
+      .query()
       .where('product_id', productId)
       .andWhere('status', 'active')
       .andWhere('expires_at', '>', now) // Utilisation correcte de la date/heure
@@ -93,42 +97,31 @@ export default class User extends compose(BaseModel, AuthFinder) {
   }
 
   async getActiveSubscriptionsWithFeatures() {
-    const now = DateTime.now().toSQL();
+    const now = DateTime.now().toSQL()
 
     // Récupérer les souscriptions actives de l'utilisateur
-    const activeSubscriptions = await this.related('subscriptions').query()
+    const activeSubscriptions = await this.related('subscriptions')
+      .query()
       .where('status', 'active')
       .andWhere('expires_at', '>', now)
       .preload('product', (productQuery) => {
-        productQuery.preload('features'); // Charger les features du produit
+        productQuery.preload('features') // Charger les features du produit
       })
       .preload('subscriptionFeatures', (subscriptionFeatureQuery) => {
-        subscriptionFeatureQuery.pivotColumns(['value']); // Charger les features spécifiques à la souscription
-      });
+        subscriptionFeatureQuery.pivotColumns(['value']) // Charger les features spécifiques à la souscription
+      })
 
     // Fusionner les features de chaque souscription avec la logique définie
     const subscriptionsWithMergedFeatures = await Promise.all(
       activeSubscriptions.map(async (subscription) => {
-        const mergedFeatures = await subscription.getSubscriptionWithFeatures();
+        const mergedFeatures = await subscription.getSubscriptionWithFeatures()
         return {
           ...subscription.serialize(),
           features: mergedFeatures,
-        };
+        }
       })
-    );
+    )
 
-    return subscriptionsWithMergedFeatures;
+    return subscriptionsWithMergedFeatures
   }
-
-
- /* async serialize() {
-    return {
-      id: this.id,
-      username: this.username,
-      email: this.email,
-      isVerified: this.isVerified,
-      subscriptions: this.subscriptions,
-      role: this.role,
-    }
-  }*/
 }
