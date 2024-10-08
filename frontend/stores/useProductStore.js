@@ -41,6 +41,11 @@ const useProductStore = createSelectors(create((set, get) => ({
             set({ error: error.message, isLoading: false });
         }
     },
+    removeProduct: (id) => {
+        const existingProducts = get().products;
+        const updatedProducts = existingProducts.filter(p => p.id !== id);
+        set({ products: updatedProducts });
+    }
 })))
 
 export default useProductStore;

@@ -1,203 +1,156 @@
+// frontend/src/components/shop/CheckoutForm.jsx
 'use client'
-import React, {useEffect} from "react";
-import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { useRouter } from "next/navigation.js";
+import React, { useEffect, useRef, useState } from "react";
 import Form from "#components/_forms/Form.jsx";
 import FormGroup from "#components/_forms/FormGroup.jsx";
 import Input from "#components/_forms/Input.jsx";
 import Button from "#components/_forms/Button.jsx";
+import InputAddress from "#components/_forms/InputAddress.jsx";
 import useCheckoutStore from "#stores/useCheckoutStore.js";
-import useOrderStore from "#stores/useOrderStore.js";
-import OrderApi from "#api/order.js";
-import {useAuthStore, useSessionStore} from "#stores/useAuthStore.js";
+import { useAuthStore } from "#stores/useAuthStore.js";
+import StripeCardForm from "#components/shop/creditCard/CreditCart.jsx";
 
-export const CheckoutForm = ({ product, isMonthly }) => {
-    const { formData, setFormData, isProcessing, setIsProcessing, setPaymentError } = useCheckoutStore();
-    const { setOrderData } = useOrderStore();
-    const {user} = useAuthStore()
-    const stripe = useStripe();
-    const elements = useElements();
-    const router = useRouter();
+export const CheckoutForm = ({ handleSubmit }) => {
+    const { formData, setFormData, isProcessing, setPaymentError } = useCheckoutStore();
+    const { user } = useAuthStore();
+    const stripeCardFormRef = useRef(null);
 
-    // Pre-fill the email from the session when the component mounts
     useEffect(() => {
         if (user && user.email) {
-            setFormData({ email: user.email });
+            setFormData('email', user.email);
         }
     }, [user, setFormData]);
 
-    const handleChange = (e) => {
+    const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({ [name]: value });
+        setFormData(name, value);
     };
 
-    const handleSubmit = async (e) => {
+    const handleAddressChange = (updatedFormData) => {
+        setFormData('address', updatedFormData.address);
+        setFormData('city', updatedFormData.city);
+        setFormData('state', updatedFormData.state);
+        setFormData('zip', updatedFormData.zip);
+        setFormData('country', updatedFormData.country);
+    };
+
+    const onFormSubmit = async (e) => {
         e.preventDefault();
 
-        if (!stripe || !elements) {
-            return;
-        }
+        if (stripeCardFormRef.current) {
+            const cardPaymentMethod = await stripeCardFormRef.current.handleCardDetails();
+            if (!cardPaymentMethod) return;
 
-        setIsProcessing(true);
-
-        try {
-            const { error, paymentMethod } = await stripe.createPaymentMethod({
-                type: 'card',
-                card: elements.getElement(CardElement),
-                billing_details: {
-                    name: `${formData.firstName} ${formData.lastName}`,
-                    phone: formData.phone,
-                    email: formData.email,
-                    address: {
-                        line1: formData.address,
-                        city: formData.city,
-                        state: formData.state,
-                        postal_code: formData.zip,
-                        country: formData.country,
-                    },
-                },
-            });
-
-            if (error) {
-                throw error;
-            }
-
-            const returnUrl = `${window.location.origin}/shop/checkout/success`;
-
-            // Create an order with a single product item
-            const orderResponse = await OrderApi.create({
-                items: [
-                    {
-                        productId: product.id,
-                        quantity: 1,
-                    },
-                ],
-                isMonthly,
-                paymentMethodId: paymentMethod.id,
-                currency: 'usd',
-                returnUrl,
-                address: formData,
-            });
-
-            if (!orderResponse.success) {
-                throw new Error('Order creation failed');
-            }
-
-            const { order, paymentIntent } = orderResponse;
-
-            // Store the order and payment data in the Zustand store
-            setOrderData(order, paymentIntent);
-
-            setIsProcessing(false);
-
-            // Navigate to the success page
-            router.push('/shop/checkout/success');
-
-        } catch (error) {
-            console.error('Error processing payment:', error);
-            setPaymentError(error.message);
-            setIsProcessing(false);
+            handleSubmit(cardPaymentMethod.id);
+        } else {
+            setPaymentError('Unable to process payment at this time.');
         }
     };
 
     return (
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={onFormSubmit}>
             <FormGroup title="Personal Information">
-                <Input
-                    label="FirstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="Enter your firstname"
-                />
-                <Input
-                    label="LastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Enter your lastname"
-                />
                 <Input
                     label="Email Address"
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
                     placeholder="Enter your email address"
                     disabled={true}
+                    required={true}
+                />
+
+                <FormGroup type={"row"}>
+                    <Input
+                        label="First Name"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        placeholder="Enter your firstname"
+                        required={true}
+                    />
+                    <Input
+                        label="Last Name"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        placeholder="Enter your lastname"
+                        required={true}
+                    />
+                </FormGroup>
+
+                <Input
+                    label="Phone Number (optional)"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Enter your phone number"
                 />
             </FormGroup>
 
             <FormGroup title="Billing Address">
-                <Input
-                    label="Phone Number"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="Enter your phone number"
-                />
-                <Input
-                    label="Address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your billing address"
-                />
+                {formData.address.length <= 0 ? (
+                    <InputAddress
+                        label="Address complete"
+                        onChange={handleAddressChange}
+                        formData={{ address: formData.address, city: formData.city, state: formData.state, zip: formData.zip, country: formData.country }}
+                    />
+                ) : (
+                    <Input
+                        label="Address"
+                        name="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData('address', e.target.value)}
+                        placeholder="Enter your address"
+                        required={true}
+                    />
+                )}
+
                 <Input
                     label="City"
                     name="city"
                     value={formData.city}
-                    onChange={handleChange}
+                    onChange={handleInputChange}
                     placeholder="Enter your city"
+                    required={true}
                 />
-                <Input
-                    label="State/Province"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    placeholder="Enter your state/province"
-                />
-                <Input
-                    label="ZIP/Postal Code"
-                    name="zip"
-                    type="number"
-                    value={formData.zip}
-                    onChange={handleChange}
-                    placeholder="Enter your ZIP/postal code"
-                />
+
+                <FormGroup type={"row"}>
+                    <Input
+                        label="ZIP/Postal Code"
+                        name="zip"
+                        value={formData.zip}
+                        onChange={handleInputChange}
+                        placeholder="Enter your ZIP/postal code"
+                        required={true}
+                    />
+
+                    <Input
+                        label="State/Province"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        placeholder="Enter your state/province"
+                        required={true}
+                    />
+                </FormGroup>
 
                 <Input
                     label="Country"
                     name="country"
                     value={formData.country}
-                    onChange={handleChange}
+                    onChange={handleInputChange}
                     placeholder="Enter your country"
+                    required={true}
                 />
             </FormGroup>
 
             <FormGroup title="Payment Information">
-                <CardElement
-                    options={{
-                        style: {
-                            base: {
-                                fontSize: '16px',
-                                color: '#fff',
-                                '::placeholder': {
-                                    color: '#87bbfd',
-                                },
-                            },
-                            invalid: {
-                                color: '#e5424d',
-                            },
-                        },
-                        hidePostalCode:true,
-                    }}
-                />
+                <StripeCardForm ref={stripeCardFormRef} />
             </FormGroup>
 
-            <div className="flex justify-between">
-                <Button type="submit" label={isProcessing ? "Processing..." : "Complete Purchase"} disabled={isProcessing} />
-                <Button type="reset" label="Reset " />
+            <div className="flex justify-end">
+                <Button type="submit" label={isProcessing ? "Processing..." : "Purchase"} disabled={isProcessing} />
             </div>
         </Form>
     );

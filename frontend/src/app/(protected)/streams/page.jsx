@@ -49,13 +49,13 @@ const StreamsPage = () => {
     }, [fetchStreams]);
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
-            <div className="container mx-auto">
+        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
+            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">
                         Streams {currentStreamCount} / {maxStreamInstance}
                         {maxStreamInstance > 0 && (
-                            <Link href="/shop/upgrade" className="text-lg ml-4">Upgrade offers</Link>
+                            <Link href="/subscriptions/upgrade" className="text-lg ml-4">Upgrade offers</Link>
                         )}
                     </h1>
 
@@ -76,12 +76,13 @@ const StreamsPage = () => {
                         </>
                     ) : (
                         <div className="text-white">
-                            You don't have an active offer, <Link href="/shops/products" className="underline">Buy here</Link>.
+                            You don't have an active offer, <Link href="/shops/products" className="underline">Buy
+                            here</Link>.
                         </div>
                     )}
                 </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6" />
-                <StreamPageIndex />
+                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+                <StreamPageIndex/>
             </div>
         </section>
     );

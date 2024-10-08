@@ -6,6 +6,9 @@ import FormGroup from '#components/_forms/FormGroup';
 import Input from '#components/_forms/Input';
 import Button from '#components/_forms/Button';
 import ProductApi from "#api/product.js";
+import FileUpload from "#components/_forms/FileUpload.jsx";
+import Search from "#components/_forms/Search.jsx";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const CreateProductPage = () => {
     const router = useRouter();
@@ -14,7 +17,9 @@ const CreateProductPage = () => {
     const [annualPrice, setAnnualPrice] = useState('');
     const [directDiscount, setDirectDiscount] = useState('');
     const [labelFeatures, setLabelFeatures] = useState('');
+    const [imageFile, setImageFile] = useState(null);
     const [features, setFeatures] = useState([]);
+    const [productGroup, setProductGroup] = useState(null);
 
     const handleAddFeature = () => {
         setFeatures([...features, { name: '', value: '' }]);
@@ -33,30 +38,67 @@ const CreateProductPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const productData = {
-            title,
-            monthlyPrice: parseInt(monthlyPrice),
-            annualPrice: parseInt(annualPrice),
-            directDiscount: parseInt(directDiscount),
-            labelFeatures: labelFeatures.split(',').map((feature) => feature.trim()), // Ensure labelFeatures is an array
-            features: features.map((feature) => ({
+
+        // Créer un objet FormData pour gérer les fichiers
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('monthlyPrice', monthlyPrice);
+        formData.append('annualPrice', annualPrice);
+        formData.append('directDiscount', directDiscount);
+
+        if (productGroup && productGroup.id) {
+            formData.append('productGroup', productGroup.id.toString());
+        } else {
+            console.error("Product group is missing or invalid");
+        }
+
+        if (labelFeatures && labelFeatures.length > 0) {
+            formData.append('labelFeatures', JSON.stringify(labelFeatures.split(',').map((feature) => feature.trim())));
+        }
+
+        if (imageFile) {
+            formData.append('logoPath', imageFile[0]);
+        }
+
+        if (features && features.length > 0) {
+            formData.append('features', JSON.stringify(features.map((feature) => ({
                 name: feature.name,
                 value: feature.value,
-            })),
-        };
-        await ProductApi.create(productData)
-        router.push('/admin/products');
+            }))));
+        }
+
+        try {
+            const {message} = await ProductApi.create(formData);
+            if ( message) {
+                router.push('/admin/products');
+            }
+        } catch (error) {
+            console.error("Error creating product:", error);
+        }
     };
 
+
     return (
-        <div className="container mx-auto py-12">
-            <h1 className="text-3xl font-bold mb-6 text-white">Create New Product</h1>
+        <Panel title={'Create Product'} buttonLink={'/admin/products'} buttonLabel={'Go to back'} darkMode={true}>
             <Form onSubmit={handleSubmit}>
                 <FormGroup title="Product Information">
-                    <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-                    <Input label="Monthly Price" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
-                    <Input label="Annual Price" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} />
-                    <Input label="Direct Discount (%)" type="number" value={directDiscount} onChange={(e) => setDirectDiscount(e.target.value)} />
+                    <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)}/>
+                    <Input label="Monthly Price" type="number" value={monthlyPrice}
+                           onChange={(e) => setMonthlyPrice(e.target.value)}/>
+                    <Input label="Annual Price" type="number" value={annualPrice}
+                           onChange={(e) => setAnnualPrice(e.target.value)}/>
+                    <Input label="Direct Discount (%)" type="number" value={directDiscount}
+                           onChange={(e) => setDirectDiscount(e.target.value)}/>
+
+                    <Search
+                        label="Product group"
+                        searchUrl='productGroups'
+                        multiple={false}
+                        updateSelectedItems={setProductGroup}
+                        showSelectedItems={true}
+                        displayFields={['name']}
+                        placeholder={"2024..."}
+                    />
 
                     <Input
                         label="Label Features"
@@ -87,11 +129,22 @@ const CreateProductPage = () => {
                     <Button type="button" label="Add Feature" onClick={handleAddFeature} className="mt-4" />
                 </FormGroup>
 
+                <FormGroup title={"Assets"}>
+                    <FileUpload
+                        label="Upload Logo"
+                        description="Supported formats: PNG, JPG, Webp, SVG"
+                        id="logo-upload"
+                        onChange={(file) => setImageFile(file)}
+                        accept={['image/png', 'image/jpg', 'image/jpeg', 'image/webp', 'image/svg+xml']}
+                        multiple={false}
+                    />
+                </FormGroup>
+
                 <div className="flex justify-end">
                     <Button label="Create Product" type="submit" />
                 </div>
             </Form>
-        </div>
+        </Panel>
     );
 };
 

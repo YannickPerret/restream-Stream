@@ -37,14 +37,14 @@ const FeaturesSection = () => {
     ];
 
     return (
-        <div className="relative bg-gradient-to-r from-indigo-900 via-gray-800 to-gray-900 py-32 px-8 rounded-b-lg overflow-hidden">
-            <div className="max-w-6xl mx-auto mb-12">
+        <div className="relative py-32 px-8 rounded-b-lg overflow-hidden">
+            <div className="max-w-7xl mx-auto mb-12">
                 <h2 className="text-4xl font-bold text-white text-left">Our Features</h2>
                 <p className="text-xl text-gray-300 text-left mt-4">
                     Explore the powerful tools we provide to elevate your streaming experience.
                 </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
                 {features.map((feature, index) => (
                     <FeatureCard
                         key={index}

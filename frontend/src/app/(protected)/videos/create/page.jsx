@@ -1,42 +1,114 @@
-'use client';
+'use client'
 import React, { useState } from 'react';
-import VideoPreview from '#components/videos/preview';
-import Form from "#components/_forms/Form";
+import VideoFileItem from '#components/videos/VideoFileItem';
 import FormGroup from "#components/_forms/FormGroup";
 import Input from "#components/_forms/Input";
-import Checkbox from "#components/_forms/Checkbox";
 import FileUpload from "#components/_forms/FileUpload";
 import Button from "#components/_forms/Button";
-import { useRouter } from 'next/navigation';
-import { VideoApi } from '#api/video'; // API pour créer une vidéo
+import { VideoApi } from "#api/video.js";
 
 export default function VideoCreatePage() {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [isPublished, setIsPublished] = useState(false);
-    const [showInLive, setShowInLive] = useState(false);
-    const [videoFile, setVideoFile] = useState(null);
-    const [thumbnail, setThumbnail] = useState(null);
-    const router = useRouter();
+    const [videoUrl, setVideoUrl] = useState('');
+    const [videoFiles, setVideoFiles] = useState([]);
+    const [videoDetails, setVideoDetails] = useState([]);
+    const [uploadStatus, setUploadStatus] = useState({});
+
+    const handleFileChange = (files) => {
+        const updatedFiles = Array.from(files);
+        setVideoFiles([...videoFiles, ...updatedFiles]);
+
+        // Ajouter un item pour chaque vidéo uploadée
+        const newDetails = updatedFiles.map(() => ({
+            title: '',
+            description: '',
+            isPublished: false,
+            showInLive: false,
+        }));
+        setVideoDetails((prevDetails) => [...prevDetails, ...newDetails]);
+    };
+
+    const handleVideoUpload = async (file, index, setUploadProgress) => {
+        try {
+            const { url, fields } = await VideoApi.getUploadPolicy(file);
+
+            if (!url || !fields) {
+                throw new Error('Invalid response from server, missing url or policy.');
+            }
+            const formData = new FormData();
+
+            Object.entries(fields).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            formData.append('file', file.name);
+
+            console.log(file)
+
+            const responseUpload = await fetch(url, {
+                method: 'POST',
+                body: formData,
+            });
+
+            console.log(responseUpload);
+
+            if (!responseUpload.ok) {
+                throw new Error('Failed to upload the file to S3');
+            }
+
+            console.log(`File uploaded successfully to S3 at key: ${url}`);
+            setVideoDetails((prevDetails) => {
+                const updatedDetails = [...prevDetails];
+                updatedDetails[index] = {
+                    ...updatedDetails[index],
+                    path: fields.key,
+                };
+                return updatedDetails;
+            });
+
+        } catch (error) {
+            console.error('Error during video upload process:', error.message);
+        }
+    };
+
+    const handleVideoDetailChange = (index, field, value) => {
+        const updatedDetails = [...videoDetails];
+        updatedDetails[index] = {
+            ...updatedDetails[index],
+            [field]: value,
+        };
+        setVideoDetails(updatedDetails);
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
+        if (videoUrl) {
+            try {
+                const { video, signedUrl } = await VideoApi.create({
+                    title: videoDetails[0]?.title || 'YouTube video',
+                    description: videoDetails[0]?.description || 'Uploaded from YouTube',
+                    videoUrl,
+                });
 
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('isPublished', isPublished);
-        formData.append('showInLive', showInLive);
+                setVideoDetails((prevDetails) => [
+                    ...prevDetails,
+                    { title: video.title, description: video.description, isPublished: false, showInLive: false, path: signedUrl }
+                ]);
 
-        if (videoFile) formData.append('video', videoFile);
-        if (thumbnail) formData.append('thumbnail', thumbnail);
+                setVideoUrl('');
+            } catch (error) {
+                console.error('Error submitting YouTube video:', error);
+            }
+        }
 
-        try {
-            const response = await VideoApi.create(formData);
-            router.push('/videos');
-            console.log(response);
-        } catch (error) {
-            console.error(error);
+        if (videoFiles.length > 0) {
+            videoFiles.forEach((file, index) => {
+                handleVideoUpload(file, index, setUploadProgress => {
+                    setUploadStatus((prevStatus) => ({
+                        ...prevStatus,
+                        [index]: setUploadProgress
+                    }));
+                });
+            });
         }
     };
 
@@ -49,66 +121,42 @@ export default function VideoCreatePage() {
                 <hr className="border-b-1 border-blueGray-300 pb-6"/>
 
                 <div className="p-6">
-                    {/* Affichage de la preview si la vidéo est sélectionnée */}
-                    {videoFile && (
-                        <VideoPreview videoUrl={URL.createObjectURL(videoFile)} />
-                    )}
+                    <FormGroup title="Stream URL (YouTube or Twitch)" type={"column"}>
+                        <Input
+                            label="Stream URL"
+                            type="url"
+                            placeholder="Enter stream URL"
+                            value={videoUrl}
+                            onChange={(e) => setVideoUrl(e.target.value)}
+                            pattern="https?://(www\.)?(youtube\.com|youtu\.be|twitch\.tv)/.*"
+                        />
+                        <Button label="Submit URL" onClick={handleSubmit} color="blue" />
+                    </FormGroup>
 
-                    {/* Formulaire de création de vidéo */}
-                    <Form onSubmit={handleSubmit}>
-                        <FormGroup title="Video Details">
-                            <Input
-                                label="Title"
-                                type="text"
-                                placeholder="Enter Title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                required
-                            />
-                            <Input
-                                label="Description"
-                                type="textarea"
-                                placeholder="Enter description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                required
-                            />
-                        </FormGroup>
+                    <FormGroup title="Upload Video Files">
+                        <FileUpload
+                            label="Upload Video Files"
+                            description="Upload one or more video files."
+                            id="videoFiles"
+                            accept={["video/mp4", "video/avi", "video/mov", "video/mts", "video/mkv", "video/webm"]}
+                            multiple
+                            onChange={handleFileChange}
+                        />
+                    </FormGroup>
 
-                        <FormGroup title="Upload Video">
-                            <FileUpload
-                                label="Upload Video File"
-                                accept={["video/mp4", "video/avi", "video/mov", "video/mts"]}
-                                onChange={setVideoFile}
+                    <div className="uploaded-videos">
+                        {videoDetails.map((video, index) => (
+                            <VideoFileItem
+                                key={index}
+                                file={videoFiles[index]}
+                                index={index}
+                                videoDetails={video}
+                                uploadStatus={uploadStatus[index]}
+                                onDetailChange={handleVideoDetailChange}
+                                onUpload={handleVideoUpload}
                             />
-                        </FormGroup>
-
-                        <FormGroup title="Upload Thumbnail">
-                            <FileUpload
-                                label="Upload Thumbnail"
-                                accept={["image/png", "image/jpeg"]}
-                                onChange={setThumbnail}
-                            />
-                        </FormGroup>
-
-                        <FormGroup title="Options">
-                            <Checkbox
-                                label="Publish"
-                                checked={isPublished}
-                                onChange={(e) => setIsPublished(e.target.checked)}
-                            />
-                            <Checkbox
-                                label="Show in live streams"
-                                checked={showInLive}
-                                onChange={(e) => setShowInLive(e.target.checked)}
-                            />
-                        </FormGroup>
-
-                        <div className="flex justify-end space-x-4">
-                            <Button label="Reset" onClick={() => window.location.reload()} color="red" />
-                            <Button label="Create Video" type="submit" color="blue" />
-                        </div>
-                    </Form>
+                        ))}
+                    </div>
                 </div>
             </div>
         </section>

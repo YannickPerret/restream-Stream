@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AuthApi from "#api/auth.js";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 function AuthAuthorize() {
     const searchParams = useSearchParams()
@@ -10,12 +11,14 @@ function AuthAuthorize() {
     const hasFetched = useRef(false)
 
     useEffect(() => {
+        console.log("Token from URL:", token);
         if (token && !hasFetched.current) {
             hasFetched.current = true
             const verify = async () => {
                 try {
-                    await AuthApi.verify(token).then((res) => res.json())
-                        .then((data) => {
+                    const formData = new FormData();
+                    formData.append('token', token);
+                    await AuthApi.verify(formData).then(() => {
                         setStatus('Your account has been verified. You can now login.')
                     })
                 } catch (e) {
@@ -28,18 +31,9 @@ function AuthAuthorize() {
     }, [token])
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-slate-500">
-                <header className="container mx-auto">
-                    <h1 className="text-3xl text-white py-4">Verify your account</h1>
-                    <hr className="border-b-1 border-blueGray-300 pb-6" />
-                </header>
-
-                <div>
-                    <h1>{status}</h1>
-                </div>
-            </div>
-        </section>
+        <Panel title={'Account Verification'}>
+            <h1>{status}</h1>
+        </Panel>
     )
 }
 

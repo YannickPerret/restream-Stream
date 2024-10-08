@@ -38,6 +38,17 @@ export default class OrderApi extends Api {
         return await response.json();
     }
 
+    static async getOneBySlug(slug) {
+        const response = await fetch(`${this.baseUrl}/api/orders/slug/${slug}`, {
+            method: 'GET',
+            headers: this.getHeaders(),
+        });
+        if(!response.ok) {
+            throw new Error('Error while fetching orders');
+        }
+        return await response.json();
+    }
+
     static async create(data) {
         const response = await fetch(`${this.baseUrl}/api/orders`, {
             method: 'POST',
@@ -70,5 +81,28 @@ export default class OrderApi extends Api {
         if(!response.ok) {
             throw new Error('Error while deleting orders');
         }
+    }
+
+    static async renewSubscription(data){
+        const response = await fetch(`${this.baseUrl}/api/orders/renew-subscription`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if(!response.ok) {
+            throw new Error('Error while renewing subscription');
+        }
+        return await response.json();
+    }
+
+    static async downloadInvoice(id) {
+        const response = await fetch(`${this.baseUrl}/api/orders/${id}/download/invoice`, {
+            method: 'GET',
+            headers: this.getHeaders(),
+        });
+        if (!response.ok) {
+            throw new Error('Error while downloading invoice');
+        }
+        return response;
     }
 }

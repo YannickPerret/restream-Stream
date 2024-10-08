@@ -1,5 +1,6 @@
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Ffmpeg from '#models/streamsFactory/ffmpeg'
+import Ytbdownload from '#models/streamsFactory/ytb_download'
 
 export default class StreamFactory {
   static createProvider(
@@ -31,6 +32,8 @@ export default class StreamFactory {
           resolution,
           fps
         )
+      case 'ytbdownload':
+        return new Ytbdownload()
       default:
         throw new Error(`Unsupported provider type: ${type}`)
     }

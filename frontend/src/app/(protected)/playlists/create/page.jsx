@@ -126,10 +126,10 @@ export default function PlaylistCreatePage() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-slate-500">
+            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
                 <div className="container mx-auto">
                     <h1 className="text-3xl text-white py-4 ">Create a new playlist</h1>
-                    <hr className="border-b-1 border-blueGray-300 pb-6" />
+                    <hr className="border-b-1 border-blueGray-300 pb-6"/>
                     <div>
                         <Link href={"/playlists"}>Back to Playlists</Link>
                     </div>
@@ -140,10 +140,16 @@ export default function PlaylistCreatePage() {
                         <PlaylistForm
                             title={playlist.title}
                             isPublished={playlist.isPublished}
-                            setPublished={(value) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, isPublished: value }))}
-                            setTitle={(title) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, title }))}
+                            setPublished={(value) => setPlaylist((prevPlaylist) => ({
+                                ...prevPlaylist,
+                                isPublished: value
+                            }))}
+                            setTitle={(title) => setPlaylist((prevPlaylist) => ({...prevPlaylist, title}))}
                             description={playlist.description}
-                            setDescription={(value) => setPlaylist((prevPlaylist) => ({ ...prevPlaylist, description: value }))}
+                            setDescription={(value) => setPlaylist((prevPlaylist) => ({
+                                ...prevPlaylist,
+                                description: value
+                            }))}
                             submitPlaylist={() => submitPlaylist(playlist.title, playlist.description, playlist.isPublished)}
                         />
 

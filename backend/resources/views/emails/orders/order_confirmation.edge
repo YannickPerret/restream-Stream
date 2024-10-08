@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmation - CoffeeStream</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #dddddd;
+    }
+    .header h1 {
+      margin: 0;
+      color: #333333;
+    }
+    .header .purchase-date {
+      color: #777777;
+      font-size: 14px;
+    }
+    .content {
+      padding: 20px 0;
+    }
+    .content p {
+      color: #555555;
+      line-height: 1.8;
+    }
+    .products {
+      margin: 20px 0;
+    }
+    .products h3 {
+      margin: 0;
+      color: #6B46C1;
+      border-bottom: 2px solid #6B46C1;
+      display: inline-block;
+      padding-bottom: 5px;
+    }
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .products-table th, .products-table td {
+      border: 1px solid #dddddd;
+      padding: 15px;
+      text-align: left;
+    }
+    .products-table th {
+      background-color: #f8f8f8;
+      color: #444;
+    }
+    .products-table td {
+      vertical-align: middle;
+    }
+    .discounts {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+    }
+    .footer {
+      text-align: center;
+      padding: 20px 0;
+      border-top: 1px solid #dddddd;
+      color: #777777;
+      font-size: 14px;
+    }
+    .product-icon {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+
+    .strikethrough {
+      text-decoration: line-through;
+      color: #e74c3c;
+
+    }
+    .highlighted-price {
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="{{ logo }}" alt="CoffeeStream Logo" style="width: 250px; display: block; margin: 10px auto;">
+    <div class="header">
+      <h1>Order Confirmation</h1>
+      <div class="purchase-date">Order Date: {{ purchaseDate }}</div>
+    </div>
+    <div class="content">
+      <p>Hello {{ user.username }},</p>
+      <p>Your order number is <a href="{{ orderUrl }}" alt="Order link">{{ order.id }}</a>. We are thrilled to confirm your order! Below, you will find the details of your recent purchase. <br />If you have any questions, do not hesitate to reach out to our support team for further assistance.</p>
+
+      <div class="products">
+        <h3>Products Ordered:</h3>
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>&nbsp;</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Frequency</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            @each(product in products)
+            <tr>
+              <td><img src="{{ product.signedLogoPath }}" alt="{{ product.title }} icon" class="product-icon"></td>
+              <td>{{ product.title }}</td>
+              <td>{{ product.quantity }}x</td>
+              <td>
+                @if(product.frequency == 'yearly')
+                  <span class="strikethrough">${{ product.annualPrice }}/year</span> <br>
+                  <span class="highlighted-price">${{ product.annualPrice * (1 - product.directDiscount / 100) }} /year</span>
+                @elseif(product.frequency == 'monthly')
+                  ${{ product.monthlyPrice }}/mo
+                @else
+                  ${{ product.price }}
+                @endif
+              </td>
+              <td>{{ product.frequency }}</td>
+              <td>${{ product.totalPrice }}</td>
+            </tr>
+            @endeach
+          </tbody>
+        </table>
+      </div>
+
+      @if(order.discounts && order.discounts.length > 0)
+      <div class="discounts">
+        <h4>Discounts Applied:</h4>
+        <ul>
+          @each(discount in discounts)
+          <li>
+            <strong>{{ discount.name }}:</strong>
+              @if (discount.type == 'percentage')
+              -{{ discount.amount }}%
+              @else
+              -${{ discount.amount }}
+              @endif
+          </li>
+          @endeach
+        </ul>
+      </div>
+      @endif
+
+      <p><strong>Total Amount: ${{ order.totalAmount }}</strong></p>
+      <p>We appreciate your trust in CoffeeStream. Your content journey just got more exciting! You will receive another email with tracking information once your order has shipped.</p>
+      <p>For any questions or support, please reach out to our team at any time. Thank you once again for choosing CoffeeStream!</p>
+    </div>
+    <div class="footer">
+      <p>&copy; 2024 CoffeeStream. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>

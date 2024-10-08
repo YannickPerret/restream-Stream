@@ -1,32 +1,34 @@
 import React from 'react';
 import { useRouter } from "next/navigation";
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import useCheckoutStore from "#stores/useCheckoutStore.js";
 
 const PriceCard = ({
                        id,
                        title,
                        monthlyPrice,
+                        isMonthly,
+                       logoPath,
                        annualPrice,
                        discount,
-                       isMonthly,
                        labelFeatures,
                        buttonText,
                        isHighlighted,
-                       borderColor, // Couleur unie
-                       borderGradient // Dégradé (optionnel)
+                       borderColor,
+                       borderGradient
                    }) => {
     const monthlyCost = `$${monthlyPrice}`;
     const annualCost = `$${annualPrice}`;
-    const annualTotalWithDiscount = (annualPrice * (100 - discount) / 100).toFixed(0);
+    const annualTotalWithDiscount = Math.round(annualPrice - (annualPrice * discount / 100));
     const router = useRouter();
 
     const handleCheckout = () => {
-        router.push(`/shop/checkout?productId=${id}&isMonthly=${isMonthly}`);
+        router.push(`/shop/checkout?productId=${id}`);
     };
 
     return (
         <div className="relative bg-gray-50 p-6 rounded-lg shadow-lg w-full max-w-sm border-2 border-gray-200flex flex-col justify-between" >
-            {/* Bordure supérieure avec dégradé */}
             {borderGradient ? (
                 <div
                     className="absolute top-0 left-0 w-full h-2 rounded-t-lg"
@@ -44,10 +46,10 @@ const PriceCard = ({
             )}
 
             <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-white p-2 rounded-full">
-                <Image src="/icones/fusee.svg" alt="Rocket Icon" width={50} height={50} />
+                {logoPath && (<Image src={logoPath} alt="Rocket Icon" width={50} height={50}/>)}
             </div>
 
-            <h2 className={`text-xl font-bold mt-12 ${isHighlighted ? 'text-black' : 'text-gray-700'}`}>{title}</h2>
+            <h2 className={`text-3xl font-bold mt-12 ${isHighlighted ? 'text-black' : 'text-gray-700'}`}>{title}</h2>
             <div className="mt-4">
                 {isMonthly ? (
                     <div>
@@ -58,8 +60,8 @@ const PriceCard = ({
                     <div>
                         <span className="text-sm text-red-500 line-through">{annualCost}</span>
                         <div>
-                            <span className="text-4xl font-extrabold text-gray-900">{annualTotalWithDiscount}</span>
-                            <span className="text-lg ml-2 text-gray-700"> / Annually</span>
+                            <span className="text-4xl font-extrabold text-gray-900">${annualTotalWithDiscount}</span>
+                            <span className="text-lg ml-2 text-gray-700">/Year</span>
                             <span className="text-sm text-green-500 ml-2">({discount}% off)</span>
                         </div>
                     </div>
@@ -70,7 +72,7 @@ const PriceCard = ({
                 {labelFeatures.map((feature, index) => (
                     <li key={index} className="flex items-center text-gray-700">
                         <span className="mr-2">✓</span>
-                        <span>{feature}</span>
+                        <ReactMarkdown className="inline">{feature}</ReactMarkdown>
                     </li>
                 ))}
             </ul>

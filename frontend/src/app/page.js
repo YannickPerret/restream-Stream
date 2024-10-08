@@ -8,18 +8,19 @@ import HeroSection from "#components/hero/Hero.jsx";
 import Newsletter from "#components/newsletter/Newsletter.jsx";
 import ContactForm from "#components/contact/ContactForm.jsx";
 import ProductShowcase from "#components/productShowcase/productShowcase.jsx";
+import FAQSection from "#components/faq/FaqSection.jsx";
 
 export default function Home() {
     return (
         <>
             <section className="flex flex-col w-full" id={"hero"}>
-                <HeroSection />
+                <HeroSection/>
             </section>
 
-            <ProductShowcase />
+            <ProductShowcase/>
 
             <section className="flex flex-col  w-full max-w-8xl" id={"features"}>
-                <FeaturesSection />
+                <FeaturesSection/>
             </section>
 
             <section className="relative w-full max-w-6xl mx-auto overflow-visible my-36 py-24" id={"testimonials"}>
@@ -33,23 +34,28 @@ export default function Home() {
             </section>
 
             <section className="flex flex-col bg-amber-50 w-full max-w-8xl" id={"pricing"}>
-                <PriceList />
+                <PriceList/>
+            </section>
+
+
+            <section className="flex flex-col bg-amber-50 w-full max-w-8xl" id={"trustLogos"}>
+                <TrustLogos/>
             </section>
 
             <BackgroundSection>
                 &nbsp;
             </BackgroundSection>
 
-            <section className="flex flex-col bg-amber-50 w-full max-w-8xl" id={"trustLogos"}>
-                <TrustLogos />
+            <section className="flex flex-col bg-amber-50 w-full max-w-8xl" id={"pricing"}>
+                <FAQSection/>
             </section>
 
             <section className="flex flex-col w-full max-w-8xl" id={"newsletter"}>
-                <Newsletter />
+                <ContactForm/>
             </section>
 
             <section className="flex flex-col w-full max-w-8xl" id={"newsletter"}>
-                <ContactForm />
+                <Newsletter/>
             </section>
 
         </>

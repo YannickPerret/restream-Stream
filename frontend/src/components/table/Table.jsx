@@ -1,22 +1,27 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
-/****** To use it*****/
-/*
-const columns = ["Name", "Role", "Email", "Status"];
-const data = [
-    ["Jane Doe", "Developer", "jane.doe@example.com", "Active"],
-    ["John Smith", "Designer", "john.smith@example.com", "Inactive"],
-    ["Alice Johnson", "Product Manager", "alice.johnson@example.com", "Active"],
-    ["Robert Brown", "CEO", "robert.brown@example.com", "Active"],
-];
- */
-
-const Table = ({ columns, data, darkMode = false }) => {
+const Table = ({ columns, data, darkMode = false, searchable = [], enableSearch = false }) => {
     const [sortConfig, setSortConfig] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
-    const sortedData = React.useMemo(() => {
-        let sortableData = [...data];
+    const filteredData = useMemo(() => {
+        if (!searchTerm) {
+            return data;
+        }
+
+        // Si searchable est vide, on effectue la recherche sur toutes les colonnes
+        const searchFields = searchable.length > 0 ? searchable : columns.map((col) => col.key);
+
+        return data.filter((row) =>
+            searchFields.some((field) =>
+                row[field].toString().toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        );
+    }, [data, searchTerm, searchable, columns]);
+
+    const sortedData = useMemo(() => {
+        let sortableData = [...filteredData];
         if (sortConfig !== null) {
             sortableData.sort((a, b) => {
                 if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -29,15 +34,11 @@ const Table = ({ columns, data, darkMode = false }) => {
             });
         }
         return sortableData;
-    }, [data, sortConfig]);
+    }, [filteredData, sortConfig]);
 
-    const requestSort = key => {
+    const requestSort = (key) => {
         let direction = 'ascending';
-        if (
-            sortConfig &&
-            sortConfig.key === key &&
-            sortConfig.direction === 'ascending'
-        ) {
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
@@ -51,23 +52,35 @@ const Table = ({ columns, data, darkMode = false }) => {
     };
 
     const tableClasses = darkMode
-        ? "bg-gray-900 text-white"
-        : "bg-white text-black";
+        ? 'bg-gray-900 text-white'
+        : 'bg-white text-black';
 
     const headerClasses = darkMode
-        ? "bg-gray-800 text-gray-400"
-        : "bg-gray-200 text-gray-700";
+        ? 'bg-gray-800 text-gray-400'
+        : 'bg-gray-200 text-gray-700';
 
     const rowEvenClasses = darkMode
-        ? "bg-gray-800"
-        : "bg-gray-100";
+        ? 'bg-gray-800'
+        : 'bg-gray-100';
 
     const rowOddClasses = darkMode
-        ? "bg-gray-900"
-        : "bg-white";
+        ? 'bg-gray-900'
+        : 'bg-white';
 
     return (
         <div className={`${tableClasses} p-8 rounded-b-lg overflow-x-auto`}>
+            {enableSearch && (
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold">Table</h2>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search..."
+                        className="p-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                </div>
+            )}
             <table className="min-w-full table-auto">
                 <thead>
                 <tr className={headerClasses}>
@@ -82,8 +95,8 @@ const Table = ({ columns, data, darkMode = false }) => {
                             {col.title}
                             {getClassNamesFor(col.key) && (
                                 <span className={`ml-2 ${getClassNamesFor(col.key) === 'ascending' ? 'arrow-up' : 'arrow-down'}`}>
-                                    {getClassNamesFor(col.key) === 'ascending' ? '▲' : '▼'}
-                                </span>
+                                        {getClassNamesFor(col.key) === 'ascending' ? '▲' : '▼'}
+                                    </span>
                             )}
                         </th>
                     ))}
@@ -91,12 +104,14 @@ const Table = ({ columns, data, darkMode = false }) => {
                 </thead>
                 <tbody>
                 {sortedData.map((row, rowIndex) => (
-                    <tr key={rowIndex} className={`border-b border-gray-700 transition-colors duration-300 hover:bg-gray-700 ${rowIndex % 2 === 0 ? rowEvenClasses : rowOddClasses}`}>
+                    <tr
+                        key={rowIndex}
+                        className={`border-b border-gray-700 transition-colors duration-300 hover:bg-gray-700 ${
+                            rowIndex % 2 === 0 ? rowEvenClasses : rowOddClasses
+                        }`}
+                    >
                         {columns.map((col) => (
-                            <td
-                                key={col.key}
-                                className="px-6 py-4 text-sm font-medium break-words"
-                            >
+                            <td key={col.key} className="px-6 py-4 text-sm font-medium break-words">
                                 {col.render ? col.render(row[col.key], row) : row[col.key]}
                             </td>
                         ))}
@@ -109,3 +124,13 @@ const Table = ({ columns, data, darkMode = false }) => {
 };
 
 export default Table;
+/****** To use it*****/
+/*
+const columns = ["Name", "Role", "Email", "Status"];
+const data = [
+    ["Jane Doe", "Developer", "jane.doe@example.com", "Active"],
+    ["John Smith", "Designer", "john.smith@example.com", "Inactive"],
+    ["Alice Johnson", "Product Manager", "alice.johnson@example.com", "Active"],
+    ["Robert Brown", "CEO", "robert.brown@example.com", "Active"],
+];
+ */

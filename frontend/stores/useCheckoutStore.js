@@ -9,7 +9,7 @@ const createSelectors = (_store) => {
     return store;
 };
 
-const useCheckoutStore = createSelectors(create((set) => ({
+const useCheckoutStore = createSelectors(create((set, get) => ({
     formData: {
         firstName: '',
         lastName: '',
@@ -21,19 +21,28 @@ const useCheckoutStore = createSelectors(create((set) => ({
         country:'',
         phone:'',
     },
+    creditCard: null,
     paymentData: null,
     isProcessing: false,
     paymentError: null,
+    isMonthly: true,
+    discounts: [], // Stocke les réductions appliquées
+    discountError: null,
 
-    setFormData: (newData) =>
+    setFormData: (key, value) =>
         set((state) => ({
-            formData: { ...state.formData, ...newData },
+            formData: {
+                ...state.formData,
+                [key]: value,
+            },
         })),
 
-    setPaymentData: (paymentData) =>
-        set({
-            paymentData,
-        }),
+    setCreditCard: (creditCard) => set({ creditCard }),
+    setIsMonthly: (isMonthly) => set({ isMonthly }),
+
+    clearDiscounts: () => set({ discounts: [], discountError: null }),
+
+    getDiscounts: () => get().discounts,
 
     setIsProcessing: (isProcessing) =>
         set({

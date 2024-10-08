@@ -11,6 +11,7 @@ export default class extends BaseSchema {
       table.integer('quantity').notNullable().defaultTo(1)
       table.float('unit_price').notNullable()
       table.float('total_amount').notNullable()
+      table.enum('frequency', ['monthly', 'annual', 'one-time']).defaultTo('one-time').notNullable()
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

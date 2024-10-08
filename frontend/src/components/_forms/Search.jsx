@@ -4,7 +4,7 @@ import Input from "#components/_forms/Input";
 import { SearchApi } from "#api/search";
 import Button from "#components/_forms/Button";
 
-const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search", displayFields = ['title'], showSelectedItems = true, defaultValue = '' }) => {
+const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search", displayFields = ['title'], showSelectedItems = true, defaultValue = '', placeholder = '' }) => {
     const [query, setQuery] = useState(defaultValue); // Initialize with defaultValue
     const [results, setResults] = useState([]);
     const [selectedItems, setSelectedItems] = useState(defaultValue ? [defaultValue] : []); // Initialize selected items if defaultValue exists
@@ -87,9 +87,10 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
 
     return (
         <div className="relative" ref={inputRef}>
+            <label className="text-sm text-gray-400 mb-1">{label}</label>
             <Input
                 type="text"
-                placeholder={label}
+                placeholder={placeholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onClick={handleInputClick}

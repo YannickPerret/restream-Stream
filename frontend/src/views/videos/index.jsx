@@ -6,6 +6,7 @@ import { getDurationInFormat } from "#helpers/time.js";
 import { boolenStringFormat } from "#helpers/string.js";
 import VideosEditView from "@/views/videos/edit.jsx";
 import Table from "#components/table/Table.jsx";
+import videoFormatage from "#libs/VideoFormatage.js";
 
 export default function VideoIndexView() {
     const videos = useVideoStore.use.videos();
@@ -18,10 +19,11 @@ export default function VideoIndexView() {
 
     const columns = [
         { title: "Title", dataIndex: "title", key: "title", render: (text, video) => <Link href={`/videos/${video.id}`}>{text}</Link> },
-        { title: "Description", dataIndex: "description", key: "description" },
+        { title: "Description", dataIndex: "description", key: "description", render: (description) => description.substring(0, 255) || "No description" },
         { title: "Duration", dataIndex: "duration", key: "duration", render: (duration) => getDurationInFormat(duration) },
         { title: "Status", dataIndex: "status", key: "status" },
         { title: "Show in live?", dataIndex: "showInLive", key: "showInLive", render: (value) => boolenStringFormat(value) },
+        { title: "Size", dataIndex: "size", key: "size", render: (size) => videoFormatage.formatSize(size) },
         {
             title: "Actions",
             key: "actions",

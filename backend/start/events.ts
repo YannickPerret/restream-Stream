@@ -19,7 +19,7 @@ emitter.on('stream:onNextVideo', async function (streamId: number | Stream) {
   await stream.load('provider')
   await stream.load('timeline')
   await stream.load('user')
-  await stream.updateGuestText()
+  //await stream.updateGuestText()
 
   const currentVideo = await stream.timeline.getCurrentVideo(stream.currentIndex)
 

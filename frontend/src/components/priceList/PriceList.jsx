@@ -3,9 +3,10 @@ import React, {useEffect, useState} from 'react';
 import PriceCard from './PriceCard';
 import PriceToggle from './PriceToggle';
 import useProductStore from "#stores/useProductStore.js";
+import useCheckoutStore from "#stores/useCheckoutStore.js";
 
 const PriceList = () => {
-    const [isMonthly, setIsMonthly] = useState(true); // State for toggling between monthly and annually
+    const {isMonthly, setIsMonthly} = useCheckoutStore();
     const { products, fetchProducts, isLoading } = useProductStore();
 
     useEffect(() => {
@@ -30,10 +31,11 @@ const PriceList = () => {
                             id={product.id}
                             key={product.id}
                             title={product.title}
+                            isMonthly={isMonthly}
+                            logoPath={product.signedLogoPath}
                             monthlyPrice={product.monthlyPrice}
                             annualPrice={product.annualPrice}
                             discount={product.directDiscount}
-                            isMonthly={isMonthly}
                             labelFeatures={product.labelFeatures}
                             buttonText="Buy this plan"
                             isHighlighted={index === 1 ? true : false}

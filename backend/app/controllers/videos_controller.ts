@@ -6,6 +6,8 @@ import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
 import Queue from '#models/queue'
 import * as fs from 'node:fs'
+import Asset from '#models/asset'
+import YtDdownload from '#models/streamsFactory/ytb_download'
 
 export default class VideosController {
   /**
@@ -35,69 +37,116 @@ export default class VideosController {
    */
 
   async store({ request, auth, response }: HttpContext) {
-    const user = await auth.authenticate()
+    try {
+      const user = auth.getUserOrFail()
 
-    const { title, description, isPublished, showInLive } = request.only([
-      'title',
-      'description',
-      'isPublished',
-      'showInLive',
-    ])
+      let { title, description, fileName, fileType, videoUrl } = request.only([
+        'title',
+        'description',
+        'fileName',
+        'fileType',
+        'videoUrl',
+      ])
+      let videoPath: string | string[]
+      let status = 'pending'
+      let size = 0
+      let duration = 0
 
-    const videoFile = request.file('video', {
-      extnames: ['mp4', 'avi', 'mov', 'mts'],
-      size: '20gb',
-    })
+      if (videoUrl) {
+        console.log('YouTube URL detected. Starting download...')
+        videoPath = await YtDdownload.download(videoUrl)
 
-    if (!videoFile) {
-      return response.badRequest('No video uploaded')
-    }
+        const youtubeInfo = await YtDdownload.getVideoInfo(videoUrl)
+        title = youtubeInfo.videoDetails.title
+        description = youtubeInfo.videoDetails.description
+        duration = youtubeInfo.videoDetails.lengthSeconds
+        const metadata = await Asset.getInfo(videoPath)
+        size = metadata.contentLength / (1024 * 1024)
+        status = 'published'
+      } else {
+        console.log('No YouTube URL detected. Creating presigned URL...')
+        videoPath = await Asset.createPresignedUrl(fileName, fileType)
+      }
 
-    if (videoFile.hasErrors) {
-      return response.badRequest(videoFile.errors)
-    }
-    const videoCreated = await Video.create({
-      title,
-      description,
-      path: videoFile.tmpPath,
-      duration: await Video.getDuration(videoFile.tmpPath as string),
-      showInLive,
-      status: isPublished ? 'published' : 'unpublished',
-      userId: user.id,
-    })
-
-    if (await videoCreated.requiresEncoding()) {
-      await videoFile.move(app.publicPath(env.get('VIDEO_PROCESSING_DIRECTORY')), {
-        name: `${cuid()}.${videoFile.extname}`,
+      const video = await Video.create({
+        title,
+        description,
+        userId: user.id,
+        path: videoPath,
+        status,
+        showInLive: 0,
+        duration: duration,
+        size,
       })
-      videoCreated.path = videoFile.filePath as string
-      logger.info('Video is not in the correct format, encoding it')
 
-      await videoCreated.save()
-
-      const queue = Queue.getInstance()
-      await queue.add(videoCreated, null, null).then(async (outputPath) => {
-        logger.info('Encoding completed')
-        videoCreated.path = outputPath
-
-        await videoCreated.save()
+      return response.created({
+        video,
+        signedUrl: await Asset.signedUrl(videoPath),
       })
-    } else {
-      await videoFile.move(app.publicPath(env.get('VIDEO_DIRECTORY')), {
-        name: `${cuid()}.${videoFile.extname}`,
-      })
-      videoCreated.path = videoFile.filePath as string
-      await videoCreated.save()
+    } catch (error) {
+      console.error('Error while creating video:', error)
+      return response.internalServerError('Could not create video')
     }
-
-    return response.created(videoCreated)
   }
 
-  /**
-   * Show individual record
-   */
+  async generateUploadPolicy({ request, response }: HttpContext) {
+    try {
+      const { fileName, fileType } = request.only(['fileName', 'fileType'])
+      const { url, fields } = await Asset.generateS3UploadPolicy(fileName, fileType)
+
+      return response.json({ url, fields })
+    } catch (error) {
+      console.error('Error generating upload policy:', error)
+      return response.internalServerError('Could not generate upload policy')
+    }
+  }
+
+  /*async store({ request, auth, response }: HttpContext) {
+    try {
+      const user = auth.getUserOrFail()
+
+      const { title, description, isPublished, showInLive } = request.only([
+        'title',
+        'description',
+        'isPublished',
+        'showInLive',
+      ])
+
+      const videoFile = request.file('video', {
+        extnames: ['mp4', 'avi', 'mov', 'mts', 'webm', 'mkv'],
+        size: '2GB',
+      })
+
+      if (!videoFile || videoFile.hasErrors) {
+        return response.badRequest(videoFile?.errors || 'No video uploaded')
+      }
+
+      const newVideo = await Video.create({
+        title,
+        description,
+        path: videoFile.tmpPath,
+        duration: await Video.getDuration(videoFile.tmpPath as string),
+        showInLive,
+        status: isPublished ? 'published' : 'unpublished',
+        userId: user.id,
+      })
+
+      if (await newVideo.requiresEncoding()) {
+        await this.handleEncoding(videoFile, newVideo, user)
+      } else {
+        await this.handleStore(videoFile, newVideo, user)
+      }
+
+      return response.created(newVideo)
+    } catch (error) {
+      logger.error('Error while processing video upload:', error)
+      return response.internalServerError('An error occurred while processing the video.')
+    }
+  }
+*/
+
   async show({ params, response, auth }: HttpContext) {
-    const user = await auth.authenticate()
+    const user = auth.getUserOrFail()
     const video = await Video.findOrFail(params.id)
     if (video.userId && video.userId !== user.id) {
       return response.forbidden('You are not authorized to view this video')
@@ -106,9 +155,6 @@ export default class VideosController {
     return response.json(video)
   }
 
-  /**
-   * Handle form submission for the edit action
-   */
   async update({ params, request, response, auth }: HttpContext) {
     const user = await auth.authenticate()
     if (!user.id) {
@@ -134,23 +180,18 @@ export default class VideosController {
     return response.json(video)
   }
 
-  /**
-   * Delete record
-   */
   async destroy({ params, auth, response }: HttpContext) {
-    const user = await auth.authenticate()
+    const user = auth.getUserOrFail()
     const video = await Video.findOrFail(params.id)
-
     if (video.user && video.user.id !== user.id) {
       return response.forbidden('You are not authorized to delete this video')
     }
-    // Delete the video file
-    fs.unlink(video.path, (err) => {
-      if (err) {
-        logger.error(err)
-      }
-    })
-    await video.delete()
+    try {
+      await Asset.deleteFromS3(video)
+      await video.delete()
+    } catch (error) {
+      logger.error('Error while deleting video:', error)
+    }
     return response.noContent()
   }
 
@@ -162,66 +203,20 @@ export default class VideosController {
     return response.download(`${video.path}`)
   }
 
-  async validate({ params, response, auth }: HttpContext) {
-    const user = await auth.authenticate()
-    if (!user) {
-      return response.unauthorized('You are not authorized to validate this video')
+  private async moveFile(videoFile, destinationDir) {
+    await videoFile.move(app.publicPath(destinationDir), {
+      name: `${cuid()}.${videoFile.extname}`,
+    })
+    return videoFile.filePath
+  }
+
+  private async safeDeleteFile(filePath: string) {
+    try {
+      logger.info(`Attempting to delete file: ${filePath}`)
+      await fs.unlink(filePath)
+      logger.info(`Successfully deleted file: ${filePath}`)
+    } catch (error) {
+      logger.error('Failed to delete file', error)
     }
-
-    const video = await Video.findOrFail(params.id)
-
-    if (await video.requiresEncoding()) {
-      // Move the video to the processing directory
-      const newFilePath = app.publicPath(
-        env.get('VIDEO_PROCESSING_DIRECTORY'),
-        `${cuid()}.${video.path.split('.').pop()}`
-      )
-
-      fs.rename(video.path, newFilePath, (err) => {
-        if (err) {
-          logger.error(err)
-          return response.internalServerError('Error moving file to processing directory')
-        }
-      })
-      video.path = newFilePath
-      await video.save()
-
-      logger.info('Video is not in the correct format, encoding it')
-
-      const queue = Queue.getInstance()
-      await queue
-        .add(video, null, null)
-        .then(async (outputPath) => {
-          logger.info('Encoding completed')
-          logger.info(`New file path: ${outputPath}`)
-          video.path = outputPath
-          video.status = 'published'
-          await video.save()
-        })
-        .catch(async (err) => {
-          logger.error(err)
-          video.status = 'unpublished'
-          await video.save()
-          return response.internalServerError(err)
-        })
-    } else {
-      const finalPath = app.publicPath(
-        env.get('VIDEO_DIRECTORY'),
-        `${cuid()}.${video.path.split('.').pop()}`
-      )
-      fs.rename(video.path, finalPath, (err) => {
-        if (err) {
-          logger.error(err)
-          return response.internalServerError('Error moving file to final directory')
-        }
-      })
-
-      logger.info(`New file path: ${finalPath}`)
-      video.path = finalPath
-      video.status = 'published'
-      await video.save()
-    }
-
-    return response.json(video)
   }
 }

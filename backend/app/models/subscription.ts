@@ -13,6 +13,7 @@ import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Product from '#models/product'
 import Order from '#models/order'
 import Feature from '#models/feature'
+import PaymentFactory from "#models/paymentGateway/PaymentGateway";
 
 export default class Subscription extends BaseModel {
   @column({ isPrimary: true })
@@ -29,6 +30,12 @@ export default class Subscription extends BaseModel {
 
   @column()
   declare status: 'inactive' | 'active' | 'expired' | 'canceled'
+
+  @column()
+  declare frequency: 'monthly' | 'yearly'
+
+  @column.date()
+  declare nextBillingDate: DateTime
 
   @column.dateTime()
   declare expiresAt: DateTime
@@ -61,7 +68,6 @@ export default class Subscription extends BaseModel {
   declare updatedAt: DateTime
 
   @beforeCreate()
-  @beforeUpdate()
   static async checkDuplicateSubscription(subscription: Subscription) {
     if (subscription.$dirty.productId || subscription.$dirty.userId) {
       const existingSubscription = await Subscription.query()
@@ -161,14 +167,31 @@ export default class Subscription extends BaseModel {
     return mergedFeatures
   }
 
+  async isExpired(): Promise<boolean> {
+    return this.expiresAt < DateTime.now()
+  }
+
   async renew(): Promise<void> {
     if (this.status === 'active' || this.status === 'expired') {
-      // Exemple : Prolonger l'abonnement d'un mois (ceci pourrait être basé sur le produit)
-      this.expiresAt = this.expiresAt.plus({ months: 1 })
-      this.status = 'active'
-      await this.save()
+      this.expiresAt = this.expiresAt.plus({ months: this.frequency === 'monthly' ? 1 : 12 });
+      this.status = 'active';
+      await this.save();
     } else {
-      throw new Error('Only active or expired subscriptions can be renewed.')
+      throw new Error('Only active or expired subscriptions can be renewed.');
+    }
+  }
+
+  async isExpiringSoon(days = 10): Promise<boolean> {
+    return this.expiresAt < DateTime.now().plus({ days })
+  }
+
+  async cancel(): Promise<void> {
+    if (this.status === 'active') {
+      this.status = 'canceled';
+      await this.save();
+      await PaymentFactory.getProvider('stripe').cancelSubscription(this.id.toString());
+    } else {
+      throw new Error('Only active subscriptions can be canceled.');
     }
   }
 
@@ -181,6 +204,76 @@ export default class Subscription extends BaseModel {
     }
   }
 
+  async sendExpirationReminder(): Promise<void> {
+    // Envoyer un e-mail de rappel à l'utilisateur
+    console.log(`Sending expiration reminder to user ${this.userId} for subscription ${this.id}`)
+  }
+
+  async createRenewalOrder(): Promise<void> {
+    let currentOrder;
+    let newOrder;
+
+    // Si l'ordre existe, on l'utilise
+    if (this.orderId) {
+      try {
+        currentOrder = await Order.query().where('id', this.orderId).preload('items').firstOrFail();
+      } catch (error) {
+        console.log(`Order not found for subscription ${this.id}. Creating a new order...`);
+      }
+    }
+
+    // Créer un nouvel order si aucun order n'existe
+    if (!currentOrder) {
+      const product = await Product.findOrFail(this.productId);
+
+      newOrder = await Order.create({
+        userId: this.userId,
+        totalAmount: product.purchaseType === 'subscription'
+          ? (this.frequency === 'monthly' ? product.monthlyPrice : product.annualPrice)
+          : product.price,
+        currency: 'USD',
+        status: 'pending',
+      });
+
+      await newOrder.related('items').create({
+        productId: product.id,
+        quantity: 1,  // On suppose une quantité de 1 pour les abonnements
+        unitPrice: newOrder.totalAmount,
+        totalAmount: newOrder.totalAmount,
+      });
+
+      console.log(`New order created for subscription ${this.id}`);
+    } else {
+      // Copier les articles de l'ancienne commande dans la nouvelle si un order existait
+      newOrder = await Order.create({
+        userId: this.userId,
+        totalAmount: currentOrder.totalAmount,
+        currency: currentOrder.currency,
+        status: 'pending',
+      });
+
+      for (const item of currentOrder.items) {
+        await newOrder.related('items').create({
+          productId: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalAmount: item.totalAmount,
+        });
+      }
+
+      console.log(`New order created from the existing order for subscription ${this.id}`);
+    }
+
+    // Mettre à jour la date d'expiration et la prochaine date de facturation
+    this.expiresAt = this.frequency === 'monthly'
+      ? DateTime.now().plus({ months: 1 })
+      : DateTime.now().plus({ years: 1 });
+    this.nextBillingDate = this.expiresAt;
+
+    await this.save();
+  }
+
+
   serialize() {
     return {
       id: this.id,
@@ -191,6 +284,8 @@ export default class Subscription extends BaseModel {
       expiresAt: DateTime.fromJSDate(new Date(this.expiresAt)).toFormat('dd/MM/yyyy'),
       createdAt: DateTime.fromJSDate(new Date(this.createdAt)).toFormat('dd/MM/yyyy'),
       features: this.getSubscriptionWithFeatures(),
+      nextBillingDate: DateTime.fromJSDate(new Date(this.nextBillingDate)).toFormat('dd/MM/yyyy'),
+      frequency: this.frequency,
     }
   }
 }

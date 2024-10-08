@@ -13,7 +13,6 @@ export default class SubscriptionAdminsController {
     }
     const subscriptions = await Subscription.query().preload('product').preload('user')
 
-    console.log(subscriptions)
     return response.json(subscriptions)
   }
 
@@ -36,4 +35,15 @@ export default class SubscriptionAdminsController {
    * Delete record
    */
   async destroy({ params }: HttpContext) {}
+
+  async renew({ params, response }: HttpContext) {
+    const subscription = await Subscription.find(params.id)
+    if (!subscription) {
+      return response.notFound('Subscription not found')
+    }
+
+    await subscription.createRenewalOrder()
+
+    return response.json(subscription)
+  }
 }

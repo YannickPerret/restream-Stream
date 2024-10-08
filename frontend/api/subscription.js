@@ -73,6 +73,18 @@ export default class SubscriptionApi extends Api {
         }
     }
 
+    static async upgrade(data) {
+        const response = await fetch(`${this.baseUrl}/api/subscriptions/upgrade`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
+        });
+        if (!response.ok) {
+            throw new Error('Error while upgrading subscriptions');
+        }
+        return await response.json();
+    }
+
 
     /***** Admin mode ****/
     static async getAllByAdmin() {

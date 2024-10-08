@@ -162,7 +162,7 @@ export default function ProvidersCreateCallback() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-slate-500">
+            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
                 <div className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">Twitch Provider Callback</h1>
                     <hr className="border-b-1 border-blueGray-300 pb-6"/>
@@ -207,8 +207,8 @@ export default function ProvidersCreateCallback() {
                             />
                         </FormGroup>
                         <div className="flex justify-end space-x-4">
-                            <Button type="reset" label={"Reset"} onClick={resetForm} />
-                            <Button type="submit" label={"Create"} />
+                            <Button type="reset" label={"Reset"} onClick={resetForm}/>
+                            <Button type="submit" label={"Create"}/>
                         </div>
                     </Form>
                 </div>

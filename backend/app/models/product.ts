@@ -1,8 +1,9 @@
 import { DateTime } from 'luxon'
 import {
+  afterCreate,
   afterFetch,
   afterFind,
-  BaseModel,
+  BaseModel, beforeDelete,
   beforeSave,
   belongsTo,
   column,
@@ -13,7 +14,9 @@ import Subscription from '#models/subscription'
 import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Feature from '#models/feature'
 import ProductGroup from '#models/product_group'
-import Asset from "#models/asset";
+import Asset from '#models/asset'
+import Discount from '#models/discount'
+import PaymentFactory from '#models/paymentGateway/PaymentGateway'
 
 export default class Product extends BaseModel {
   @column({ isPrimary: true })
@@ -23,10 +26,16 @@ export default class Product extends BaseModel {
   declare title: string
 
   @column()
-  declare monthlyPrice: number
+  declare monthlyPrice?: number
 
   @column()
-  declare annualPrice: number
+  declare annualPrice?: number
+
+  @column()
+  declare price?: number
+
+  @column()
+  declare purchaseType: 'one-time' | 'subscription'
 
   @column()
   declare directDiscount: number
@@ -64,11 +73,29 @@ export default class Product extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
+  @manyToMany(() => Discount, {
+    pivotTable: 'product_discounts',
+  })
+  declare discounts: ManyToMany<typeof Discount>
+  logoPathSigned: string | null | undefined;
+
   @beforeSave()
   static async serializeFeatures(product: Product) {
     if (Array.isArray(product.labelFeatures)) {
       product.labelFeatures = JSON.stringify(product.labelFeatures)
     }
+  }
+
+  @afterCreate()
+  static async createProductOnPaymentGateway(product: Product) {
+    const paymentProvider = PaymentFactory.getProvider('stripe')
+    await paymentProvider.setupProduct(product)
+  }
+
+  @beforeDelete()
+  static async deleteProductOnPaymentGateway(product: Product) {
+    const paymentProvider = PaymentFactory.getProvider('stripe')
+    await paymentProvider.removeProduct(product)
   }
 
   @afterFind()
@@ -82,7 +109,7 @@ export default class Product extends BaseModel {
 
       // Transform logoPath into a signed URL
       if (product.logoPath) {
-        product.logoPath = await Asset.signedUrl(product.logoPath)
+        product.logoPathSigned = await Asset.signedUrl(product.logoPath)
       }
     }
 
@@ -111,6 +138,9 @@ export default class Product extends BaseModel {
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       features: this.features,
+      signedLogoPath: this.logoPathSigned,
+      price: this.price,
+      purchaseType: this.purchaseType,
     }
   }
 }

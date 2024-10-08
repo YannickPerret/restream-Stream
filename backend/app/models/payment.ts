@@ -15,7 +15,10 @@ export default class Payment extends BaseModel {
   declare orderId: number
 
   @column()
-  declare stripePaymentIntentId: string
+  declare paymentProvider: string
+
+  @column()
+  declare paymentProviderId: string
 
   @column()
   declare amount: number
@@ -25,6 +28,9 @@ export default class Payment extends BaseModel {
 
   @column()
   declare status: string
+
+  @column()
+  declare userId?: number
 
   @belongsTo(() => Order)
   declare order: BelongsTo<typeof Order>
@@ -45,28 +51,15 @@ export default class Payment extends BaseModel {
     apiVersion: '2024-06-20',
   })
 
-  static async createPaymentIntent(
-    order: { totalAmount: number; id: number; currency: string },
-    user: { id: number },
-    payment: { paymentMethodId: string; returnUrl: string }
-  ) {
-    try {
-      const paymentIntent = await this.stripe.paymentIntents.create({
-        amount: Math.round(order.totalAmount * 100),
-        currency: order.currency || 'usd',
-        payment_method: payment.paymentMethodId,
-        return_url: payment.returnUrl,
-        confirm: true,
-        metadata: {
-          order_id: order.id,
-          user_id: user.id,
-        },
-      })
-
-      return paymentIntent
-    } catch (error) {
-      console.error('Error creating payment intent:', error)
-      throw new Error('Unable to create payment intent')
-    }
+  static async recordPayment(order: Order, user: User, provider: string, providerPaymentId: string, amount: number, currency: string, status: string) {
+    return await Payment.create({
+      orderId: order.id,
+      paymentProvider: provider,
+      paymentProviderId: providerPaymentId,
+      amount,
+      currency,
+      status,
+      userId: user?.id,
+    });
   }
 }

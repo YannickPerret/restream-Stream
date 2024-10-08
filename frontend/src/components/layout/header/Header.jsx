@@ -20,15 +20,16 @@ const Header = () => {
     };
 
     return (
-        <header className="absolute top-0 left-0 w-full z-30 text-white border-b-2 border-gray-50 border-opacity-10 bg-transparent">
+        <header className="absolute top-0 left-0 w-full z-30 text-white border-b-2 border-gray-50 border-opacity-20 bg-transparent">
             <div className="container mx-auto flex justify-between items-center px-4 py-3 bg-transparent">
                 <div className="flex items-center">
+                    {/* Responsive logo sizing */}
                     <Image
                         src={Logo}
                         alt="Coffee Stream"
-                        width={240}
+                        width={240}   // Desktop size
                         height={80}
-                        className="object-contain"
+                        className="object-contain w-[180px] h-[60px] md:w-[240px] md:h-[80px]" // Mobile and desktop responsive classes
                     />
                 </div>
 
@@ -61,12 +62,13 @@ const Header = () => {
                 } transition-transform duration-300 ease-in-out z-50 md:hidden`}
             >
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">
+                    {/* Adjust logo size in mobile sidebar */}
                     <Image
                         src={Logo}
                         alt="Coffee Stream"
-                        width={180}
-                        height={60}
-                        className="object-contain"
+                        width={150}
+                        height={50}
+                        className="object-contain w-[150px] h-[50px]" // Mobile logo size
                     />
                     <button onClick={toggleMobileMenu} aria-label="Close menu">
                         <X className="w-6 h-6 text-white" />
@@ -75,7 +77,7 @@ const Header = () => {
                 <nav className="flex flex-col space-y-4 p-4">
                     <Navigation />
                 </nav>
-                <div className="border-t border-gray-700 p-4 mt-auto">
+                <div className={`border-t border-gray-700 p-4 mt-auto ${isMobileMenuOpen && 'flex flex-col'}`}>
                     {authChecked && <NavigationRight />}
                 </div>
             </div>

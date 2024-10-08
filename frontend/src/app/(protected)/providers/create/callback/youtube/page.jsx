@@ -142,7 +142,7 @@ export default function ProvidersCreateYouTubeCallback() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-slate-500">
+            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
                 <div className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">YouTube Provider Callback</h1>
                     <hr className="border-b-1 border-blueGray-300 pb-6"/>
@@ -153,20 +153,23 @@ export default function ProvidersCreateYouTubeCallback() {
                         <div className="grid grid-cols-1 gap-4">
                             {broadcasts.items.map((broadcast) => (
                                 <div key={broadcast.id} className="card bg-white shadow-lg p-4 rounded-lg">
-                                    <img src={broadcast.snippet.thumbnails.medium.url} alt={broadcast.snippet.title} className="w-full h-48 object-cover rounded-lg" />
+                                    <img src={broadcast.snippet.thumbnails.medium.url} alt={broadcast.snippet.title}
+                                         className="w-full h-48 object-cover rounded-lg"/>
                                     <h2 className="text-xl font-bold mt-4">{broadcast.snippet.title}</h2>
-                                    <p className="text-gray-600">Created at: {new Date(broadcast.snippet.publishedAt).toLocaleString()}</p>
-                                    <Button onClick={() => handleBroadcastSelection(broadcast)} label="Select this broadcast" />
+                                    <p className="text-gray-600">Created
+                                        at: {new Date(broadcast.snippet.publishedAt).toLocaleString()}</p>
+                                    <Button onClick={() => handleBroadcastSelection(broadcast)}
+                                            label="Select this broadcast"/>
                                 </div>
                             ))}
                             <div className="mt-4">
-                                <Button onClick={handleNewStreamCreation} label="Add a New Stream" />
+                                <Button onClick={handleNewStreamCreation} label="Add a New Stream"/>
                             </div>
                         </div>
                     ) : (
                         <div>
                             <p>No active live broadcasts found. You can create a new one.</p>
-                            <Button onClick={handleNewStreamCreation} label="Add a New Stream" />
+                            <Button onClick={handleNewStreamCreation} label="Add a New Stream"/>
                         </div>
                     )}
                     <Form onSubmit={handleSubmit}>
@@ -201,8 +204,8 @@ export default function ProvidersCreateYouTubeCallback() {
                             />
                         </FormGroup>
                         <div className="flex justify-end space-x-4">
-                            <Button type="reset" label={"Reset"} />
-                            <Button type="submit" label={"Create"} />
+                            <Button type="reset" label={"Reset"}/>
+                            <Button type="submit" label={"Create"}/>
                         </div>
                     </Form>
                 </div>

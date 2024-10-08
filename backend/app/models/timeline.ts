@@ -11,6 +11,7 @@ import Video from '#models/video'
 import app from '@adonisjs/core/services/app'
 import Stream from '#models/stream'
 import env from '#start/env'
+import Asset from "#models/asset";
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -68,9 +69,6 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    /*this.filePath = path.join(
-      app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `playlist${this.id}.${type}`)
-    )*/
     this.filePath = `${crypto.randomUUID()}-${this.id}.${type}`
     const currentPath = path.join(
       app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `${this.filePath}`)
@@ -84,14 +82,11 @@ export default class Timeline extends BaseModel {
       if (item.type === 'video') {
         const video = await Video.find(item.itemId)
         if (video && video.path) {
-          const relativePath = path.relative('/', video.path)
-          const absolutePath = `file://${path.resolve(video.path)}`
+          const relativePath = await Asset.signedUrl(video.path)
           logger.info(`Adding video Id ${item.itemId} to playlist ${this.id}`)
           if (type === 'm3u8') {
             content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
-            content += `file '/${relativePath}'\n`
-          } else if (type === 'txt') {
-            content += `${absolutePath}\n`
+            content += `file '${relativePath}'\n`
           }
         } else {
           logger.warn(`Video with id ${item.itemId} not found or does not have a filePath.`)
@@ -102,18 +97,14 @@ export default class Timeline extends BaseModel {
           await playlist.load('videos')
           for (const video of playlist.videos) {
             if (video && video.path) {
-              const relativePath = path.relative('/', video.path)
-              const absolutePath = `file://${path.resolve(video.path)}`
+              const absolutePath = `file://${await Asset.signedUrl(video.path)}`
               logger.info(
                 `Adding video Id ${video.id} from playlist ${playlist.id} to timeline ${this.id}`
               )
               if (type === 'm3u8') {
                 content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
-                content += `file '/${relativePath}'\n`
-              } else if (type === 'txt') {
-                content += `${absolutePath}\n`
+                content += `file '${absolutePath}'\n`
               }
-            } else {
               logger.warn(`Video with id ${video.id} not found or does not have a filePath.`)
             }
           }
@@ -208,7 +199,6 @@ export default class Timeline extends BaseModel {
 
   async getCurrentVideo(currentIndex: number): Promise<Video | null> {
     const videos = await this.videos()
-    console.log('videos', videos)
     if (videos && videos.length > currentIndex) {
       return videos[currentIndex]
     } else {

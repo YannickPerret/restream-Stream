@@ -17,7 +17,7 @@ export default class UserAddress extends BaseModel {
   declare lastName: string
 
   @column()
-  declare phone: string
+  declare phone?: string
 
   @column()
   declare address: string

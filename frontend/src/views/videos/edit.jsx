@@ -14,7 +14,6 @@ export default function VideosEditView({videoToEdit, onClose}) {
     };
 
     const handleSubmit = async (formdata) => {
-        console.log("tst")
         await updateVideo(videoToEdit.id, formdata)
             .then(() => {
                 closeModal()

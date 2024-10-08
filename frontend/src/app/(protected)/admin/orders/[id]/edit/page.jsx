@@ -1,24 +1,22 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation'; // Pour récupérer l'ID de la commande
-import { OrderApi } from '#api/order'; // Assurez-vous que cette API fonctionne pour récupérer une commande
+import { useParams } from 'next/navigation';
 import Input from '#components/_forms/Input';
 import Button from '#components/_forms/Button';
-import { useAuthStore } from '#stores/useAuthStore'; // Pour vérifier si l'utilisateur est admin
+import { useAuthStore } from '#stores/useAuthStore';
 import { useRouter } from 'next/navigation';
+import OrderApi from "#api/order.js";
 
 export default function OrderEditPage() {
-    const { id } = useParams(); // Récupérer l'ID de la commande à partir de l'URL
-    const [order, setOrder] = useState(null); // État pour stocker les détails de la commande
-    const { user } = useAuthStore(); // Récupérer l'utilisateur connecté
-    const [isAdmin, setIsAdmin] = useState(false); // État pour stocker si l'utilisateur est admin ou non
+    const { id } = useParams();
+    const [order, setOrder] = useState(null);
+    const { user } = useAuthStore();
+    const [isAdmin, setIsAdmin] = useState(false);
     const router = useRouter();
 
-    // État pour les modifications
     const [status, setStatus] = useState('');
     const [totalAmount, setTotalAmount] = useState(0);
 
-    // Charger les détails de la commande et vérifier le rôle
     useEffect(() => {
         const fetchOrder = async () => {
             try {

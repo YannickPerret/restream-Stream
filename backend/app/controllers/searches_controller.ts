@@ -5,6 +5,7 @@ import Playlist from '#models/playlist'
 import User from '#models/user'
 import Product from '#models/product'
 import ProductGroup from "#models/product_group";
+import Video from "#models/video";
 
 export default class SearchesController {
   async index({ request, response, auth }: HttpContext) {
@@ -16,7 +17,7 @@ export default class SearchesController {
 
     switch (searchType) {
       case 'videos':
-        //results = await Video.query().where('title', 'LIKE', `%${searchTerms}%`)
+        results = await Video.query().where('title', 'LIKE', `%${searchTerms}%`)
         break
       case 'playlists':
         results = await Playlist.query()

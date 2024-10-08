@@ -64,11 +64,17 @@ const navItems = [
         href: '/admin/orders',
         label: 'Manage orders',
         icon: FileText,
-        condition: () => true,
+        condition: (user) => user?.role?.name === 'admin',
     },
     {
         href: '/admin/subscriptions',
         label: 'Manage subscriptions',
+        icon: FileText,
+        condition: (user) => user?.role?.name === 'admin',
+    },
+    {
+        href: '/admin/discounts',
+        label: 'Manage discounts',
         icon: FileText,
         condition: (user) => user?.role?.name === 'admin',
     },

@@ -1,27 +1,30 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Form from '#components/_forms/Form';
 import FormGroup from '#components/_forms/FormGroup';
 import Input from '#components/_forms/Input';
 import Button from '#components/_forms/Button';
 import useProductStore from '#stores/useProductStore';
 import ProductApi from '#api/product';
-import {useParams} from "next/navigation";
+import FileUpload from '#components/_forms/FileUpload';
+import Image from 'next/image';
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const EditProductPage = () => {
     const router = useRouter();
     const { id } = useParams();
-
     const { fetchProductById, isLoading } = useProductStore();
     const [product, setProduct] = useState(null);
-
     const [title, setTitle] = useState('');
     const [monthlyPrice, setMonthlyPrice] = useState('');
     const [annualPrice, setAnnualPrice] = useState('');
     const [directDiscount, setDirectDiscount] = useState('');
     const [labelFeatures, setLabelFeatures] = useState('');
     const [features, setFeatures] = useState([]);
+    const [logoPath, setLogoPath] = useState('');  // Nouveau logo
+    const [initialLogoPath, setInitialLogoPath] = useState('');
+    const [isFileUploadVisible, setFileUploadVisible] = useState(false);
 
     useEffect(() => {
         const loadProduct = async () => {
@@ -37,8 +40,8 @@ const EditProductPage = () => {
                 name: feature.name,
                 value: feature.pivotValue || ''
             })));
-
-            console.log(fetchedProduct);
+            setLogoPath(fetchedProduct.signedLogoPath);
+            setInitialLogoPath(fetchedProduct.logoPath);  // Stocker le logo initial
         };
 
         if (id) {
@@ -73,7 +76,11 @@ const EditProductPage = () => {
             features: features.map(({ name, value }) => ({ name, value })),
         };
 
-        console.log("twest", updatedProductData);
+        // Ajouter le logo uniquement s'il a changé
+        if (logoPath !== initialLogoPath) {
+            updatedProductData.logoPath = logoPath;
+        }
+
         try {
             await ProductApi.update(id, updatedProductData);
             //router.push('/admin/products');
@@ -82,13 +89,17 @@ const EditProductPage = () => {
         }
     };
 
+    const handleFileUpload = (newLogoPath) => {
+        setLogoPath(newLogoPath);
+        setFileUploadVisible(false);
+    };
+
     if (isLoading || !product) {
         return <div>Loading...</div>;
     }
 
     return (
-        <div className="container mx-auto py-12">
-            <h1 className="text-3xl font-bold mb-6 text-white">Edit Product</h1>
+        <Panel title="Edit Product" darkMode={true}>
             <Form onSubmit={handleSubmit}>
                 <FormGroup title="Product Information">
                     <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -96,6 +107,36 @@ const EditProductPage = () => {
                     <Input label="Annual Price" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} />
                     <Input label="Direct Discount (%)" type="number" value={directDiscount} onChange={(e) => setDirectDiscount(e.target.value)} />
                     <Input label="Label Features"  value={labelFeatures.join(', ')} onChange={(e) => setLabelFeatures(e.target.value)} />
+                </FormGroup>
+
+                <FormGroup title="Product Logo">
+                    <div className="flex items-center mb-4">
+                        {logoPath && (
+                            <Image
+                                src={logoPath}
+                                alt="Product Logo"
+                                width={100}
+                                height={100}
+                                className="rounded-lg mr-4"
+                            />
+                        )}
+                        <Button
+                            type="button"
+                            label="Change Logo"
+                            onClick={() => setFileUploadVisible(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-lg"
+                        />
+                    </div>
+
+                    {isFileUploadVisible && (
+                        <FileUpload
+                            label={"Upload a new logo"}
+                            accept={['image/png', 'image/jpg', 'image/jpeg', 'image/webp', 'image/svg+xml']}
+                            multiple={false}
+                            id="logo-upload"
+                            onChange={handleFileUpload}
+                        />
+                    )}
                 </FormGroup>
 
                 <FormGroup title="Features">
@@ -123,7 +164,7 @@ const EditProductPage = () => {
                     <Button label="Update Product" type="submit" />
                 </div>
             </Form>
-        </div>
+        </Panel>
     );
 };
 

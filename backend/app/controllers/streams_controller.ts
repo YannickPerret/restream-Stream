@@ -93,6 +93,13 @@ export default class StreamsController {
       'websiteUrl',
       'provider',
     ])
+
+    console.log(title,
+      timeline,
+      quality,
+      websiteUrl,
+      provider)
+
     const runLive = request.input('runLive') === 'true'
 
     const logoFile = request.file('logo', { size: '5mb', extnames: ['jpg', 'png', 'jpeg'] })
@@ -102,7 +109,7 @@ export default class StreamsController {
       return response.badRequest({ error: 'Missing required fields' })
     }
     if (websiteUrl !== '' && websiteUrl !== null) {
-      // Validate that the website URL matches the allowed patterns
+
       const allowedUrlPattern =
         /^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/
       if (!allowedUrlPattern.test(websiteUrl)) {
@@ -113,19 +120,14 @@ export default class StreamsController {
       }
     }
 
-    // 1. Récupérer les souscriptions actives de l'utilisateur
     const subscriptions = await user.related('subscriptions').query().where('status', 'active')
 
     if (subscriptions.length === 0) {
       return response.forbidden({ error: 'You do not have an active subscription' })
     }
 
-    const subscription = subscriptions[0] // Suppose qu'il n'y a qu'une souscription active
-
-    // 2. Récupérer les features de la souscription et les fusionner avec celles du produit
+    const subscription = subscriptions[0]
     const features = await subscription.getSubscriptionWithFeatures()
-
-    // 3. Vérifier le nombre de streams actifs par rapport à max_stream_instance
     const maxStreamInstanceFeature = features.find(
       (feature) => feature.name === 'max_stream_instances'
     )
@@ -138,8 +140,6 @@ export default class StreamsController {
         error: `You have reached the maximum number of active streams (${maxStreamInstance}).`,
       })
     }
-
-    // 4. Vérifier que la qualité sélectionnée est bien disponible dans les features
     const qualityFeature = features.find((feature) => feature.name === 'quality')
     const availableQualities = qualityFeature?.values || []
 
@@ -149,7 +149,6 @@ export default class StreamsController {
       })
     }
 
-    // Vérifier le logo et l'overlay
     if (logoFile && logoFile.isValid) {
       await logoFile.move(env.get('LOGO_DIRECTORY'), {
         name: `${cuid()}.${logoFile.extname}`,

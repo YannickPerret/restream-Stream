@@ -3,9 +3,9 @@ import React, {useEffect, useState} from 'react';
 import Input from '#components/_forms/Input';
 import Select from '#components/_forms/Select';
 import Button from '#components/_forms/Button';
-import { OrderApi } from '#api/order'; // L'API pour créer des commandes
 import { useRouter } from 'next/navigation';
 import {useAuthStore} from "#stores/useAuthStore.js";
+import OrderApi from "#api/order.js";
 
 export default function OrderCreatePage() {
     const [products, setProducts] = useState([{ productId: '', quantity: 1 }]); // Gérer les produits et quantités

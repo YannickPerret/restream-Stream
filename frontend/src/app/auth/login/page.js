@@ -5,20 +5,24 @@ import { useAuthStore } from "#stores/useAuthStore.js";
 import Image from "next/image.js";
 import Link from "next/link.js";
 import AuthApi from "#api/auth.js";
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, setUser, setToken, setAuthenticated } = useAuthStore();
+  const { isAuthenticated, setUser, setToken, setAuthenticated, redirectAfterLogin, clearRedirectAfterLogin } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Pour gérer l'état de chargement
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard'); // Redirige si déjà connecté
+      // Redirige l'utilisateur vers la page précédente ou le dashboard s'il n'y en a pas
+      const destination = clearRedirectAfterLogin() || '/dashboard';
+      router.push(destination);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, clearRedirectAfterLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,13 +32,11 @@ export default function LoginPage() {
       const data = await AuthApi.login({ email, password });
       setToken(data.token);
       setUser(data.user);
-      setAuthenticated(true)
-
-      router.push('/dashboard');
+      setAuthenticated(true);
     } catch (error) {
       setError('Erreur lors de la connexion. Veuillez réessayer.');
     } finally {
-      setLoading(false); // Arrête le loader
+      setLoading(false);
     }
   };
 
@@ -86,16 +88,24 @@ export default function LoginPage() {
                 </div>
 
                 {/* Password Input */}
-                <div>
+                <div className="relative">
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
                   <input
                       id="password"
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       placeholder="Password"
                       className="w-full px-4 py-3 rounded bg-gray-100 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-600"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
                   />
+                  <button
+                      type="button"
+                      className="absolute right-3 top-9 transform -translate-y-1/2 text-gray-500 "
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label="Toggle password visibility"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
                 </div>
               </div>
 
@@ -119,7 +129,7 @@ export default function LoginPage() {
                   </Link>
                 </p>
                 <p>
-                  <Link href={"/auth/password-reset"} className="text-purple-500 hover:underline">
+                  <Link href={"/auth/forgot-password"} className="text-purple-500 hover:underline">
                     Forgot Password?
                   </Link>
                 </p>

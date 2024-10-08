@@ -16,6 +16,12 @@ export default class UserToken extends BaseModel {
   @column()
   declare type: string
 
+  @column()
+  declare status: 'inactive' | 'active' | 'expired' | 'used'
+
+  @column()
+  declare ip: string
+
   @column.dateTime()
   declare expiresAt: DateTime
 

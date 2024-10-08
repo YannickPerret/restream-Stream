@@ -88,4 +88,14 @@ export default class SubscriptionAdminApi extends Api {
         return await response.json();
     }
 
+    static async renewSubscription(id) {
+        const response = await fetch(`${this.baseUrl}/api/admin/subscriptions/${id}/renew`, {
+            method: 'POST',
+            headers: this.getHeaders(),
+        });
+        if (!response.ok) {
+            throw new Error('Error while renewing subscription');
+        }
+    }
+
 }

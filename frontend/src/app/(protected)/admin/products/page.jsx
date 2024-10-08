@@ -3,15 +3,37 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import useProductStore from '#stores/useProductStore';
 import Table from '#components/table/Table';
+import Image from "next/image";
+import Panel from "#components/layout/panel/Panel.jsx";
+import Button from "#components/_forms/Button.jsx";
+import ProductAdminApi from "#api/admin/product.js";
 
 const IndexProductPage = () => {
-    const { fetchProducts, products } = useProductStore();
+    const { fetchProducts, products, removeProduct } = useProductStore();
 
     useEffect(() => {
         fetchProducts();
+
     }, [fetchProducts]);
 
+    const handleDelete = async (id) => {
+        try {
+            await ProductAdminApi.delete(id);
+            removeProduct(id);
+        }
+        catch (error) {
+            console.log(error);
+        }
+    }
+
     const columns = [
+        {
+            key: 'signedLogoPath',
+            title: 'Icon',
+            render: (signedLogoPath) => (
+                signedLogoPath ? <Image src={signedLogoPath} alt="Product Icon" className="h-10 w-10 object-cover" width={100} height={100}/> : 'No Image'
+            )
+        },
         { key: 'title', title: 'Title' },
         { key: 'monthlyPrice', title: 'Monthly Price ($)' },
         { key: 'annualPrice', title: 'Annual Price ($)' },
@@ -27,15 +49,17 @@ const IndexProductPage = () => {
             render: (text, record) => (
                 <>
                     <Link href={`/admin/products/${record.id}`}>
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg mr-2">
-                            View
-                        </button>
+                        <Button label="View" color={'green'}/>
                     </Link>
                     <Link href={`/admin/products/${record.id}/edit`}>
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 rounded-lg">
-                            Edit
-                        </button>
+                        <Button label="Edit" color={'blue'}/>
                     </Link>
+
+                    <Button
+                        label="Delete"
+                        color={'red'}
+                        onClick={() => handleDelete(record.id)}
+                    />
                 </>
             )
         },
@@ -45,6 +69,7 @@ const IndexProductPage = () => {
     const data = products.map(product => ({
         id: product.id,
         title: product.title,
+        signedLogoPath: product.signedLogoPath,
         monthlyPrice: product.monthlyPrice,
         annualPrice: product.annualPrice,
         directDiscount: product.directDiscount,
@@ -52,22 +77,9 @@ const IndexProductPage = () => {
     }));
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
-            <div className="container mx-auto">
-                <header className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-bold text-white">Products</h1>
-                        <Link href="/admin/products/create">
-                            <button
-                                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
-                                Create New Product
-                            </button>
-                        </Link>
-                </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6"/>
-
-                <Table columns={columns} data={data}/>
-            </div>
-        </section>
+        <Panel title={'Products'} buttonLink={'/admin/products/create'} buttonLabel={'Create New Product'} darkMode={true}>
+            <Table columns={columns} data={data}/>
+        </Panel>
     );
 };
 

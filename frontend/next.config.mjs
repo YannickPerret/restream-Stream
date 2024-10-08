@@ -14,7 +14,16 @@ const nextConfig = {
                 port: '3333',
                 pathname: '/images/**',
             },
+            {
+                protocol: 'https',
+                hostname: 'restream.s3.swiss-backup03.infomaniak.com',
+            },
+            {
+                protocol: 'https',
+                hostname: 's3.pub1.infomaniak.cloud',
+            }
         ],
+        dangerouslyAllowSVG: true,
     },
     output: "standalone",
     eslint: {

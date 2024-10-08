@@ -23,6 +23,9 @@ export default class OrderItem extends BaseModel {
   @column()
   declare totalAmount: number
 
+  @column()
+  declare frequency: 'monthly' | 'yearly' | 'one-time'
+
   @belongsTo(() => Order)
   declare order: BelongsTo<typeof Order>
 

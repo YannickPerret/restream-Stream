@@ -4,12 +4,13 @@ import User from '#models/user'
 import Product from '#models/product'
 import { DateTime } from 'luxon'
 import Feature from '#models/feature'
+import Payment from "#models/payment";
+import OrderItem from "#models/order_item";
+import Order from "#models/order";
 
 export default class SubscriptionsController {
-  async index({ request, response, auth }: HttpContext) {
+  async index({ response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-
-    // Build the query
     const subscriptions = await Subscription.query()
       .preload('product')
       .preload('user')
@@ -110,9 +111,97 @@ export default class SubscriptionsController {
     return response.json({ success: true, product })
   }
 
+  async upgrade({ request, response, auth }: HttpContext) {
+    const user = await auth.authenticate();
+    if (!user) return response.badRequest();
+
+    const { subscriptionId, productId, isMonthly, paymentMethodId, returnUrl } = request.only([
+      'subscriptionId',
+      'productId',
+      'isMonthly',
+      'paymentMethodId',
+      'returnUrl',
+    ]);
+
+    try {
+      // Récupérer l'abonnement actuel et le produit associé
+      const currentSubscription = await Subscription.findOrFail(subscriptionId);
+      const product = await Product.findOrFail(productId);
+
+      // Désactiver l'abonnement existant
+      currentSubscription.status = 'cancelled';
+      await currentSubscription.save();
+
+      // Calculer le prix du nouveau produit
+      const newPrice = isMonthly ? product.monthlyPrice : product.annualPrice;
+
+      // Créer une nouvelle commande (Order)
+      const order = await Order.create({
+        userId: user.id,
+        totalAmount: newPrice,
+        status: 'pending',
+        currency: 'usd',
+      });
+
+      // Ajouter le nouveau produit à la commande
+      await OrderItem.create({
+        productId: product.id,
+        orderId: order.id,
+        quantity: 1,
+        unitPrice: newPrice,
+        totalAmount: newPrice,
+      });
+
+      // Créer un nouveau Payment Intent avec Stripe (si le montant est > 0)
+      let paymentIntent;
+      if (newPrice > 0) {
+        paymentIntent = await Payment.createPaymentIntent(order, user, {
+          paymentMethodId,
+          returnUrl,
+        });
+
+        // Sauvegarder le paiement
+        await Payment.create({
+          orderId: order.id,
+          stripePaymentIntentId: paymentIntent.id,
+          amount: newPrice,
+          currency: 'usd',
+          status: paymentIntent.status,
+        });
+
+        if (paymentIntent.status === 'succeeded') {
+          order.status = 'completed';
+          await order.save();
+        }
+      } else {
+        // Si le montant est de 0, marquer directement la commande comme complète
+        order.status = 'completed';
+        await order.save();
+      }
+
+      // Créer une nouvelle souscription pour le produit choisi
+      const expiresAt = isMonthly
+        ? DateTime.now().plus({ months: 1 })
+        : DateTime.now().plus({ years: 1 });
+
+      await Subscription.create({
+        userId: user.id,
+        productId: product.id,
+        orderId: order.id,
+        status: 'active',
+        expiresAt: expiresAt,
+      });
+
+      return response.json({ success: true, order });
+
+    } catch (error) {
+      console.error(error);
+      return response.status(500).json({ error: 'Error upgrading subscription' });
+    }
+  }
+
   async renew({ request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-    const {subscription, monthly} = request.only(['subscription', 'monthly'])
   }
 
   async revoke({ request, response, auth }: HttpContext) {

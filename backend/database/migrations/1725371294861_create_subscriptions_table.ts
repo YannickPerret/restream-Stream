@@ -10,6 +10,8 @@ export default class extends BaseSchema {
       table.integer('product_id').unsigned().references('products.id').notNullable()
       table.integer('order_id').unsigned().references('orders.id')
       table.enum('status', ['inactive', 'active', 'expired', 'canceled']).defaultTo('inactive')
+      table.enum('frequency', ['monthly', 'yearly']).notNullable()
+      table.date('next_billing_date').notNullable()
       table.timestamp('expires_at').notNullable()
       table.timestamp('created_at')
       table.timestamp('updated_at')

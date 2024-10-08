@@ -33,7 +33,7 @@ const ProductShowcase = () => {
                     {/* Bloc blanc en arrière-plan */}
                     <div className="absolute bg-purple-800 w-5/6 h-full -right-12 -bottom-8 rounded-lg shadow-lg"></div>
                     <Image
-                        src="/hero_showcase.png" // Utilisation de ton image
+                        src="/phoenix.jpg" // Utilisation de ton image
                         alt="Product Screenshot"
                         className="relative rounded-lg shadow-lg border-r border-b border-black "
                         width={800}
@@ -43,7 +43,7 @@ const ProductShowcase = () => {
             </div>
 
             {/* Caractéristiques en bas */}
-            <div className="mt-28 grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
+            <div className="mt-36 grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
                 <div className="flex flex-col items-center space-y-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 0a2 2 0 100-4H5a2 2 0 100 4h6m-6 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2z" />

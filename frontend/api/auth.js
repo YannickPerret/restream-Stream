@@ -34,8 +34,8 @@ export default class AuthApi extends Api{
   static async verify(token){
     const response = await fetch(`${this.baseUrl}/api/auth/verify-account`, {
       method: "POST",
-      headers: this.getHeaders(),
-        body: JSON.stringify({token})
+      headers: this.getHeaders({}),
+      body: token,
     });
     if (!response.ok) throw new Error(response.statusText);
     return await response.json()
@@ -55,6 +55,26 @@ export default class AuthApi extends Api{
       method: 'GET',
       headers: this.getHeaders(),
     })
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json()
+  }
+
+  static async resetPassword(data){
+    const response = await fetch(`${this.baseUrl}/api/auth/reset-password`, {
+      method: "POST",
+      headers: this.getHeaders({}),
+      body: data
+    });
+    if (!response.ok) throw new Error(response.statusText);
+    return await response.json()
+  }
+
+  static async forgotPassword(data){
+    const response = await fetch(`${this.baseUrl}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: this.getHeaders({}),
+      body: data
+    });
     if (!response.ok) throw new Error(response.statusText);
     return await response.json()
   }

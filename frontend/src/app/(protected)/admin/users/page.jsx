@@ -4,6 +4,7 @@ import Table from '#components/table/Table';
 import { useUserStore } from '#stores/useUserStore.js';
 import Button from "#components/_forms/Button.jsx";
 import UserAdminApi from '#api/admin/user.js';
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const UserListPage = () => {
     const { users, fetchAllUsers, loading, error } = useUserStore();
@@ -51,10 +52,14 @@ const UserListPage = () => {
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <div className="container mx-auto">
-            <h1 className="text-4xl font-bold mb-6">User List</h1>
+        <Panel
+            title="Users"
+            darkMode={true}
+            buttonLink="/admin/subscriptions/create"
+            buttonLabel="Create New Subscription"
+        >
             <Table columns={columns} data={users} />
-        </div>
+        </Panel>
     );
 };
 

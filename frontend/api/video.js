@@ -38,12 +38,30 @@ export class VideoApi extends Api {
     static async create(data) {
         const response = await fetch(`${this.baseUrl}/api/videos`, {
             method: 'POST',
-            headers: this.getHeaders({}),
-            body: data,
+            headers: this.getHeaders(),
+            body: JSON.stringify(data),
         });
+
         if(!response.ok) {
             throw new Error('Error while creating stream');
         }
+        return await response.json();
+    }
+
+    static async getUploadPolicy(file) {
+            const response = await fetch(`${this.baseUrl}/api/videos/generate-upload-policy`, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to get upload policy');
+            }
+
         return await response.json();
     }
 
@@ -69,14 +87,22 @@ export class VideoApi extends Api {
         }
     }
 
-    static async validate (id) {
-        const response = await fetch(`${this.baseUrl}/api/videos/${id}/validate`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-        });
-        if(!response.ok) {
-            throw new Error('Error while validating stream');
+    static async uploadToS3(s3Url, file) {
+        try {
+            const response = await fetch(s3Url, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type,
+                    'Access-Control-Allow-Origin': '*',
+                },
+            });
+
+            const data = await response.json();
+            return data.url; // URL to upload the video to S3
+        } catch (error) {
+            console.error('Error fetching presigned URL:', error);
+            throw error;
         }
-        return await response.json();
     }
 }

@@ -1,14 +1,12 @@
-import React from 'react';
+'use client';
+import React, { useState } from 'react';
 
-const FileUpload = ({ label, description, id, onChange, accept }) => {
-    const handleFileChange = (file) => {
-        const fileType = file.type.split('/')[0];
+const FileUpload = ({ label, description, id, onChange, accept, multiple = false }) => {
+    const [preview, setPreview] = useState(null);
 
-        if (accept.includes(fileType)) {
-            onChange(file);
-        } else {
-            alert(`Please upload a valid ${accept.join(' or ')} file.`);
-        }
+    const handleFileChange = (e) => {
+        const files = e.target.files;
+        onChange(files);
     };
 
     return (
@@ -25,9 +23,10 @@ const FileUpload = ({ label, description, id, onChange, accept }) => {
             <input
                 id={id}
                 type="file"
-                onChange={(e) => handleFileChange(e.target.files[0])}
+                onChange={handleFileChange}
                 className="hidden"
-                accept={accept.map(type => `${type}/*`).join(',')} // e.g., "image/*,video/*"
+                accept={accept.join(',')}
+                multiple={multiple}
             />
         </div>
     );

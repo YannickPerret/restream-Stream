@@ -16,8 +16,8 @@ export default function ProvidersPage() {
     }, [getProviders]);
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl p-8 bg-gradient-to-r from-indigo-900 via-gray-900 to-black">
-            <div className="container mx-auto">
+        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
+            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">Providers</h1>
                     <Link href="/providers/create">
@@ -27,8 +27,8 @@ export default function ProvidersPage() {
                         </button>
                     </Link>
                 </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6" />
-                <ProviderIndex />
+                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+                <ProviderIndex/>
             </div>
         </section>
     );

@@ -16,12 +16,12 @@ import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
 import { cuid } from '@adonisjs/core/helpers'
-import drive from '#config/drive'
 import emitter from '@adonisjs/core/services/emitter'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from '@adonisjs/transmit/services/main'
 import StreamSchedule from '#models/stream_schedule'
+import drive from "@adonisjs/drive/services/main";
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -113,10 +113,19 @@ export default class Stream extends BaseModel {
 
   @afterCreate()
   static async createBaseFiles(stream: Stream) {
-    const guestKey = `datas/streams/${cuid()}_guest.txt`
-    stream.guestFile = guestKey
-    await drive.use().put(guestKey, 'Upload by : CoffeeStream')
-    await stream.save()
+    const guestKey = `datas/streams/${cuid()}_guest.txt`;
+
+    // Vérifier si le fichier existe déjà
+    const fileExists = await drive.use('fs').exists(guestKey);
+
+    // Si le fichier n'existe pas, on le crée
+    if (!fileExists) {
+      stream.guestFile = guestKey;
+      await drive.use().put(guestKey, 'Upload by : CoffeeStream');
+      await stream.save();
+    } else {
+      console.log(`File ${guestKey} already exists.`);
+    }
   }
 
   @beforeDelete()

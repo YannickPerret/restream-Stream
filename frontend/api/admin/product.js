@@ -50,7 +50,7 @@ export default class ProductAdminApi extends Api {
     }
 
     static async delete(id) {
-        const response = await fetch(`${this.baseUrl}/api/products/${id}`, {
+        const response = await fetch(`${this.baseUrl}/api/admin/products/${id}`, {
             method: 'DELETE',
             headers: this.getHeaders(),
         });

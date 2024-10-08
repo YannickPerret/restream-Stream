@@ -14,12 +14,12 @@ export default function OrdersAdminIndexPage() {
 
     // Colonnes de la table
     const columns = [
-        { key: 'orderId', title: 'Order ID' },
-        { key: 'productName', title: 'Product Name' },
-        { key: 'userName', title: 'User Name' },
-        { key: 'status', title: 'Status' },
-        { key: 'createdAt', title: 'Order Date' },
-        { key: 'totalAmount', title: 'Total Amount' },
+        { key: 'OrderId', title: 'Order ID' },
+        { key: 'Product', title: 'Product Name' },
+        { key: 'User', title: 'User Name' },
+        { key: 'Status', title: 'Status' },
+        { key: 'CreatedAt', title: 'Order Date' },
+        { key: 'TotalAmount', title: 'Total Amount' },
     ];
 
     // Charger toutes les commandes pour l'admin
@@ -36,7 +36,7 @@ export default function OrdersAdminIndexPage() {
         if (user?.role.name === 'admin') {
             fetchOrdersForAdmin();
         } else {
-            router.push('/'); // Redirige si l'utilisateur n'est pas admin
+            router.push('/');
         }
     }, [user, router]);
 
@@ -46,7 +46,7 @@ export default function OrdersAdminIndexPage() {
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">Orders</h1>
                     <Link href="/admin/orders/create">
-                        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">
+                        <button  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
                             Create New Order
                         </button>
                     </Link>
@@ -61,12 +61,12 @@ export default function OrdersAdminIndexPage() {
                         <Table
                             columns={columns}
                             data={orders.map(order => ({
-                                orderId: order.id,
-                                productName: order.product.title,
-                                userName: `${order.user.userName}`,
-                                status: order.status,
-                                createdAt: new Date(order.createdAt).toLocaleDateString(),
-                                totalAmount: `${orders.currency} ${order.totalAmount.toFixed(2)}`,
+                                OrderId: order.id,
+                                Product: order.items.map((item) => item.product.title).join(', '),
+                                User: `${order.user?.username} (${order.user?.email})`,
+                                Status: order.status,
+                                CreatedAt: new Date(order.createdAt).toLocaleDateString(),
+                                TotalAmount: `${order.currency} ${order.totalAmount.toFixed(2)}`,
                             }))}
                             darkMode={true}
                         />

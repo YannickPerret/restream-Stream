@@ -10,7 +10,7 @@ const Newsletter = () => {
     };
 
     return (
-        <section className="relative bg-gradient-to-b from-gray-900 to-gray-800 py-16 md:py-24 px-6 text-white rounded-b-lg">
+        <section className="relative bg-gradient-to-b from-gray-900 to-gray-950 py-16 md:py-24 px-6 text-white rounded-b-lg">
             <div className="max-w-3xl mx-auto text-center">
                 <h2 className="text-3xl md:text-4xl font-bold">
                     Stay in the Loop – Be the First to Know !

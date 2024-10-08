@@ -24,7 +24,7 @@ export default function LogoutForm() {
   return (
     <button
       type="button"
-      className="flex text-xl gap-2 p-2 text-white hover:bg-gray-700 rounded-md align-baseline text-white bg-purple-600 rounded-lg px-4 py-2 ml-4 hover:bg-purple-700 transition-all duration-300"
+      className="flex gap-2 p-2 text-white hover:bg-gray-700 rounded-md align-baseline text-white bg-purple-600 rounded-lg px-4 py-2 ml-4 hover:bg-purple-700 transition-all duration-300"
       onClick={handleLogout}
     >
       <LogOut /> Logout

@@ -26,10 +26,10 @@ export default class ProductApi extends Api {
     }
 
     static async create(data) {
-        const response = await fetch(`${this.baseUrl}/api/products`, {
+         const response = await fetch(`${this.baseUrl}/api/products`, {
             method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(data),
+            headers: this.getHeaders({}),
+             body: data,
         });
         if(!response.ok) {
             throw new Error('Error while creating products');

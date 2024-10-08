@@ -23,11 +23,6 @@ const mailConfig = defineConfig({
         pass: env.get('SMTP_PASSWORD'),
       },
     }),
-
-    resend: transports.resend({
-      key: env.get('RESEND_API_KEY'),
-      baseUrl: 'https://api.resend.com',
-    }),
   },
 })
 

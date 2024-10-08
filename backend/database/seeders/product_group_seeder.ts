@@ -13,6 +13,10 @@ export default class extends BaseSeeder {
         name: '2024-bot',
         multiple: true,
       },
+      {
+        name: '2024-bot',
+        multiple: false,
+      },
     ])
   }
 }

@@ -23,8 +23,8 @@ export default class ProductsController {
     return response.json(product)
   }
 
-  async update({ params, request, response }) {
-    const { title, monthlyPrice, annualPrice, directDiscount, labelFeatures, features } =
+  async update({ params, request, response }: HttpContext) {
+    const { title, monthlyPrice, annualPrice, directDiscount, labelFeatures, features, logoPath } =
       request.only([
         'title',
         'monthlyPrice',
@@ -32,6 +32,7 @@ export default class ProductsController {
         'directDiscount',
         'labelFeatures',
         'features',
+        'logoPath',
       ])
 
     const product = await Product.findOrFail(params.id)
@@ -43,6 +44,7 @@ export default class ProductsController {
       annualPrice,
       directDiscount,
       labelFeatures,
+      logoPath: logoPath && logoPath,
     })
     await product.save()
 
@@ -68,11 +70,10 @@ export default class ProductsController {
         })
       }
     }
-
     return response.json({ success: true, product })
   }
 
-  async store({ request, response }) {
+  async store({ request, response }: HttpContext) {
     const {
       title,
       monthlyPrice,
@@ -96,16 +97,22 @@ export default class ProductsController {
       return response.badRequest({ message: 'Product with this title already exists' })
     }
 
+    // Récupération du fichier 'logoPath'
     const image = request.file('logoPath', {
       size: '2mb',
       extnames: ['jpeg', 'jpg', 'png', 'svg', 'webp'],
-    })
-    let key
+    });
+
+    let key = null;
     if (image) {
       try {
-        key = await Asset.uploadToS3(image)
+        if (!image.isValid) {
+          return response.badRequest({ message: 'Invalid image format or size' });
+        }
+
+        key = await Asset.uploadToS3(image, 'products');
       } catch (error) {
-        console.error('Failed to upload image to S3', error)
+        console.error('Failed to upload image to S3', error);
       }
     }
 
@@ -114,33 +121,50 @@ export default class ProductsController {
       monthlyPrice,
       annualPrice,
       directDiscount,
-      labelFeatures: JSON.parse(labelFeatures),
+      labelFeatures: labelFeatures && JSON.parse(labelFeatures),
       logoPath: key,
       productGroupId: productGroup,
     })
 
     // Gérer les features
-    for (const featureData of JSON.parse(features)) {
-      console.log(featureData)
-      let feature = await Feature.findBy('name', featureData.name)
+    if (features) {
+      for (const featureData of JSON.parse(features)) {
+        console.log(featureData)
+        let feature = await Feature.findBy('name', featureData.name)
 
-      if (!feature) {
-        feature = await Feature.create({ name: featureData.name })
+        if (!feature) {
+          feature = await Feature.create({ name: featureData.name })
+        }
+
+        await product.related('features').attach({
+          [feature.id]: {
+            value: featureData.value,
+          },
+        })
       }
-
-      await product.related('features').attach({
-        [feature.id]: {
-          value: featureData.value,
-        },
-      })
     }
 
     return response.json({
       success: true,
       message: 'Product created successfully',
-      product,
     })
   }
 
-  async destroy({ params, response }: HttpContext) {}
+  async destroy({ params, response, auth }: HttpContext) {
+    const user = auth.getUserOrFail()
+    await user.load('role')
+    if (user.role.name !== 'admin') {
+      return response.unauthorized({ message: 'You are not authorized to perform this action' })
+    }
+    const product = await Product.findOrFail(params.id)
+
+    if (product.logoPath) {
+      await Asset.deleteFromS3(product.logoPath)
+    }
+
+    await product.related('features').detach()
+
+    await product.delete()
+    return response.json({ success: true })
+  }
 }

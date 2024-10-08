@@ -4,7 +4,6 @@ import { StreamApi } from '#api/stream.js';
 import Form from "#components/_forms/Form";
 import FormGroup from "#components/_forms/FormGroup";
 import Input from "#components/_forms/Input";
-import Checkbox from "#components/_forms/Checkbox";
 import FileUpload from "#components/_forms/FileUpload";
 import Button from "#components/_forms/Button";
 import SearchForm from "#components/_forms/Search";
@@ -12,16 +11,16 @@ import Dropdown from "#components/_forms/Dropdown.jsx";
 import {useAuthStore} from "#stores/useAuthStore.js";
 import AuthApi from "#api/auth.js";
 import {useRouter} from "next/navigation";
+import Checkbox from "#components/_forms/Checkbox.jsx";
 
 export default function StreamCreate() {
     const [title, setTitle] = useState('');
-    const [providers, setProviders] = useState([]);
+    const [provider, setProvider] = useState(null);
     const [timeline, setTimeline] = useState(null);
-    const [primaryProvider, setPrimaryProvider] = useState(null);
     const [runLive, setRunLive] = useState(false);
     const [logo, setLogo] = useState(null);
     const [overlay, setOverlay] = useState(null);
-    const [quality, setQuality] = useState(''); // Set empty string as the default value
+    const [quality, setQuality] = useState('');
     const { subscriptions, setSubscriptions } = useAuthStore();
     const [availableQualities, setAvailableQualities] = useState([]);
     const [websiteUrl, setWebsiteUrl] = useState("");
@@ -30,18 +29,11 @@ export default function StreamCreate() {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        const providersWithPrimary = providers.map(provider => ({
-            ...provider,
-            onPrimary: provider.id === (primaryProvider?.id || null),
-        }));
-
-        console.log(quality)
-
         const formData = new FormData();
         formData.append('title', title);
         formData.append('timeline', timeline?.id);
         formData.append('runLive', runLive);
-        formData.append('providers', JSON.stringify(providersWithPrimary));
+        formData.append('provider', provider?.id);
         formData.append('quality', quality);
         formData.append('websiteUrl', websiteUrl);
 
@@ -57,20 +49,11 @@ export default function StreamCreate() {
         }
     };
 
-    const handlePrimaryChange = (provider) => {
-        setPrimaryProvider(provider.id === primaryProvider?.id ? null : provider);
-    };
-
     useEffect(() => {
-        if (primaryProvider && !providers.some(provider => provider.id === primaryProvider.id)) {
-            setPrimaryProvider(null);
-        }
-
         const getSubscriptions = async () => {
             await AuthApi.getCurrentUser().then((data) => {
                 setSubscriptions(data.subscriptions);
 
-                // Check if subscriptions and its features are properly defined
                 const subscription = data.subscriptions && data.subscriptions[0];
                 if (subscription && subscription.features) {
                     const qualityFeature = subscription.features.find((feature) => feature.name === 'quality');
@@ -80,7 +63,7 @@ export default function StreamCreate() {
         };
 
         getSubscriptions();
-    }, [providers, setSubscriptions]);
+    }, [setSubscriptions]);
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
@@ -121,30 +104,16 @@ export default function StreamCreate() {
                                 multiple={false}
                                 updateSelectedItems={setTimeline}
                             />
-                            {timeline && (
-                                <p className="mt-2">Selected Timeline: {timeline.title}</p>
-                            )}
                         </FormGroup>
 
                         <FormGroup title="Providers">
                             <SearchForm
                                 label="Search for Providers"
                                 searchUrl="providers"
-                                multiple={true}
-                                updateSelectedItems={setProviders}
+                                multiple={false}
+                                updateSelectedItems={setProvider}
+                                displayFields={['name']}
                             />
-                            <div className="mt-4">
-                                <p className="mb-2">Selected Providers: <span className="text-red-500">(Select one as primary)</span>
-                                </p>
-                                {providers.map(provider => (
-                                    <Checkbox
-                                        key={provider.id}
-                                        label={provider.name}
-                                        checked={primaryProvider?.id === provider.id}
-                                        onChange={() => handlePrimaryChange(provider)}
-                                    />
-                                ))}
-                            </div>
                         </FormGroup>
 
                         <FormGroup title="Assets">

@@ -17,6 +17,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   APP_KEY: Env.schema.string(),
   HOST: Env.schema.string({ format: 'host' }),
   LOG_LEVEL: Env.schema.string(),
+  NAME: Env.schema.string(),
 
   /*
   |----------------------------------------------------------
@@ -53,15 +54,6 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
-  | Variables for @rlanz/bull-queue
-  |----------------------------------------------------------
-  */
-  QUEUE_REDIS_HOST: Env.schema.string({ format: 'host' }),
-  QUEUE_REDIS_PORT: Env.schema.number(),
-  QUEUE_REDIS_PASSWORD: Env.schema.string.optional(),
-
-  /*
-  |----------------------------------------------------------
   | Variables for @rlanz/ally-twitch
   |----------------------------------------------------------
   */
@@ -81,4 +73,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   S3_REGION: Env.schema.string(),
   S3_BUCKET: Env.schema.string(),
   S3_ENDPOINT: Env.schema.string(),
+
+
+  /*
+  |----------------------------------------------------------
+  | Variables for Orders
+  |----------------------------------------------------------
+   */
+
+  ORDER_START: Env.schema.number.optional(),
 })

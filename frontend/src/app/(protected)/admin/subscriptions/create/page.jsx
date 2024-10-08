@@ -8,6 +8,7 @@ import FormGroup from '#components/_forms/FormGroup';
 import Input from '#components/_forms/Input';
 import Label from '#components/_forms/Label';
 import {useSubscriptionStore} from "#stores/useSubscriptionStore.js";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const SubscriptionCreatePage = () => {
     const router = useRouter();
@@ -41,8 +42,7 @@ const SubscriptionCreatePage = () => {
     };
 
     return (
-        <div className="container mx-auto py-12 text-white">
-            <h1 className="text-3xl font-bold mb-6">Create New Subscription</h1>
+        <Panel title={'Create Subscription'} buttonLink={'/admin/subscriptions'} buttonLabel={'Back'} darkMode={true}>
             <Form onSubmit={handleSubmit}>
                 <FormGroup title="Select User">
                     <Search
@@ -91,7 +91,7 @@ const SubscriptionCreatePage = () => {
                     <Button label="Create Subscription" type="submit" />
                 </div>
             </Form>
-        </div>
+        </Panel>
     );
 };
 

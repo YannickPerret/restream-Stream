@@ -11,6 +11,8 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
+const DiscountsController = () => import('#controllers/discounts_controller')
+const DiscountAdminsController = () => import('#controllers/admin/discount_admins_controller')
 const UserAdminsController = () => import('#controllers/admin/user_admins_controller')
 const OrderAdminsController = () => import('#controllers/admin/order_admins_controller')
 const SubscriptionAdminsController = () =>
@@ -39,7 +41,8 @@ router
         router.post('login', [AuthController, 'login'])
         router.post('logout', [AuthController, 'logout']).use(middleware.auth())
         router.post('refresh', [AuthController, 'refreshToken'])
-        router.post('forgot-password', [AuthController, 'resetPassword'])
+        router.post('forgot-password', [AuthController, 'forgotPassword'])
+        router.post('reset-password', [AuthController, 'resetPassword'])
         router.post('verify-account', [AuthController, 'verify'])
       })
       .prefix('auth')
@@ -97,7 +100,7 @@ router
             router.get(':id', [VideosController, 'show'])
             router.put(':id', [VideosController, 'update'])
             router.delete(':id', [VideosController, 'destroy'])
-            router.post(':id/validate', [VideosController, 'validate'])
+            router.post('/generate-upload-policy', [VideosController, 'generateUploadPolicy'])
           })
           .prefix('videos')
 
@@ -129,8 +132,17 @@ router
             router.get('/', [OrdersController, 'index'])
             router.post('/', [OrdersController, 'store'])
             router.get(':id', [OrdersController, 'show'])
+            router.get('slug/:slug/', [OrdersController, 'showBySlug'])
+            router.post('renew-subscription', [OrdersController, 'renewSubscription'])
+            router.get(':slug/download/invoice', [OrdersController, 'downloadInvoice'])
           })
           .prefix('orders')
+
+        router
+          .group(() => {
+            router.post('apply', [DiscountsController, 'apply'])
+          })
+          .prefix('discounts')
 
         router
           .group(() => {
@@ -140,6 +152,7 @@ router
             router.put(':id', [SubscriptionsController, 'update'])
             router.post(':id/renew', [SubscriptionsController, 'renew'])
             router.post(':id/revoke', [SubscriptionsController, 'revoke'])
+            router.post('/upgrade', [SubscriptionsController, 'upgrade'])
           })
           .prefix('subscriptions')
 
@@ -152,7 +165,12 @@ router
         /********* ADMIN ROUTE **********/
         router
           .group(() => {
-            router.get('subscriptions', [SubscriptionAdminsController, 'index'])
+            router.group(() => {
+              router.get('/', [SubscriptionAdminsController, 'index'])
+              router.post(':id/renew', [SubscriptionAdminsController, 'renew'])
+
+            }).prefix('subscriptions')
+
 
             router
               .group(() => {
@@ -166,10 +184,24 @@ router
 
             router
               .group(() => {
+                router.delete(':id', [ProductsController, 'destroy'])
+              })
+              .prefix('products')
+
+            router
+              .group(() => {
                 router.get('/', [UserAdminsController, 'index'])
                 router.delete(':id', [UserAdminsController, 'destroy'])
               })
               .prefix('users')
+
+            router
+              .group(() => {
+                router.get('/', [DiscountAdminsController, 'index'])
+                router.post('/', [DiscountAdminsController, 'store'])
+                router.get(':id', [DiscountAdminsController, 'show'])
+              })
+              .prefix('discounts')
           })
           .prefix('admin')
       })
@@ -189,5 +221,16 @@ router.group(() => {
     } else {
       return response.status(404).send('File not found')
     }
+  })
+
+  router.get('/assets/order/download/:slug', async ({ params, response }) => {
+    const filePath = app.publicPath(params.file)
+    const exists = fs.existsSync(filePath)
+    if (exists) {
+      response.header('Content-Type', 'application/pdf')
+      const fileStream = fs.createReadStream(filePath)
+      return response.stream(fileStream)
+    }
+    return response.status(404).send('File not found')
   })
 })

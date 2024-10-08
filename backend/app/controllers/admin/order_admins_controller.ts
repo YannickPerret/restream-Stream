@@ -24,6 +24,7 @@ export default class OrderAdminsController {
           itemQuery.preload('product')
         })
         .preload('payment')
+        .preload('user')
 
       return response.ok({ success: true, orders })
     } catch (error) {
