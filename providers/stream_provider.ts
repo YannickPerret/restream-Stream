@@ -40,7 +40,9 @@ export default class StreamProvider {
         streamData.fps
       );
 
-      const pid = stream.startStream();
+      const pid = stream.startStream((bitrate) => {
+        console.log(`Current bitrate: ${bitrate}`);
+      })
       // Stocker le PID dans Redis pour ce stream spécifique
       await redis.set(`stream:${streamData.id}:pid`, pid);
 
