@@ -100,8 +100,17 @@ export default class FFMPEGStream {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe']
     })
+// Log stdout
+    this.instance.stdout.on('data', (data) => {
+      console.log(`FFmpeg stdout: ${data}`);
+    });
 
-    this.handleProcessOutputs(this.instance)
+// Log stderr (qui est souvent plus utile pour FFmpeg)
+    this.instance.stderr.on('data', (data) => {
+      const output = data.toString();
+      logger.info(output);  // Ça devrait te donner plus d'info si quelque chose se passe mal
+    });
+    //this.handleProcessOutputs(this.instance)
     return Number.parseInt(this.instance.pid.toString(), 10)
   }
 
