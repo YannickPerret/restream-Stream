@@ -3,7 +3,6 @@ import * as fs from 'node:fs'
 import puppeteer from 'puppeteer'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn } from 'node:child_process'
-import Asset from "#models/asset";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -40,7 +39,6 @@ export default class FFMPEGStream {
 -flags low_delay -f tee "[f=flv]rtmp://live.twitch.tv/app/live_47374918_IsNjzt3lfQZXiWu6g7NxO1eA8LQ6gK|[f=flv]rtmp://live.twitch.tv/app/live_47374918_OTHER_STREAM_KEY"
      */
 
-
     const inputParameters = [
       '-re',
       '-hwaccel', 'rkmpp',
@@ -53,7 +51,7 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      this.startBrowserCapture()
+      await this.startBrowserCapture()
       inputParameters.push('-i', SCREENSHOT_FIFO)
 
       filterComplex.push(
@@ -69,13 +67,13 @@ export default class FFMPEGStream {
       '-filter_complex', filterComplex.join(''),
       '-map', '[v1]',
       '-map', '0:a?',
-      '-analyzeduration', '1',
+      //'-analyzeduration', '1',
       '-s', this.resolution,
       '-c:a', 'aac',
       '-c:v', 'h264_rkmpp',
       '-b:v', this.bitrate,
       '-maxrate', this.bitrate,
-      '-bufsize', `${Number.parseInt(this.bitrate) * 2}`,
+      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
       '-flags', 'low_delay'
     ]
 
