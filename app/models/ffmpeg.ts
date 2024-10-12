@@ -27,7 +27,7 @@ export default class FFMPEGStream {
     private fps: number
   ) {}
 
-  async startStream(onBitrateUpdate: (bitrate: number) => void): number {
+  async startStream() {
     if (this.enableBrowser) {
       this.createFifos()
     }
@@ -103,7 +103,7 @@ export default class FFMPEGStream {
       stdio: ['ignore', 'pipe', 'pipe']
     })
 
-    this.handleProcessOutputs(this.instance, onBitrateUpdate)
+    this.handleProcessOutputs(this.instance)
     return Number.parseInt(this.instance.pid.toString(), 10)
   }
 
@@ -225,17 +225,17 @@ export default class FFMPEGStream {
     this.removeFifos()
   }
 
-  private handleProcessOutputs(instance: any, onBitrateUpdate: (bitrate: number) => void) {
+  private handleProcessOutputs(instance: any)  {
     instance.stderr.on('data', (data: any) => {
       const output = data.toString()
       logger.info(output)
 
       // Tentative de capturer le bitrate à partir des logs FFmpeg
-      const bitrateMatch = output.match(/bitrate=\s*(\d+\.?\d*)\s*kbits\/s/)
+     /* const bitrateMatch = output.match(/bitrate=\s*(\d+\.?\d*)\s*kbits\/s/)
       if (bitrateMatch) {
         const bitrate = Number.parseFloat(bitrateMatch[1])
         onBitrateUpdate(bitrate)
-      }
+      }*/
     })
 
     instance.on('error', (error: any) => {
