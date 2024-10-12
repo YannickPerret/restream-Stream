@@ -28,7 +28,9 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream(onBitrateUpdate: (bitrate: number) => void): number {
-    this.createFifos()
+    if (this.enableBrowser) {
+      this.createFifos()
+    }
 
     console.log('Starting FFmpeg stream...')
     /*
@@ -153,11 +155,11 @@ export default class FFMPEGStream {
         '--disable-web-security',
         ...minimalArgs,
       ],
+      executablePath: '/usr/bin/chromium-browser',
       ignoreDefaultArgs: ['--enable-automation'],
     })
 
     const page = await browser.newPage()
-    console.log('Navigating to:', this.webpageUrl)
     await page.goto(this.webpageUrl)
 
     let writeStream
