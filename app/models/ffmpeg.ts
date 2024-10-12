@@ -71,6 +71,7 @@ export default class FFMPEGStream {
     encodingParameters.push('-f', 'tee', teeOutput);
   }
 
+  console.log('FFmpeg command:', 'ffmpeg', [...inputParameters, ...encodingParameters]);
   this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
     detached: true, stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -193,7 +194,7 @@ export default class FFMPEGStream {
     })
   }
 
-  stopStream(pid: number): void {
+  /*stopStream(pid: number): void {
     if (this.instance && pid > 0) {
       logger.info(`Stopping FFmpeg with PID: ${pid}`)
       this.instance.kill('SIGKILL')
@@ -202,7 +203,7 @@ export default class FFMPEGStream {
       if (pid > 0) process.kill(pid, 'SIGKILL')
     }
     this.removeFifos()
-  }
+  }*/
 
   private handleProcessOutputs(instance: any)  {
     instance.stderr.on('data', (data: any) => {
