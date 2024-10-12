@@ -43,7 +43,7 @@ export default class StreamProvider {
       const pid = await stream.startStream();
 
       // Stocker le PID dans Redis pour ce stream spécifique
-      await redis.set(`stream:${streamData.id}:pid`, pid);
+     // await redis.set(`stream:${streamData.id}:pid`, pid);
 
       console.log(`Stream started with PID: ${pid}`);
     });
