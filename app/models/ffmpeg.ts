@@ -28,9 +28,7 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream() {
-    if (this.enableBrowser) {
       this.createFifos()
-    }
 
     console.log('Starting FFmpeg stream...')
     /*
