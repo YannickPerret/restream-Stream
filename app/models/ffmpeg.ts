@@ -28,91 +28,63 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream() {
-      this.createFifos()
+  this.createFifos();
+  console.log('Starting FFmpeg stream...');
 
-    console.log('Starting FFmpeg stream...')
-    /*
-    ffmpeg -re -hwaccel rkmpp -protocol_whitelist file,concat,http,https,tcp,tls,crypto \
--f concat -safe 0 -i concat:playlist.m3u8 -r 60 \
--filter_complex "[0:v]fps=fps=60[v1]" -map "[v1]" -map "0:a?" -analyzeduration 1 \
--s 1920x1080 -c:a aac -c:v h264_rkmpp -b:v 6000k -maxrate 6000k -bufsize 12000k \
--flags low_delay -f tee "[f=flv]rtmp://live.twitch.tv/app/live_47374918_IsNjzt3lfQZXiWu6g7NxO1eA8LQ6gK|[f=flv]rtmp://live.twitch.tv/app/live_47374918_OTHER_STREAM_KEY"
-     */
+  const inputParameters = [
+    '-re', '-hwaccel', 'rkmpp', '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
+    '-f', 'concat', '-safe', '0', '-i', `concat:${this.timelinePath}`
+  ];
 
-    const inputParameters = [
-      '-re',
-      '-hwaccel', 'rkmpp',
-      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-      '-f', 'concat',
-      '-safe', '0',
-      '-i', `concat:${this.timelinePath}`
-    ]
+  let filterComplex: string[] = [];
 
-    let filterComplex: string[] = []
-
-    if (this.enableBrowser) {
-      await this.startBrowserCapture()
-      inputParameters.push('-i', SCREENSHOT_FIFO)
-
-      filterComplex.push(
-        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
-        `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
-      )
-    } else {
-      filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`)
-    }
-
-    const encodingParameters = [
-      '-r', this.fps.toString(),
-      '-filter_complex', filterComplex.join(''),
-      '-map', '[v1]',
-      '-map', '0:a?',
-      //'-analyzeduration', '1',
-      '-s', this.resolution,
-      '-c:a', 'aac',
-      '-c:v', 'h264_rkmpp',
-      '-b:v', this.bitrate,
-      '-maxrate', this.bitrate,
-      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
-      '-flags', 'low_delay'
-    ]
-
-    if (this.channels.length === 1) {
-      // Sortie unique
-      const channel = this.channels[0]
-      const baseUrl = BASE_URLS[channel.type]
-      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
-      encodingParameters.push('-f', 'flv', outputUrl)
-    } else {
-      // Sortie multiple avec `tee`
-      const teeOutput = this.channels
-        .map((channel) => {
-          const baseUrl = BASE_URLS[channel.type]
-          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
-          return `[f=flv]${outputUrl}`
-        })
-        .join('|')
-
-      encodingParameters.push('-f', 'tee', teeOutput)
-    }
-
-    this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
-      detached: true,
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-// Log stdout
-    this.instance.stdout.on('data', (data) => {
-      console.log(`FFmpeg stdout: ${data}`);
-    });
-
-// Log stderr (qui est souvent plus utile pour FFmpeg)
-    this.instance.stderr.on('data', (data) => {
-      const output = data.toString();
-      logger.info(output);  // Ça devrait te donner plus d'info si quelque chose se passe mal
-    });
-    //this.handleProcessOutputs(this.instance)
-    return Number.parseInt(this.instance.pid.toString(), 10)
+  if (this.enableBrowser) {
+    await this.startBrowserCapture();
+    inputParameters.push('-i', SCREENSHOT_FIFO);
+    filterComplex.push(
+      `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
+      `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
+    );
+  } else {
+    filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`);
   }
+
+  const encodingParameters = [
+    '-r', this.fps.toString(), '-filter_complex', filterComplex.join(''),
+    '-map', '[v1]', '-map', '0:a?', '-s', this.resolution,
+    '-c:a', 'aac', '-c:v', 'h264_rkmpp', '-b:v', this.bitrate,
+    '-maxrate', this.bitrate, '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
+    '-flags', 'low_delay'
+  ];
+
+  if (this.channels.length === 1) {
+    const channel = this.channels[0];
+    const baseUrl = BASE_URLS[channel.type];
+    const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
+    encodingParameters.push('-f', 'flv', outputUrl);
+  } else {
+    const teeOutput = this.channels.map(channel => {
+      const baseUrl = BASE_URLS[channel.type];
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
+      return `[f=flv]${outputUrl}`;
+    }).join('|');
+    encodingParameters.push('-f', 'tee', teeOutput);
+  }
+
+  this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
+    detached: true, stdio: ['ignore', 'pipe', 'pipe']
+  });
+
+  this.instance.stdout.on('data', data => {
+    console.log(`FFmpeg stdout: ${data}`);
+  });
+
+  this.instance.stderr.on('data', data => {
+    logger.info(data.toString());
+  });
+
+  return Number.parseInt(this.instance.pid.toString(), 10);
+}
 
   private async startBrowserCapture() {
     const minimalArgs = [
