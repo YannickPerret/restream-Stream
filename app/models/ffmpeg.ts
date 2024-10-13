@@ -70,7 +70,6 @@ export default class FFMPEGStream {
       encodingParameters.push('-f', 'tee', teeOutput);
     }
 
-    console.log('FFmpeg command:', 'ffmpeg', [...inputParameters, ...encodingParameters]);
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true, stdio: ['ignore', 'pipe', 'pipe']
     });
