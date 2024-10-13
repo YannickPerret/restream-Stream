@@ -1,15 +1,12 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'timeline_items'
+  protected tableName = 'newsletters'
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table.enum('type', ['playlist', 'video', 'transition']).notNullable()
-      table.integer('timeline_id').unsigned().references('timelines.id').onDelete('CASCADE')
-      table.integer('item_id').unsigned().notNullable()
-      table.integer('order').notNullable()
+      table.string('email').notNullable().unique()
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

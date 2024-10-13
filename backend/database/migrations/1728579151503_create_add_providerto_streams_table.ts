@@ -1,15 +1,14 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
-  protected tableName = 'timeline_items'
+  protected tableName = 'stream_providers'
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table.enum('type', ['playlist', 'video', 'transition']).notNullable()
-      table.integer('timeline_id').unsigned().references('timelines.id').onDelete('CASCADE')
-      table.integer('item_id').unsigned().notNullable()
-      table.integer('order').notNullable()
+      table.integer('stream_id').unsigned().references('streams.id').onDelete('CASCADE')
+      table.integer('provider_id').unsigned().references('providers.id').onDelete('CASCADE')
+      table.unique(['stream_id', 'provider_id'])
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

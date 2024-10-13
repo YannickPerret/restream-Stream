@@ -11,25 +11,32 @@ declare module '@adonisjs/core/types' {
 }
 
 emitter.on('stream:onNextVideo', async function (streamId: number | Stream) {
+  // Fetch the stream by its ID
   const stream = await Stream.query()
     .where('id', streamId)
     .andWhere('status', 'active')
     .firstOrFail()
 
-  await stream.load('provider')
+  // Load associated relationships
+  await stream.load('providers')
   await stream.load('timeline')
   await stream.load('user')
-  //await stream.updateGuestText()
 
+  // Fetch the current video from the timeline
   const currentVideo = await stream.timeline.getCurrentVideo(stream.currentIndex)
 
+  // If a video is found and should be shown live, update provider titles
   if (currentVideo && currentVideo.showInLive && currentVideo.duration > 55) {
     logger.info(`stream:onNextVideo: ${streamId} - ${currentVideo.title}`)
 
-    const providerLocal = await Provider.createProvider(stream.provider)
-    await providerLocal.changeTitle(currentVideo.title)
+    // Iterate through all providers and update the title for each
+    for (const provider of stream.providers) {
+      const providerInstance = await Provider.createProvider(provider)
+      await providerInstance.changeTitle(currentVideo.title)
+    }
   }
 
+  // Broadcast the current video to the frontend
   if (currentVideo) {
     transmit.broadcast(`streams/${streamId}/currentVideo`, {
       currentVideo: currentVideo.serialize(),

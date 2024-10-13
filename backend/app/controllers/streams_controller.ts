@@ -9,6 +9,7 @@ import {
   StreamQualityBiterate,
   StreamFpsByQuality,
 } from '#enums/streams'
+import Provider from '#models/providers/provider'
 
 export default class StreamsController {
   async index({ response, auth }: HttpContext) {
@@ -16,7 +17,7 @@ export default class StreamsController {
     const streams = await Stream.query()
       .where('userId', user.id)
       .preload('timeline')
-      .preload('provider')
+      .preload('providers')
 
     const streamWithCurrentVideo = await Promise.all(
       streams.map(async (stream) => {
@@ -36,7 +37,7 @@ export default class StreamsController {
 
   async show({ params, response }: HttpContext) {
     const stream = await Stream.query()
-      .preload('provider')
+      .preload('providers')
       .preload('timeline')
       .preload('user')
       .where('id', params.id)
@@ -85,82 +86,102 @@ export default class StreamsController {
   }
 
   async store({ auth, request, response }: HttpContext) {
-    const user = auth.getUserOrFail()
-    const { title, timeline, quality, websiteUrl, provider } = request.only([
+    const user = auth.getUserOrFail();
+    const { title, timeline, quality, websiteUrl, providers } = request.only([
       'title',
       'timeline',
       'quality',
       'websiteUrl',
-      'provider',
-    ])
+      'providers',
+    ]);
 
-    console.log(title,
-      timeline,
-      quality,
-      websiteUrl,
-      provider)
+    const runLive = request.input('runLive') === 'true';
+    let enableBrowser = true;
 
-    const runLive = request.input('runLive') === 'true'
+    const logoFile = request.file('logo', { size: '5mb', extnames: ['jpg', 'png', 'jpeg'] });
+    const overlayFile = request.file('overlay', { size: '50mb', extnames: ['jpg', 'png', 'jpeg'] });
 
-    const logoFile = request.file('logo', { size: '5mb', extnames: ['jpg', 'png', 'jpeg'] })
-    const overlayFile = request.file('overlay', { size: '50mb', extnames: ['jpg', 'png', 'jpeg'] })
-
-    if (!title || !provider || !timeline || !quality) {
-      return response.badRequest({ error: 'Missing required fields' })
+    if (!title || !providers || !timeline || !quality) {
+      return response.badRequest({ error: 'Missing required fields' });
     }
-    if (websiteUrl !== '' && websiteUrl !== null) {
 
-      const allowedUrlPattern =
-        /^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/
-      if (!allowedUrlPattern.test(websiteUrl)) {
+    if (websiteUrl && websiteUrl.length > 0) {
+      if (!/^(https:\/\/dashboard\.twitch\.tv\/widgets\/|https:\/\/streamlabs\.com\/alert-box\/|https:\/\/streamelements\.com\/overlay\/|https:\/\/widgets\.streamelements\.com\/host\/).*/.test(websiteUrl)) {
         return response.badRequest({
-          error:
-            'Invalid website URL. The URL must start with one of the following: https://dashboard.twitch.tv/widgets/, https://streamlabs.com/alert-box/, https://streamelements.com/overlay/, or https://widgets.streamelements.com/host/',
-        })
+          error: 'Invalid website URL. The URL must start with one of the predefined formats.',
+        });
       }
+    } else {
+      enableBrowser = false;
     }
 
-    const subscriptions = await user.related('subscriptions').query().where('status', 'active')
-
+    // Fetch active subscriptions for the user
+    const subscriptions = await user.related('subscriptions').query().where('status', 'active');
     if (subscriptions.length === 0) {
-      return response.forbidden({ error: 'You do not have an active subscription' })
+      return response.forbidden({ error: 'You do not have an active subscription' });
     }
 
-    const subscription = subscriptions[0]
-    const features = await subscription.getSubscriptionWithFeatures()
-    const maxStreamInstanceFeature = features.find(
-      (feature) => feature.name === 'max_stream_instances'
-    )
-    const maxStreamInstance = Number.parseInt(maxStreamInstanceFeature?.values[0] || '0', 10)
+    const subscription = subscriptions[0];
+    const features = await subscription.getSubscriptionWithFeatures();
 
-    const activeStreamsCount = await Stream.query().where('userId', user.id).count('* as total')
+    const maxStreamInstanceFeature = features.find((feature) => feature.name === 'max_stream_instances');
+    const maxStreamChannelFeature = features.find((feature) => feature.name === 'max_multi_stream_channel')?.values[0];
+    const maxStreamInstance = Number.parseInt(maxStreamInstanceFeature?.values[0] || '0', 10);
 
+    const activeStreamsCount = await Stream.query().where('userId', user.id).count('* as total');
     if (activeStreamsCount[0].$extras.total >= maxStreamInstance) {
       return response.forbidden({
         error: `You have reached the maximum number of active streams (${maxStreamInstance}).`,
-      })
+      });
     }
-    const qualityFeature = features.find((feature) => feature.name === 'quality')
-    const availableQualities = qualityFeature?.values || []
 
+    const qualityFeature = features.find((feature) => feature.name === 'quality');
+    const availableQualities = qualityFeature?.values || [];
     if (!availableQualities.includes(quality)) {
       return response.badRequest({
         error: `The selected quality (${quality}) is not available for your subscription.`,
-      })
+      });
     }
 
+    // Ensure providers belong to the user and exist in the database
+    const validProviders = [];
+    for (const providerId of providers) {
+      console.log(providerId);
+      const provider = await Provider.query()
+        .where('id', providerId)
+        .andWhere('user_id', user.id)
+        .first();
+
+      if (!provider) {
+        return response.badRequest({ error: `Provider with ID ${providerId} does not exist or you do not have access.` });
+      }
+
+      validProviders.push(provider.id);
+    }
+
+    if (validProviders.length >= maxStreamChannelFeature) {
+      return response.forbidden({
+        error: `You have reached the maximum number of channels (${maxStreamChannelFeature}). Please upgrade your subscription to add more channels.`,
+      });
+    }
+
+    // Handle file uploads (logo and overlay)
+    let logoPath = null;
+    let overlayPath = null;
+
     if (logoFile && logoFile.isValid) {
-      await logoFile.move(env.get('LOGO_DIRECTORY'), {
-        name: `${cuid()}.${logoFile.extname}`,
-      })
+      const logoFileName = `${cuid()}.${logoFile.extname}`;
+      await logoFile.move(env.get('LOGO_DIRECTORY'), { name: logoFileName });
+      logoPath = `${env.get('LOGO_DIRECTORY')}/${logoFileName}`;
     }
 
     if (overlayFile && overlayFile.isValid) {
-      await overlayFile.move(env.get('OVERLAY_DIRECTORY'), {
-        name: `${cuid()}.${overlayFile.extname}`,
-      })
+      const overlayFileName = `${cuid()}.${overlayFile.extname}`;
+      await overlayFile.move(env.get('OVERLAY_DIRECTORY'), { name: overlayFileName });
+      overlayPath = `${env.get('OVERLAY_DIRECTORY')}/${overlayFileName}`;
     }
 
+    // Create the stream
     const stream = await Stream.create({
       name: title,
       pid: 0,
@@ -168,26 +189,28 @@ export default class StreamsController {
       userId: user.id,
       type: 'ffmpeg',
       timelineId: timeline,
-      logo: logoFile ? env.get('LOGO_DIRECTORY') + '/' + logoFile.fileName : null,
-      overlay: overlayFile ? env.get('OVERLAY_DIRECTORY') + '/' + overlayFile.fileName : null,
+      logo: logoPath,
+      overlay: overlayPath,
       currentIndex: 0,
-      enableBrowser: true,
+      enableBrowser: enableBrowser,
       webpageUrl: websiteUrl,
       resolution: StreamResolutionByQuality[quality as keyof typeof StreamResolutionByQuality],
       bitrate: StreamQualityBiterate[quality as keyof typeof StreamQualityBiterate],
       fps: StreamFpsByQuality[quality as keyof typeof StreamFpsByQuality],
-      providerId: provider,
-    })
+    });
 
-    // Lancer le stream en live si `runLive` est activé
+    // Attach providers to the stream (many-to-many relation)
+    await stream.related('providers').attach(validProviders);
+
+    // Optionally, start the stream if 'runLive' is true
     if (runLive) {
-      await stream.load('timeline')
-      const streamManager = Stream_manager
-      const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream)
-      await streamInstance.run()
+      await stream.load('timeline');
+      const streamManager = Stream_manager;
+      const streamInstance = await streamManager.getOrAddStream(stream.id.toString(), stream);
+      await streamInstance.run();
     }
 
-    return response.created(stream)
+    return response.created(stream);
   }
 
   async update({ params, request, response }: HttpContext) {

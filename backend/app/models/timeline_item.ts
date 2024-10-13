@@ -19,7 +19,7 @@ export default class TimelineItem extends BaseModel {
   declare timeline: BelongsTo<typeof Timeline>
 
   @column()
-  declare type: 'video' | 'playlist'
+  declare type: 'video' | 'playlist' | 'transition'
 
   @column()
   declare itemId: number

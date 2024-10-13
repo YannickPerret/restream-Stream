@@ -46,7 +46,8 @@ export default defineConfig({
     () => import('@adonisjs/core/providers/edge_provider'),
     () => import('@adonisjs/i18n/i18n_provider'),
     () => import('#providers/stream_schedule_provider'),
-    () => import('@adonisjs/drive/drive_provider')
+    () => import('@adonisjs/drive/drive_provider'),
+    () => import('@adonisjs/redis/redis_provider'),
   ],
 
   /*

@@ -1,109 +1,53 @@
-import ytdl from '@distube/ytdl-core'
+import fs from 'node:fs'
+import {YtdlCore} from '@ybd-project/ytdl-core'
 import Asset from '#models/asset'
+import {exec} from 'node:child_process'
+import app from '@adonisjs/core/services/app'
 
-export interface YtbDownload {
-  download(url: string): Promise<string>
-  downloadPlaylist(playlistUrl: string): Promise<string[]>
-  handleDownload(url: string): Promise<string | string[]>
-  getVideoInfo(url: string): Promise<any>
-}
-
-export default class YtDdownload implements YtbDownload {
+export default class YtDownload {
   static async download(url: string): Promise<string> {
     try {
-      // Valider si l'URL YouTube est correcte
-      if (!ytdl.validateURL(url)) {
-        throw new Error('Invalid YouTube URL')
-      }
+      const outputFile = app.publicPath('assets/videos', `${Date.now()}.webm`)
 
-      // Télécharger la vidéo via ytdl-core (en stream)
-      const videoStream = ytdl(url, {
-        filter: 'audioandvideo',
-        quality: 'highestvideo',
+      await new Promise((resolve, reject) => {
+        const command = `yt-dlp -f "bestvideo[height<=1080][fps=60]+bestaudio/best[height<=1080][fps=60]" -o "${outputFile}" ${url}`
+        const ytProcess = exec(command)
+
+        ytProcess.stdout?.on('data', (data) => console.log(`stdout: ${data}`))
+        ytProcess.stderr?.on('data', (data) => console.error(`stderr: ${data}`))
+
+        ytProcess.on('close', (code) => {
+          if (code === 0) {
+            console.log('Download completed')
+            resolve(true)
+          } else {
+            reject(new Error(`yt-dlp exited with code ${code}`))
+          }
+        })
       })
 
-      // Définir l'extension du fichier
-      const extname = 'mp4' // Par défaut, on télécharge en .mp4
+      const fileStream = fs.createReadStream(outputFile)
 
-      // Utiliser la méthode `uploadToS3` du modèle `Asset` pour uploader directement le flux sur S3
-      const s3Path = await Asset.uploadStreamToS3(videoStream, `video/${extname}`)
+      const extname = 'webm'
 
-      console.log(`Video downloaded and uploaded to S3 successfully: ${s3Path}`)
-      return s3Path
+      return await Asset.uploadStreamToS3(fileStream, `video/${extname}`, true)
     } catch (error) {
       console.error(`Error downloading video: ${error.message}`)
       throw error
     }
   }
 
-  static async downloadPlaylist(playlistUrl: string): Promise<string[]> {
-    try {
-      // Valider si l'URL de la playlist est correcte
-      if (!playlistUrl.includes('list=')) {
-        throw new Error('Invalid playlist URL')
-      }
-
-      // Extraire les IDs des vidéos de la playlist
-      const videoUrls = await this.extractPlaylistVideoUrls(playlistUrl)
-
-      const s3Paths: string[] = []
-      for (const url of videoUrls) {
-        const s3Path = await this.download(url)
-        s3Paths.push(s3Path)
-      }
-
-      return s3Paths
-    } catch (error) {
-      console.error(`Error downloading playlist: ${error.message}`)
-      throw error
-    }
-  }
-
-  static async handleDownload(urlOrPlaylist: string): Promise<string | string[]> {
-    if (urlOrPlaylist.includes('playlist?list=')) {
-      // Si l'URL est une playlist
-      return await this.downloadPlaylist(urlOrPlaylist)
-    } else {
-      // Sinon, c'est une vidéo simple
-      return await this.download(urlOrPlaylist)
-    }
-  }
-
   static async getVideoInfo(url: string): Promise<any> {
     try {
-      if (!ytdl.validateURL(url)) {
-        throw new Error('Invalid YouTube URL')
-      }
-      return await ytdl.getBasicInfo(url)
+      // Create a new instance of YtdlCore
+      const ytdl = new YtdlCore()
+
+      // Fetch basic info of the video
+      const info = await ytdl.getBasicInfo(url)
+      console.log(`Video title: ${info.videoDetails.title}`)
+      return info
     } catch (error) {
       console.error(`Error getting video info: ${error.message}`)
-      throw error
-    }
-  }
-
-  static async extractPlaylistVideoUrls(playlistUrl: string): Promise<string[]> {
-    try {
-      // Récupérer le contenu HTML de la playlist pour extraire les URLs des vidéos
-      const response = await axios.get(playlistUrl)
-      const html = response.data
-
-      // Extraire les URLs des vidéos via une expression régulière
-      const videoUrls: string[] = []
-      const videoIdPattern = /"videoId":"([a-zA-Z0-9_-]{11})"/g
-      let match
-      while ((match = videoIdPattern.exec(html)) !== null) {
-        const videoId = match[1]
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`
-        videoUrls.push(videoUrl)
-      }
-
-      if (videoUrls.length === 0) {
-        throw new Error('No videos found in the playlist.')
-      }
-
-      return videoUrls
-    } catch (error) {
-      console.error(`Error extracting video URLs from playlist: ${error.message}`)
       throw error
     }
   }

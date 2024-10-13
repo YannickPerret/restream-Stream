@@ -81,7 +81,7 @@ export default class VideosController {
 
       return response.created({
         video,
-        signedUrl: await Asset.signedUrl(videoPath),
+        signedUrl: await Asset.getPublicUrl(videoPath),
       })
     } catch (error) {
       console.error('Error while creating video:', error)
@@ -187,7 +187,7 @@ export default class VideosController {
       return response.forbidden('You are not authorized to delete this video')
     }
     try {
-      await Asset.deleteFromS3(video)
+      await Asset.deleteFromS3(video.path)
       await video.delete()
     } catch (error) {
       logger.error('Error while deleting video:', error)

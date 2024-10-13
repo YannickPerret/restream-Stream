@@ -35,23 +35,23 @@ export default class TimelinesController {
    * Handle form submission for the create action
    */
   async store({ request, response, auth }: HttpContext) {
-    const user = await auth.authenticate()
-    const { title, items } = request.all()
+    const user = auth.getUserOrFail()
+    const { title, items, description } = request.only(['title', 'items', 'description'])
 
     const timeline = await Timeline.create({
       title,
       filePath: '',
-      description: '',
+      description: description,
       userId: user.id,
     })
 
     if (items) {
       for (const [index, item] of items.entries()) {
-        if (item.type === 'video' || item.type === 'playlist') {
+        if (item.type === 'video' || item.type === 'playlist' || item.type === 'transition') {
           await TimelineItem.create({
             timelineId: timeline.id,
             type: item.type,
-            itemId: item.itemId,
+            itemId: item.id,
             order: index + 1,
           })
         } else {

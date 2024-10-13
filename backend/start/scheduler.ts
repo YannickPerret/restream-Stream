@@ -8,7 +8,7 @@ import Subscription from '#models/subscription'
 /************** SUBSCRIPTIONS **************/
 scheduler
   .call(async () => {
-    const subscriptions = await Subscription.findManyBy('isActive', true)
+    const subscriptions = await Subscription.findManyBy('status', 'active')
     for (const subscription of subscriptions) {
       if (await subscription.isExpiringSoon(subscription.frequency === 'monthly' ? 15 : 60)) {
         await subscription.createRenewalOrder()

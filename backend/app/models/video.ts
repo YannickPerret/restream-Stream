@@ -1,12 +1,11 @@
 import { DateTime } from 'luxon'
-import {BaseModel, beforeCreate, beforeFetch, belongsTo, column, manyToMany} from '@adonisjs/lucid/orm'
+import {BaseModel, beforeCreate, belongsTo, column, manyToMany} from '@adonisjs/lucid/orm'
 import User from '#models/user'
 import type { BelongsTo, ManyToMany } from '@adonisjs/lucid/types/relations'
 import ffmpeg from 'fluent-ffmpeg'
 import Playlist from '#models/playlist'
 import * as fs from 'node:fs'
 import app from '@adonisjs/core/services/app'
-import Asset from "#models/asset";
 
 export default class Video extends BaseModel {
   @column({ isPrimary: true })
@@ -60,12 +59,6 @@ export default class Video extends BaseModel {
       fs.mkdirSync(publicPath, { recursive: true })
     }
   }
-/*
-  @beforeCreate()
-  static async setDuration(video: Video) {
-    if (video.path === null) return
-    video.duration = (await Video.getDuration(video.path)) || 0
-  }*/
 
   static async getInformation(path: string): Promise<ffmpeg.FfprobeData> {
     return new Promise((resolve, reject) => {

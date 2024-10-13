@@ -11,7 +11,7 @@ import Video from '#models/video'
 import app from '@adonisjs/core/services/app'
 import Stream from '#models/stream'
 import env from '#start/env'
-import Asset from "#models/asset";
+import Asset from '#models/asset'
 
 export default class Timeline extends BaseModel {
   @column({ isPrimary: true })
@@ -69,7 +69,7 @@ export default class Timeline extends BaseModel {
     })
 
     let content = ''
-    this.filePath = `${crypto.randomUUID()}-${this.id}.${type}`
+    this.filePath = `timelines/${crypto.randomUUID()}${this.id}.${type}`
     const currentPath = path.join(
       app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), `${this.filePath}`)
     )
@@ -82,7 +82,7 @@ export default class Timeline extends BaseModel {
       if (item.type === 'video') {
         const video = await Video.find(item.itemId)
         if (video && video.path) {
-          const relativePath = await Asset.signedUrl(video.path)
+          const relativePath = await Asset.getPublicUrl(video.path)
           logger.info(`Adding video Id ${item.itemId} to playlist ${this.id}`)
           if (type === 'm3u8') {
             content += `#EXTINF:-1, ${video.title || 'undefined'}\n`
@@ -97,7 +97,7 @@ export default class Timeline extends BaseModel {
           await playlist.load('videos')
           for (const video of playlist.videos) {
             if (video && video.path) {
-              const absolutePath = `file://${await Asset.signedUrl(video.path)}`
+              const absolutePath = `file://${await Asset.getPublicUrl(video.path)}`
               logger.info(
                 `Adding video Id ${video.id} from playlist ${playlist.id} to timeline ${this.id}`
               )
@@ -122,9 +122,15 @@ export default class Timeline extends BaseModel {
       await addItemToContent(this.items[i])
     }
 
-    const dirPath = path.dirname(currentPath)
-    await fs.promises.mkdir(dirPath, { recursive: true })
-    await fs.promises.writeFile(currentPath, content)
+    const dirPath = path.dirname(currentPath);
+    await fs.promises.mkdir(dirPath, { recursive: true });
+    await fs.promises.writeFile(currentPath, content);
+
+    // Lire le fichier généré en tant que stream et l'envoyer à S3
+    const stream = fs.createReadStream(currentPath);
+    await Asset.uploadToS3(stream, 'timelines', true);
+
+    logger.info(`Playlist uploaded to S3: ${this.filePath}`);
   }
 
   async generatePlaylistFileWithRepetition(type: string = 'm3u8', currentIndex: number = 0) {

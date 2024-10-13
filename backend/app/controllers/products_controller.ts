@@ -37,6 +37,7 @@ export default class ProductsController {
 
     const product = await Product.findOrFail(params.id)
 
+
     // Mettre à jour les détails du produit
     product.merge({
       title,
@@ -44,7 +45,7 @@ export default class ProductsController {
       annualPrice,
       directDiscount,
       labelFeatures,
-      logoPath: logoPath && logoPath,
+      //logoPath: logoPath !== null ? logoPath : product.logoPath,
     })
     await product.save()
 

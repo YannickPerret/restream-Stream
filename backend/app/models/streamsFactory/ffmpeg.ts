@@ -5,6 +5,8 @@ import encryption from '@adonisjs/core/services/encryption'
 import puppeteer from 'puppeteer'
 import fs from 'node:fs'
 import env from '#start/env'
+import Provider from '#models/providers/provider'
+import { channel } from 'node:diagnostics_channel'
 
 export interface StreamProvider {
   startStream(onBitrateUpdate: (bitrate: number) => void): number
@@ -14,13 +16,18 @@ export interface StreamProvider {
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
 
+const BASE_URLS: Record<string, string> = {
+  twitch: 'rtmp://live.twitch.tv/app',
+  youtube: 'rtmp://a.rtmp.youtube.com/live2',
+  // Add other providers as needed
+}
+
 export default class Ffmpeg implements StreamProvider {
   private instance: any = null
   private browserStarted: boolean = false
 
   constructor(
-    private baseUrl: string,
-    private streamKey: string,
+    private channels: { type: string; streamKey: string }[],
     private timelinePath: string,
     private logo: string,
     private overlay: string,
@@ -35,7 +42,6 @@ export default class Ffmpeg implements StreamProvider {
   startStream(onBitrateUpdate: (bitrate: number) => void): number {
     this.createFifos()
 
-    console.log('base url', this.baseUrl)
     const parameters = [
       '-hwaccel',
       'auto',
@@ -47,8 +53,6 @@ export default class Ffmpeg implements StreamProvider {
       '0',
       '-i',
       `concat:${app.publicPath(env.get('TIMELINE_PLAYLIST_DIRECTORY'), this.timelinePath)}`,
-      '-r',
-      this.fps,
     ]
 
     let filterComplex: string[] = []
@@ -58,7 +62,7 @@ export default class Ffmpeg implements StreamProvider {
       parameters.push('-i', SCREENSHOT_FIFO)
 
       filterComplex.push(
-        '[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=30[ckout];',
+        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
         `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
       )
     } else {
@@ -66,6 +70,8 @@ export default class Ffmpeg implements StreamProvider {
     }
 
     parameters.push(
+      '-r',
+      this.fps,
       '-filter_complex',
       filterComplex.join(''),
       '-map',
@@ -79,27 +85,41 @@ export default class Ffmpeg implements StreamProvider {
       '-c:a',
       'aac',
       '-c:v',
-      'libx264',
+      'h264',
       '-keyint_min',
       (this.fps * 2).toString(),
       '-preset',
-      'ultrafast',
+      'medium',
       '-b:v',
       this.bitrate,
+      '-maxrate',
+      this.bitrate,
+      '-bufsize',
+      `${Number.parseInt(this.bitrate) * 2}`,
       '-tune',
       'zerolatency',
       '-flags',
-      'low_delay',
-      '-maxrate',
-      this.bitrate,
-      '-crf',
-      '29',
-      '-r',
-      this.fps,
-      '-f',
-      'flv',
-      `${this.baseUrl}/${encryption.decrypt(this.streamKey)}`
+      'low_delay'
     )
+
+    if (this.channels.length === 1) {
+      // Single channel, directly stream without tee
+      const channel = this.channels[0]
+      const baseUrl = BASE_URLS[channel.type]
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+      parameters.push('-f', 'flv', outputUrl)
+    } else {
+      // Multiple channels, use tee for multi-output
+      const teeOutput = this.channels
+        .map((channel) => {
+          const baseUrl = BASE_URLS[channel.type]
+          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+          return `[f=flv]${outputUrl}`
+        })
+        .join('|')
+
+      parameters.push('-f', 'tee', teeOutput)
+    }
 
     this.instance = spawn('ffmpeg', parameters, {
       detached: true,
@@ -187,6 +207,7 @@ export default class Ffmpeg implements StreamProvider {
     })
 
     const page = await browser.newPage()
+    console.log('Navigating to:', this.webpageUrl)
     await page.goto(this.webpageUrl)
 
     let writeStream

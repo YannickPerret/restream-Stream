@@ -1,17 +1,17 @@
 import { DateTime } from 'luxon'
 import {
+  afterCreate,
   BaseModel,
+  beforeDelete,
   belongsTo,
   column,
-  afterCreate,
-  beforeDelete,
   hasMany,
+  manyToMany,
 } from '@adonisjs/lucid/orm'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import Provider from '#models/providers/provider'
-import StreamFactory from '#models/streamsFactory/stream_factory'
 import { StreamProvider } from '#models/streamsFactory/ffmpeg'
 import Timeline from '#models/timeline'
 import Video from '#models/video'
@@ -21,7 +21,9 @@ import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from '@adonisjs/transmit/services/main'
 import StreamSchedule from '#models/stream_schedule'
-import drive from "@adonisjs/drive/services/main";
+import drive from '@adonisjs/drive/services/main'
+import Asset from '#models/asset'
+import RedisProvider from '#models/redis_provider'
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -56,9 +58,6 @@ export default class Stream extends BaseModel {
 
   @column()
   declare userId: number
-
-  @column()
-  declare providerId: number
 
   @column()
   declare timelineId: number
@@ -99,8 +98,10 @@ export default class Stream extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @belongsTo(() => Provider)
-  declare provider: BelongsTo<typeof Provider>
+  @manyToMany(() => Provider, {
+    pivotTable: 'stream_providers',
+  })
+  declare providers: ManyToMany<typeof Provider>
 
   @belongsTo(() => Timeline)
   declare timeline: BelongsTo<typeof Timeline>
@@ -113,18 +114,18 @@ export default class Stream extends BaseModel {
 
   @afterCreate()
   static async createBaseFiles(stream: Stream) {
-    const guestKey = `datas/streams/${cuid()}_guest.txt`;
+    const guestKey = `datas/streams/${cuid()}_guest.txt`
 
     // Vérifier si le fichier existe déjà
-    const fileExists = await drive.use('fs').exists(guestKey);
+    const fileExists = await drive.use('fs').exists(guestKey)
 
     // Si le fichier n'existe pas, on le crée
     if (!fileExists) {
-      stream.guestFile = guestKey;
-      await drive.use().put(guestKey, 'Upload by : CoffeeStream');
-      await stream.save();
+      stream.guestFile = guestKey
+      await drive.use().put(guestKey, 'Upload by : CoffeeStream')
+      await stream.save()
     } else {
-      console.log(`File ${guestKey} already exists.`);
+      console.log(`File ${guestKey} already exists.`)
     }
   }
 
@@ -214,55 +215,80 @@ export default class Stream extends BaseModel {
 
   async run() {
     logger.info(`Starting stream ${this.id}`)
-    await this.load('provider')
+    await this.load('providers')
     await this.load('timeline')
 
+    if (this.status === 'active') {
+      logger.info('Stream is already active.')
+      return
+    }
+
     this.currentIndex = 0
-    const providerInstance = await Provider.createProvider(this.provider)
 
-    this.streamProvider = StreamFactory.createProvider(
-      this.type,
-      providerInstance.baseUrl,
-      providerInstance.streamKey,
-      this.timeline.filePath,
-      this.logo || '',
-      this.overlay || '',
-      this.guestFile,
-      this.enableBrowser,
-      this.webpageUrl,
-      this.bitrate,
-      this.resolution,
-      this.fps
-    )
+    if (this.providers.length === 0) {
+      logger.error('No providers associated with the stream.')
+      return
+    }
+    const streamData = {
+      id: this.id,
+      name: this.name,
+      resolution: this.resolution,
+      fps: this.fps,
+      bitrate: this.bitrate,
+      logo: this.logo,
+      overlay: this.overlay,
+      guestFile: this.guestFile,
+      enableBrowser: this.enableBrowser,
+      webpageUrl: this.webpageUrl,
+      timelinePath: await Asset.getPublicUrl(this.timeline.filePath),
+      channels: this.providers.map((provider) => ({
+        streamKey: provider.streamKey,
+        type: provider.type,
+      })),
+    }
 
-    await this.start()
-    await emitter.emit('stream:onNextVideo', this.id)
+    await RedisProvider.save('stream', this.id.toString(), streamData)
+    await RedisProvider.publish(`stream:${this.id}:start`, streamData)
+
+    this.startTime = DateTime.now()
     this.streamStartTime = DateTime.now()
     this.canNextVideo = true
+    this.status = 'active'
 
-    await this.nextVideo()
     await this.save()
+    await this.nextVideo()
   }
 
+  async stop(): Promise<void> {
+    logger.info(`Stopping stream ${this.id}`)
+    clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
+
+    await RedisProvider.publish(`stream:${this.id}:stop`, { id: this.id })
+    await RedisProvider.delete('stream', this.id.toString())
+
+    this.status = 'inactive'
+    this.endTime = DateTime.now()
+    this.pid = 0
+
+    await this.save()
+  }
+  /*
   async start(): Promise<void> {
+
     this.pid = this.streamProvider
-      ? this.streamProvider.startStream(this.updateBitrate.bind(this))
+      ? this.streamProvider.startStream()
       : process.pid
     this.startTime = DateTime.now()
     this.status = 'active'
     await this.sendAnalytics()
-
     await this.save()
-  }
-
-  private updateBitrate(bitrate: number) {
-    this.currentBitrate = bitrate
-  }
+  }*/
 
   sendAnalytics = async () => {
     if (this.status === 'inactive') return
 
     pidusage(this.pid, async (err, stats) => {
+      console.log(err, this.pid)
       if (err || this.pid === 0) {
         if (this.analyticsInterval) {
           clearTimeout(this.analyticsInterval)
@@ -271,6 +297,7 @@ export default class Stream extends BaseModel {
         return
       }
 
+      console.log('Sending analytics for stream', this.id)
       // Utiliser system information pour obtenir les statistiques réseau
       const networkStats = await si.networkStats()
       const inputBytes = networkStats[0]?.rx_bytes || 0 // Octets reçus
@@ -289,86 +316,9 @@ export default class Stream extends BaseModel {
           output: outputMbps,
         },
       }
-      // Envoyer les statistiques au frontend via WebSocket ou autre méthode
       transmit.broadcast(`streams/${this.id}/analytics`, { stats: analyticsData })
 
-      // Mettre à jour les analytics chaque seconde
       this.analyticsInterval = setTimeout(() => this.sendAnalytics(), 8000)
     })
-  }
-
-  async stop(): Promise<void> {
-    logger.info(`Stopping streams ${this.id}`)
-    clearTimeout(this.nextVideoTimeout as NodeJS.Timeout)
-
-    // Vérifiez si `this.pid` est défini et si le processus existe encore
-    if (this.pid > 0) {
-      try {
-        process.kill(this.pid, 'SIGKILL') // Tuer le processus si `this.pid` est valide
-      } catch (err: any) {
-        if (err.code === 'ESRCH') {
-          logger.error(`Le processus avec le PID ${this.pid} n'existe pas.`)
-        } else {
-          logger.error(
-            `Erreur lors de l'arrêt du processus avec le PID ${this.pid}: ${err.message}`
-          )
-        }
-      }
-    } else {
-      logger.warn(`Aucun processus n'est associé au stream avec le PID ${this.pid}.`)
-    }
-
-    // Si un streamProvider existe, arrêtez-le
-    if (this.streamProvider) {
-      this.streamProvider.stopStream(this.pid)
-    }
-
-    this.endTime = DateTime.now()
-    this.status = 'inactive'
-    this.pid = 0
-
-    await this.save()
-  }
-
-  async restartStream() {
-    logger.info('Redémarrage du stream')
-    await this.stop()
-
-    const remainingTime = await this.timeline.getTimeRestOfVideos(this.currentIndex)
-    logger.warn(`Temps restant : ${remainingTime}`)
-    if (remainingTime > this.restartTimes) {
-      await this.timeline.generatePlaylistFile('m3u8', this.currentIndex)
-    } else {
-      await this.timeline.generatePlaylistFileWithRepetition('m3u8', this.currentIndex)
-    }
-    setTimeout(async () => {
-      await this.run()
-    }, 10000)
-  }
-
-  async removeAssets() {
-    if (this.logo) {
-      try {
-        await drive.use().delete(this.logo)
-      } catch (err) {
-        logger.error(err)
-      }
-    }
-
-    if (this.overlay) {
-      try {
-        await drive.use().delete(this.overlay)
-      } catch (err) {
-        logger.error(err)
-      }
-    }
-
-    if (this.guestFile) {
-      try {
-        await drive.use().delete(this.guestFile)
-      } catch (err) {
-        logger.error(err)
-      }
-    }
   }
 }
