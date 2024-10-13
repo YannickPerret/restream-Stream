@@ -37,8 +37,6 @@ export default class FFMPEGStream {
 
     let filterComplex: string[] = [];
 
-    console.log('Starting FFmpeg stream...');
-
     if (this.enableBrowser) {
       await this.startBrowserCapture();
       inputParameters.push('-i', SCREENSHOT_FIFO);
@@ -136,7 +134,7 @@ export default class FFMPEGStream {
         '--disable-web-security',
         ...minimalArgs,
       ],
-      executablePath: '/usr/bin/chromium-browser',
+      //executablePath: '/usr/bin/chromium-browser',
       ignoreDefaultArgs: ['--enable-automation'],
     })
 

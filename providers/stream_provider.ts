@@ -43,12 +43,12 @@ export default class StreamProvider {
       const pid = await stream.startStream();
 
       // Stocker le PID dans Redis pour ce stream spécifique
-     // await redis.set(`stream:${streamData.id}:pid`, pid);
+      await redis.set(`stream:${streamData.id}:pid`, pid);
 
       console.log(`Stream started with PID: ${pid}`);
     });
 
-   /* // Écouter le canal pour arrêter un stream spécifique
+   // Écouter le canal pour arrêter un stream spécifique
     redis.psubscribe('stream:*:stop', async (pattern, message) => {
       const { pid } = JSON.parse(message);
 
@@ -64,7 +64,7 @@ export default class StreamProvider {
           }
         }
       }
-    });*/
+    });
   }
 
   /**
