@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Button = ({ label, onClick, type = 'button', color }) => {
+const Button = ({ label, onClick, type = 'button', color, className }) => {
     // Determine className based on button type or custom color
     const baseClass = "text-white font-bold py-2 px-4 rounded";
     const typeClass = type === 'reset'
@@ -17,7 +17,7 @@ const Button = ({ label, onClick, type = 'button', color }) => {
         <button
             type={type}
             onClick={onClick}
-            className={`${baseClass} ${colorClass}`}
+            className={`${baseClass} ${colorClass} ${className}`}
         >
             {label}
         </button>

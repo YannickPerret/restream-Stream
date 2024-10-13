@@ -1,23 +1,23 @@
 import React from 'react';
 import Dropdown from "#components/_forms/Dropdown.jsx";
+import {useTimelineStore} from "#stores/useTimelineStore.js";
 
-const TimelineSwitchLocal = ({ locale, onChange }) => {
-    const handleLocaleChange = (event) => {
-        onChange(event.target.value);
-    };
+const TimelineSwitchLocal = ( ) => {
+    const { locale, setLocale } = useTimelineStore();
+
 
     return (
-        <div className="flex justify-start mb-4 pointer-events-auto z-20">
-            <Dropdown
-                label="Select Locale"
-                options={[
-                    {label: 'en-US', value: 'en-US'},
-                    {label: 'fr-FR', value: 'fr-FR'},
-                ]}
-                value={locale}
-                onChange={handleLocaleChange}
-            />
-        </div>
+        <Dropdown
+            label="Select Locale"
+            options={[
+                {label: 'en-US', value: 'en-US'},
+                {label: 'fr-FR', value: 'fr-FR'},
+            ]}
+            value={locale}
+            onChange={(e) => {
+                setLocale(e.target.value);
+            }}
+        />
     );
 };
 

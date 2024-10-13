@@ -1,35 +1,36 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import useProductStore from '#stores/useProductStore';
+import ProductApi from '#api/product';
+import Panel from "#components/layout/panel/Panel.jsx";
 import Form from '#components/_forms/Form';
 import FormGroup from '#components/_forms/FormGroup';
 import Input from '#components/_forms/Input';
 import Button from '#components/_forms/Button';
-import useProductStore from '#stores/useProductStore';
-import ProductApi from '#api/product';
 import FileUpload from '#components/_forms/FileUpload';
 import Image from 'next/image';
-import Panel from "#components/layout/panel/Panel.jsx";
 
 const EditProductPage = () => {
     const router = useRouter();
     const { id } = useParams();
-    const { fetchProductById, isLoading } = useProductStore();
-    const [product, setProduct] = useState(null);
+    const { fetchProductById, isLoading, setSelectedProduct } = useProductStore();
     const [title, setTitle] = useState('');
     const [monthlyPrice, setMonthlyPrice] = useState('');
     const [annualPrice, setAnnualPrice] = useState('');
     const [directDiscount, setDirectDiscount] = useState('');
     const [labelFeatures, setLabelFeatures] = useState('');
     const [features, setFeatures] = useState([]);
-    const [logoPath, setLogoPath] = useState('');  // Nouveau logo
+    const [signedLogoPath, setSignedLogoPath] = useState('');
     const [initialLogoPath, setInitialLogoPath] = useState('');
     const [isFileUploadVisible, setFileUploadVisible] = useState(false);
 
     useEffect(() => {
         const loadProduct = async () => {
             const fetchedProduct = await fetchProductById(id);
-            setProduct(fetchedProduct);
+
+            // Mettre à jour les états locaux avec les données du produit
+            console.log(fetchedProduct);
             setTitle(fetchedProduct.title);
             setMonthlyPrice(fetchedProduct.monthlyPrice);
             setAnnualPrice(fetchedProduct.annualPrice);
@@ -40,14 +41,14 @@ const EditProductPage = () => {
                 name: feature.name,
                 value: feature.pivotValue || ''
             })));
-            setLogoPath(fetchedProduct.signedLogoPath);
-            setInitialLogoPath(fetchedProduct.logoPath);  // Stocker le logo initial
+            setSignedLogoPath(fetchedProduct.signedLogoPath);
+            setInitialLogoPath(fetchedProduct.logoPath);
         };
 
         if (id) {
             loadProduct();
         }
-    }, [id, fetchProductById]);
+    }, [id, fetchProductById, setSelectedProduct]);
 
     const handleFeatureChange = (index, field, value) => {
         const updatedFeatures = [...features];
@@ -72,29 +73,28 @@ const EditProductPage = () => {
             monthlyPrice: parseInt(monthlyPrice, 10),
             annualPrice: parseInt(annualPrice, 10),
             directDiscount: parseInt(directDiscount, 10),
-            labelFeatures: labelFeatures,
+            labelFeatures,
             features: features.map(({ name, value }) => ({ name, value })),
+            logoPath: signedLogoPath !== initialLogoPath ? signedLogoPath : null
+
         };
 
-        // Ajouter le logo uniquement s'il a changé
-        if (logoPath !== initialLogoPath) {
-            updatedProductData.logoPath = logoPath;
-        }
-
         try {
-            await ProductApi.update(id, updatedProductData);
-            //router.push('/admin/products');
+            const productUpdated = await ProductApi.update(id, updatedProductData);
+            if (productUpdated) {
+                router.push('/admin/products');
+            }
         } catch (error) {
             console.error('Error updating product:', error);
         }
     };
 
     const handleFileUpload = (newLogoPath) => {
-        setLogoPath(newLogoPath);
+        setSignedLogoPath(newLogoPath);
         setFileUploadVisible(false);
     };
 
-    if (isLoading || !product) {
+    if (isLoading) {
         return <div>Loading...</div>;
     }
 
@@ -106,14 +106,14 @@ const EditProductPage = () => {
                     <Input label="Monthly Price" type="number" value={monthlyPrice} onChange={(e) => setMonthlyPrice(e.target.value)} />
                     <Input label="Annual Price" type="number" value={annualPrice} onChange={(e) => setAnnualPrice(e.target.value)} />
                     <Input label="Direct Discount (%)" type="number" value={directDiscount} onChange={(e) => setDirectDiscount(e.target.value)} />
-                    <Input label="Label Features"  value={labelFeatures.join(', ')} onChange={(e) => setLabelFeatures(e.target.value)} />
+                    <Input label="Label Features" value={labelFeatures} onChange={(e) => setLabelFeatures(e.target.value.split(','))} />
                 </FormGroup>
 
                 <FormGroup title="Product Logo">
                     <div className="flex items-center mb-4">
-                        {logoPath && (
+                        {signedLogoPath && (
                             <Image
-                                src={logoPath}
+                                src={signedLogoPath}
                                 alt="Product Logo"
                                 width={100}
                                 height={100}

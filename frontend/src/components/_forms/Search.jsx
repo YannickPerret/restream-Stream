@@ -4,11 +4,12 @@ import Input from "#components/_forms/Input";
 import { SearchApi } from "#api/search";
 import Button from "#components/_forms/Button";
 
-const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search", displayFields = ['title'], showSelectedItems = true, defaultValue = '', placeholder = '' }) => {
+const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Search", displayFields = ['title'], showSelectedItems = true, defaultValue = '', placeholder = '', maxSelected }) => {
     const [query, setQuery] = useState(defaultValue); // Initialize with defaultValue
     const [results, setResults] = useState([]);
     const [selectedItems, setSelectedItems] = useState(defaultValue ? [defaultValue] : []); // Initialize selected items if defaultValue exists
     const [showResults, setShowResults] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const inputRef = useRef(null);
     const resultsRef = useRef(null);
@@ -43,10 +44,17 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
 
     const handleSelect = (item) => {
         if (multiple) {
+            // Check if the maximum limit has been reached
+            if (maxSelected && selectedItems.length >= maxSelected) {
+                setErrorMessage(`Maximum number of ${maxSelected} items reached.`);
+                return;
+            }
+            // Add the item only if it's not already selected
             if (!selectedItems.some(selected => selected.id === item.id)) {
                 const newSelectedItems = [...selectedItems, item];
                 setSelectedItems(newSelectedItems);
                 updateSelectedItems(newSelectedItems);
+                setErrorMessage(''); // Clear error message on successful selection
             }
         } else {
             setSelectedItems([item]);
@@ -59,6 +67,7 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
         const newSelectedItems = selectedItems.filter(item => item.id !== itemId);
         setSelectedItems(newSelectedItems);
         updateSelectedItems(newSelectedItems);
+        setErrorMessage(''); // Clear error message when an item is removed
     };
 
     const handleClickOutside = (event) => {
@@ -131,6 +140,13 @@ const Search = ({ searchUrl, multiple = false, updateSelectedItems, label = "Sea
                             </li>
                         ))}
                     </ul>
+                </div>
+            )}
+
+            {/* Display the error message if maxSelected limit is reached */}
+            {errorMessage && (
+                <div className="text-red-500 mt-2">
+                    {errorMessage}
                 </div>
             )}
         </div>

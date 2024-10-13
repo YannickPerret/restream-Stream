@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Calendar, List } from 'lucide-react';
-import CalendarView from "#components/timeline/view/TimelineCalendarView.jsx";
+import {CalendarView} from "#components/timeline/view/TimelineCalendarView.jsx";
 import TimelineListView from "#components/timeline/view/TimelineListView.jsx";
+import TimelineSwitchLocal from "#components/timeline/switch/TimelineSwitchLocal.jsx";
 
 
-const TimelineSwitcher = ({timeline, removeVideo, moveVideo, locale }) => {
+const TimelineSwitcher = ({timeline, removeVideo, moveVideo }) => {
     const [view, setView] = useState('list'); // Default view
 
     const switchToCalendar = () => {
@@ -17,24 +18,30 @@ const TimelineSwitcher = ({timeline, removeVideo, moveVideo, locale }) => {
         setView('list');
     };
 
-
     return (
         <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-            <div className="flex justify-end mb-4 gap-4">
-                <button
-                    onClick={switchToList}
-                    className={`ml-2 p-2 rounded-full ${view === 'list' ? 'bg-indigo-600' : 'bg-gray-700'} hover:bg-indigo-500 transition-all`}>
-                    <List size={24} className="text-white"/>
-                </button>
-                <button
-                    onClick={switchToCalendar}
-                    className={`p-2 rounded-full ${view === 'calendar' ? 'bg-indigo-600' : 'bg-gray-700'} hover:bg-indigo-500 transition-all`}>
-                    <Calendar size={24} className="text-white"/>
-                </button>
+            <div className={"flex flex-row justify-between"}>
+                <TimelineSwitchLocal />
+                <div className="mb-4">
+                    <h2 className="text-lg font-bold text-white mb-4 text-center">Timeline View</h2>
+                    <div className="flex space-x-4">
+                        <button
+                            onClick={switchToList}
+                            className={`w-14 p-2 rounded-lg flex justify-center items-center ${view === 'list' ? 'bg-violet-600' : 'bg-gray-700'} hover:bg-violet-500 transition-all`}
+                        >
+                            <List size={24} className="text-white"/>
+                        </button>
+                        <button
+                            onClick={switchToCalendar}
+                            className={`w-14 p-2 rounded-lg flex justify-center items-center ${view === 'calendar' ? 'bg-violet-600' : 'bg-gray-700'} hover:bg-violet-500 transition-all`}
+                        >
+                            <Calendar size={24} className="text-white"/>
+                        </button>
+                    </div>
+                </div>
             </div>
-
             {view === 'calendar' ? (
-                <CalendarView locale={locale} />
+                <CalendarView/>
             ) : (
                 <TimelineListView
                     timeline={timeline}

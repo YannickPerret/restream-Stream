@@ -11,10 +11,10 @@ const createSelectors = (_store) => {
 };
 
 const useProductStore = createSelectors(create((set, get) => ({
-    products: [], // Liste des produits disponibles
+    products: [],
+    selectedProduct: null,
     isLoading: false,
 
-    // Fonction pour récupérer tous les produits depuis l'API
     fetchProducts: async () => {
         set({ isLoading: true, error: null });
         try {

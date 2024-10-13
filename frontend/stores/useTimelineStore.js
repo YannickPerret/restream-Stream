@@ -12,11 +12,64 @@ const createSelectors = (_store) => {
 };
 
 export const useTimelineStore = createSelectors(create((set, get) => ({
-    timelines: [], // Liste des timelines
-    selectedTimeline: null, // Timeline actuellement sélectionnée
-    timelineItems: [], // Liste des éléments (vidéos) de la timeline actuelle
-    addAutoTransition: false, // Indicateur pour ajouter automatiquement des transitions
-    videoTransition: null, // Vidéo de transition
+    timelines: [],
+    selectedTimeline: null,
+    timelineItems: [],
+    autoTransition: false,
+    videoTransition: null,
+    locale : 'en-US',
+    newTimeline: {
+        title: '',
+        description: '',
+        duration: 0,
+        items: [],
+    },
+
+    setLocale: (locale) => set({ locale }),
+
+    setNewTimeline: (key, value) => set((state) => ({
+        newTimeline: {
+            ...state.newTimeline,
+            [key]: value,
+        },
+    })),
+
+    clearNewTimeline: () => set({ newTimeline: { title: '', description: '', items: [] } }),
+
+    clearNewTimelineItems: () => set((state) => ({
+        newTimeline: {
+            ...state.newTimeline,
+            items: [],
+            duration: 0,
+        },
+    })),
+
+    addNewVideoInTimeline: (video) => {
+        const currentItems = get().newTimeline.items;
+        const autoTransition = get().autoTransition;
+        const videoTransition = get().videoTransition;
+
+        const newItems = [...currentItems, video];
+
+        if (autoTransition && videoTransition) {
+            const transitionVideo = {
+                ...videoTransition,
+                type: 'transition',
+            };
+            newItems.push(transitionVideo);
+        }
+
+        // Mise à jour du store
+        set((state) => ({
+            newTimeline: {
+                ...state.newTimeline,
+                items: newItems,
+                duration: state.newTimeline.duration + video.duration + (autoTransition && videoTransition ? videoTransition.duration : 0),
+            },
+        }));
+    },
+
+    setAutoTransition: (value) => set({ autoTransition: value }),
 
     fetchTimelines: async () => {
         try {
@@ -141,14 +194,12 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
     },
 
     moveVideoInTimeline: (fromIndex, toIndex) => {
-        const timelineItems = get().timelineItems;
+        const timelineItems = get().newTimeline.items;
         const newTimelineItems = [...timelineItems];
         const [movedItem] = newTimelineItems.splice(fromIndex, 1);
         newTimelineItems.splice(toIndex, 0, movedItem);
-        set({ timelineItems: newTimelineItems });
+        set({ newTimeline: { ...get().newTimeline, items: newTimelineItems } });
     },
-
-    setAddAutoTransition: (value) => set({ addAutoTransition: value }),
 
     setVideoTransition: (video) => set({ videoTransition: video }),
 
@@ -177,7 +228,6 @@ export const useTimelineStore = createSelectors(create((set, get) => ({
         }
     },
     clearTimeline: () => set({ timelineItems: [] }),
-
 
     deleteTimelineById: async (id) => {
         try {

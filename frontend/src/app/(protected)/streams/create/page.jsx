@@ -12,10 +12,11 @@ import {useAuthStore} from "#stores/useAuthStore.js";
 import AuthApi from "#api/auth.js";
 import {useRouter} from "next/navigation";
 import Checkbox from "#components/_forms/Checkbox.jsx";
+import {useProviderStore} from "#stores/useProviderStore.js";
 
 export default function StreamCreate() {
     const [title, setTitle] = useState('');
-    const [provider, setProvider] = useState(null);
+    const [providersToSubmit, setProvidersToSubmit] = useState([]);
     const [timeline, setTimeline] = useState(null);
     const [runLive, setRunLive] = useState(false);
     const [logo, setLogo] = useState(null);
@@ -23,8 +24,12 @@ export default function StreamCreate() {
     const [quality, setQuality] = useState('');
     const { subscriptions, setSubscriptions } = useAuthStore();
     const [availableQualities, setAvailableQualities] = useState([]);
+    const [maxStreamMultiChannel, setMaxStreamMultiChannel] = useState(0);
+
     const [websiteUrl, setWebsiteUrl] = useState("");
     const router = useRouter()
+    const { providers, fetchProviders } = useProviderStore();
+
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -33,10 +38,15 @@ export default function StreamCreate() {
         formData.append('title', title);
         formData.append('timeline', timeline?.id);
         formData.append('runLive', runLive);
-        formData.append('provider', provider?.id);
         formData.append('quality', quality);
         formData.append('websiteUrl', websiteUrl);
 
+        // Append providers as individual formData entries
+        providersToSubmit.forEach((provider, index) => {
+            formData.append(`providers[${index}]`, provider.id);
+        });
+
+        // Append files (if any)
         if (logo) formData.append('logo', logo);
         if (overlay) formData.append('overlay', overlay);
 
@@ -49,6 +59,7 @@ export default function StreamCreate() {
         }
     };
 
+
     useEffect(() => {
         const getSubscriptions = async () => {
             await AuthApi.getCurrentUser().then((data) => {
@@ -57,13 +68,17 @@ export default function StreamCreate() {
                 const subscription = data.subscriptions && data.subscriptions[0];
                 if (subscription && subscription.features) {
                     const qualityFeature = subscription.features.find((feature) => feature.name === 'quality');
+                    const maxStreamMultiChannel = subscription.features.find((feature) => feature.name === "max_multi_stream_channel");
                     setAvailableQualities(qualityFeature ? qualityFeature.values : []);
+                    setMaxStreamMultiChannel(maxStreamMultiChannel ? maxStreamMultiChannel.values[0] : 0);
                 }
             });
         };
 
+        // Fetch providers when component mounts
         getSubscriptions();
-    }, [setSubscriptions]);
+        fetchProviders();
+    }, [setSubscriptions, fetchProviders]);
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
@@ -91,7 +106,7 @@ export default function StreamCreate() {
                                     label: quality,
                                     value: quality
                                 }))}
-                                value={quality || ''} // Set empty string if quality is null
+                                value={quality}
                                 onChange={(e) => setQuality(e.target.value)}
                                 placeholder="Select a quality"
                             />
@@ -106,12 +121,13 @@ export default function StreamCreate() {
                             />
                         </FormGroup>
 
-                        <FormGroup title="Providers">
+                        <FormGroup title={`Multi-stream Channels (${providersToSubmit.length}/${maxStreamMultiChannel})`}>
                             <SearchForm
-                                label="Search for Providers"
+                                label="Search int your channel list"
                                 searchUrl="providers"
-                                multiple={false}
-                                updateSelectedItems={setProvider}
+                                multiple={true}
+                                maxSelected={maxStreamMultiChannel}
+                                updateSelectedItems={setProvidersToSubmit}
                                 displayFields={['name']}
                             />
                         </FormGroup>

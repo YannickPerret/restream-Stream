@@ -77,7 +77,7 @@ export default function Navigation() {
             <Link href="/#review" className="text-gray-400 hover:text-white">
                 Review
             </Link>
-            <Link href="/#contact" className="text-gray-400 hover:text-white">
+            <Link href="/contact" className="text-gray-400 hover:text-white">
                 Contact
             </Link>
         </nav>

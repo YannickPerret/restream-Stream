@@ -15,6 +15,10 @@ export default function RootLayout({ children }) {
 
     return (
         <html lang="fr">
+        <head>
+            <style data-fullcalendar/>
+        </head>
+
         <body className={`${inter.className} flex flex-col min-h-screen max-w-screen bg-gray-900`}>
         {/*<TopBanner
             message="🎉🎉 Anouncement Coffee-Stream is finally launched !! 🎉🎉 "

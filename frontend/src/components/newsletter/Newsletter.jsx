@@ -1,12 +1,22 @@
 'use client'
 import React, { useState } from 'react';
+import NewsletterApi from "#api/newsletter.js";
 
 const Newsletter = () => {
     const [email, setEmail] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Handle form submission here
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+
+            await NewsletterApi.create(formData);
+            setEmail('');
+        }
+        catch (error) {
+            console.error('An error occurred while submitting the form:', error);
+        }
     };
 
     return (

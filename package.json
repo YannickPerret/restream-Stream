@@ -1,0 +1,5 @@
+{
+	"dependencies": {
+		"@ybd-project/ytdl-core": "^6.0.1"
+	}
+}

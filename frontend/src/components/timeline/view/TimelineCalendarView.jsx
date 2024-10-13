@@ -1,158 +1,176 @@
-import React, { useState, useRef } from 'react';
-import { DateTime } from 'luxon';
-import { useTimelineStore } from '#stores/useTimelineStore';
-import { generateTimeSlots } from "#helpers/timeline";
+'use client'
+import React, { useState, useRef, useEffect } from 'react';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import TimelineCalendarSlotHours from "#components/timeline/view/TimelineCalendarSlotHours";
-import TimelineCalendarSlot from "#components/timeline/view/TimelineCalendarSlot";
-import TimelineCalendarTooltip from "#components/timeline/view/TimelineCalendarTooltip.jsx";
+import { DateTime } from 'luxon';
+import { useTimelineStore } from '#stores/useTimelineStore.js';
 
-const TimelineCalendarView = ({ locale }) => {
-    const { timelineItems } = useTimelineStore();
+export const CalendarView = () => {
+    const [currentDate, setCurrentDate] = useState(DateTime.now());
+    const { locale, newTimeline } = useTimelineStore();
     const calendarRef = useRef(null);
+    const [startDateTime, setStartDateTime] = useState("");
+    const [calendarEvents, setCalendarEvents] = useState([]);
 
-    const [currentWeek, setCurrentWeek] = useState(DateTime.now().startOf('week'));
-    const [tooltip, setTooltip] = useState({ visible: false, content: '', position: { x: 0, y: 0 } });
+    useEffect(() => {
+        if (calendarRef.current) {
+            const calendarApi = calendarRef.current.getApi();
+            calendarApi.setOption('locale', locale);
+        }
+    }, [locale]);
 
-    const timeSlots = generateTimeSlots();
-    const daysOfWeek = Array.from({ length: 7 }, (_, i) => currentWeek.plus({ days: i }));
-    console.log(daysOfWeek)
-    const startOfToday = DateTime.now().startOf('day');
+    useEffect(() => {
+        const initialTime = startDateTime ? DateTime.fromISO(startDateTime) : DateTime.now();
+        if (newTimeline.items.length > 0) {
+            updateTimelineItems(initialTime);
+        }
+    }, [startDateTime, newTimeline.items.length]);
 
-    const handlePreviousWeek = () => {
-        setCurrentWeek(currentWeek.minus({ weeks: 1 }));
+    const updateTimelineItems = (startTime) => {
+        const itemsWithCalculatedTimes = [];
+        let currentTime = startTime;
+
+        newTimeline.items.forEach(item => {
+            if (item.type === 'video') {
+                const endTime = currentTime.plus({ seconds: item.duration });
+
+                itemsWithCalculatedTimes.push({
+                    title: `${item.title}`,
+                    start: currentTime.toISO(),
+                    end: endTime.toISO(),
+                    extendedProps: { type: 'video', duration: item.duration }
+                });
+
+                currentTime = endTime.plus({ seconds: 1 });
+            }
+            else if (item.type === 'playlist' && item.videos && item.videos.length > 0) {
+                const playlistStartTime = currentTime;
+                const playlistEndTime = playlistStartTime.plus({ seconds: item.duration });
+
+                itemsWithCalculatedTimes.push({
+                    title: `${item.title} (Playlist)`,
+                    start: playlistStartTime.toISO(),
+                    end: playlistEndTime.toISO(),
+                    extendedProps: {
+                        type: 'playlist',
+                        videos: item.videos,
+                    },
+                    color: 'green',
+                });
+
+                currentTime = playlistEndTime.plus({ seconds: 1 });
+            }
+
+            else if (item.type === 'transition' && item.videos && item.videos.length > 0) {
+                const playlistStartTime = currentTime;
+                const playlistEndTime = playlistStartTime.plus({ seconds: item.duration });
+
+                itemsWithCalculatedTimes.push({
+                    title: `${item.title} (Playlist)`,
+                    start: playlistStartTime.toISO(),
+                    end: playlistEndTime.toISO(),
+                    extendedProps: {
+                        type: 'playlist',
+                        videos: item.videos,
+                    },
+                    color: 'violet',
+                });
+
+                currentTime = playlistEndTime.plus({ seconds: 1 });
+            }
+        });
+
+        setCalendarEvents(itemsWithCalculatedTimes);
+    };
+
+    const handlePrevWeek = () => {
+        if (calendarRef.current) {
+            calendarRef.current.getApi().prev();
+            setCurrentDate(calendarRef.current.getApi().getDate());
+        }
     };
 
     const handleNextWeek = () => {
-        setCurrentWeek(currentWeek.plus({ weeks: 1 }));
+        if (calendarRef.current) {
+            calendarRef.current.getApi().next();
+            setCurrentDate(calendarRef.current.getApi().getDate());
+        }
     };
 
-    let tooltipTimeout;
-
-    const handleMouseEnter = (event, item) => {
-        const boundingRect = event.target.getBoundingClientRect();
-        const x = boundingRect.left + window.scrollX;
-        const y = boundingRect.top + window.scrollY;
-
-        tooltipTimeout = setTimeout(() => {
-            setTooltip({
-                visible: true,
-                content: `${item.video.title} - ${item.video.duration} minutes`,
-                position: { x, y },
-            });
-        }, 2000);
+    const renderEventContent = (eventInfo) => {
+        return (
+            <div>
+                <b>{eventInfo.event.title}</b>
+                <br/>
+                <i>{eventInfo.timeText}</i>
+            </div>
+        );
     };
 
-    const handleMouseLeave = () => {
-        clearTimeout(tooltipTimeout);
-        setTooltip({ visible: false, content: '', position: { x: 0, y: 0 } });
+    const generatePlaylistTooltip = (videos) => {
+        return videos.map((video, index) => `• ${video.title} (${video.duration}s)`).join('\n');
     };
 
     return (
-        <div className="p-4 relative" ref={calendarRef}>
-            <div className="flex justify-between items-center mb-4">
-                <button onClick={handlePreviousWeek} className="p-2 bg-gray-700 text-white rounded-lg">
-                    <ArrowLeft/>
+        <div className="w-full p-4 relative">
+            {/* Header */}
+            <h1 className={"text-center text-4xl"}>Calendar preview (simulation)</h1>
+            <div className="flex items-center justify-between mb-4">
+                <button onClick={handlePrevWeek} className="p-2">
+                    <ArrowLeft className="h-6 w-6 text-gray-500"/>
                 </button>
-                <h2 className="text-xl font-bold text-white">
-                    {currentWeek.toFormat('MMMM dd, yyyy')} - {currentWeek.plus({days: 6}).toFormat('MMMM dd, yyyy')}
-                </h2>
-                <button onClick={handleNextWeek} className="p-2 bg-gray-700 text-white rounded-lg">
-                    <ArrowRight/>
-                </button>
-            </div>
-            <div className="grid grid-cols-8 gap-0 relative">
-                <TimelineCalendarSlotHours timeSlots={timeSlots} locale={locale}/>
-                {daysOfWeek.map((day, i) => (
-                    <TimelineCalendarSlot
-                        key={i}
-                        day={day.toJSDate()}
-                        timeSlots={timeSlots}
-                        isPastDay={day < startOfToday}
-                        isToday={day.toLocaleString(DateTime.DATE_SHORT, {locale}) === DateTime.now().toLocaleString(DateTime.DATE_SHORT, {locale})}
-                        now={DateTime.now().toJSDate()}
+                <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select start date and time:</label>
+                    <input
+                        type="datetime-local"
+                        className="border p-2 rounded-lg"
+                        value={startDateTime || ""}
+                        onChange={(e) => setStartDateTime(e.target.value)}
                     />
-                ))}
+                </div>
+                <button onClick={handleNextWeek} className="p-2">
+                    <ArrowRight className="h-6 w-6 text-gray-500"/>
+                </button>
             </div>
 
-            <div className="absolute top-0 left-0 right-0 bottom-0">
-                {timelineItems.map((item, i) => {
-                    const startTime = DateTime.fromISO(item.startTime);
-                    const endTime = DateTime.fromISO(item.endTime);
+            {/* FullCalendar Component */}
+            <FullCalendar
+                ref={calendarRef}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="timeGridWeek"
+                headerToolbar={{
+                    left: 'today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                }}
+                locale={locale}
+                events={calendarEvents}
+                nowIndicator={true}
+                selectable={true}
+                editable={false}
+                timeZone="UTC+2"
+                firstDay={1}
+                height={'auto'}
+                dayHeaderFormat={{ weekday: 'long', day: 'numeric' }}
+                eventContent={renderEventContent}
+                eventDidMount={(info) => {
+                    info.el.style.overflow = 'hidden';
+                    info.el.style.maxHeight = '100%';
+                    const { title, start, end, extendedProps } = info.event;
+                    let tooltipContent = `Title: ${title}\nStart: ${start}\nEnd: ${end}`;
 
-                    const dayIndex = daysOfWeek.findIndex(day => day.hasSame(startTime, 'day'));
-                    if (dayIndex === -1) return null;
-
-                    const minutesFromStartOfDay = startTime.diff(startTime.startOf('day'), 'minutes').minutes;
-                    const topPosition = `${(minutesFromStartOfDay / (24 * 60)) * 100}%`;
-
-                    const durationInMinutes = endTime.diff(startTime, 'minutes').minutes;
-
-                    if (!startTime.hasSame(endTime, 'day')) {
-                        const minutesUntilMidnight = startTime.endOf('day').diff(startTime, 'minutes').minutes;
-                        const heightFirstPart = `${(minutesUntilMidnight / (24 * 60)) * 100}%`;
-
-                        const minutesAfterMidnight = endTime.diff(endTime.startOf('day'), 'minutes').minutes;
-                        const heightSecondPart = `${(minutesAfterMidnight / (24 * 60)) * 100}%`;
-
-                        return (
-                            <React.Fragment key={i}>
-                                <div
-                                    className="absolute bg-blue-500 text-white rounded-lg p-2"
-                                    style={{
-                                        top: topPosition,
-                                        left: `calc(${(dayIndex + 1) / 8 * 100}% + 2px)`,
-                                        width: 'calc(1/8 * 100% - 4px)',
-                                        height: heightFirstPart
-                                    }}
-                                    onMouseEnter={(event) => handleMouseEnter(event, item)}
-                                    onMouseLeave={handleMouseLeave}
-                                >
-                                    {item.video.title}
-                                </div>
-                                {dayIndex + 1 < daysOfWeek.length && (
-                                    <div
-                                        className="absolute bg-blue-500 text-white rounded-lg p-2"
-                                        style={{
-                                            top: 'calc(0% + 50px)',
-                                            left: `calc(${(dayIndex + 2) / 8 * 100}% + 2px)`,
-                                            width: 'calc(1/8 * 100% - 4px)',
-                                            height: heightSecondPart
-                                        }}
-                                        onMouseEnter={(event) => handleMouseEnter(event, item)}
-                                        onMouseLeave={handleMouseLeave}
-                                    >
-                                        {item.video.title}
-                                    </div>
-                                )}
-                            </React.Fragment>
-                        );
-                    } else {
-                        return (
-                            <div
-                                key={i}
-                                className="absolute bg-blue-500 text-white rounded-lg p-2"
-                                style={{
-                                    top: topPosition,
-                                    left: `calc(${(dayIndex + 1) / 8 * 100}% + 2px)`,
-                                    width: 'calc(1/8 * 100% - 4px)',
-                                    height: `${(durationInMinutes / (24 * 60)) * 100}%`
-                                }}
-                                onMouseEnter={(event) => handleMouseEnter(event, item)}
-                                onMouseLeave={handleMouseLeave}
-                            >
-                                {item.video.title}
-                            </div>
-                        );
+                    // Si c'est une playlist, ajouter la liste des vidéos au tooltip
+                    if (extendedProps.type === 'playlist' && extendedProps.videos) {
+                        tooltipContent += `\nVideos:\n${generatePlaylistTooltip(extendedProps.videos)}`;
                     }
-                })}
-            </div>
 
-            {tooltip.visible && (
-                <TimelineCalendarTooltip content={tooltip.content} position={tooltip.position}/>
-            )}
+                    // Ajoute un tooltip natif
+                    info.el.setAttribute('title', tooltipContent);
+                }}
+            />
         </div>
     );
 };
-
-export default TimelineCalendarView;

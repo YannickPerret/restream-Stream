@@ -20,7 +20,6 @@ export default function StreamShowPage() {
     const [subscription, setSubscription] = useState(null);
     const stream = useStreamStore.use.selectedStream();
     const [selectedStream, setSelectedStream] = useState(null);
-    const [analytics, setAnalytics] = useState(null);
 
     // References for charts
     const bitrateChartRef = useRef(null);
@@ -40,12 +39,15 @@ export default function StreamShowPage() {
                 const sub = transmit.subscription(`streams/${stream.id}/currentVideo`);
                 const streamAnalytics = transmit.subscription(`streams/${stream.id}/analytics`);
 
+                console.log(streamAnalytics)
+
                 await sub.create();
                 setSubscription(sub);
                 await streamAnalytics.create();
 
                 if (stream.status === 'active') {
                     streamAnalytics.onMessage(({ stats }) => {
+                        console.log(stats);
                         updateCharts(stats);
                     });
                 }
