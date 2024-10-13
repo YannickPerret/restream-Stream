@@ -3,6 +3,9 @@ import * as fs from 'node:fs'
 import puppeteer from 'puppeteer'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn } from 'node:child_process'
+import redis from "@adonisjs/redis/services/main";
+import pidusage from 'pidusage'
+import si from 'systeminformation'
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -14,6 +17,7 @@ const BASE_URLS: Record<string, string> = {
 
 export default class FFMPEGStream {
   private instance: any
+  private analyticsInterval: NodeJS.Timeout | null = null
   constructor(
     private channels: { type: string; streamKey: string }[],
     private timelinePath: string,
@@ -192,17 +196,6 @@ export default class FFMPEGStream {
     })
   }
 
-  /*stopStream(pid: number): void {
-    if (this.instance && pid > 0) {
-      logger.info(`Stopping FFmpeg with PID: ${pid}`)
-      this.instance.kill('SIGKILL')
-    } else {
-      logger.error('Cannot stop FFmpeg: instance is undefined or invalid, force stopping process')
-      if (pid > 0) process.kill(pid, 'SIGKILL')
-    }
-    this.removeFifos()
-  }*/
-
   private handleProcessOutputs(instance: any)  {
     instance.stderr.on('data', (data: any) => {
       const output = data.toString()
@@ -224,5 +217,39 @@ export default class FFMPEGStream {
       logger.info(`FFmpeg process closed with code: ${code}`)
       this.removeFifos()
     })
+  }
+
+  sendAnalytics = async (streamId: string, pid: number) => {
+    this.analyticsInterval = setInterval(async () => {
+      try {
+        const stats = await pidusage(pid);
+        const networkStats = await si.networkStats();
+
+        const inputBytes = networkStats[0]?.rx_bytes || 0; // Octets reçus
+        const outputBytes = networkStats[0]?.tx_bytes || 0; // Octets envoyés
+
+        // Conversion des octets en Mbps
+        const inputMbps = (inputBytes * 8) / 1000000; // en Mbps
+        const outputMbps = (outputBytes * 8) / 1000000; // en Mbps
+
+        const analyticsData = {
+          cpu: stats.cpu,
+          memory: stats.memory / 1024 / 1024,
+          bitrate: this.bitrate,
+          network: {
+            input: inputMbps,
+            output: outputMbps,
+          },
+        };
+
+        // Publier les analytics sur Redis
+        await redis.publish(`stream:${streamId}:analytics`, JSON.stringify({ streamId, analyticsData }));
+
+        console.log(`Analytics sent for stream ${streamId}`);
+      } catch (err) {
+        console.error(`Failed to send analytics for stream ${streamId}:`, err);
+        clearInterval(this.analyticsInterval!);
+      }
+    }, 8000); // Envoyer les analytics toutes les 8 secondes
   }
 }
