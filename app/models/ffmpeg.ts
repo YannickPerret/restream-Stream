@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import redis from "@adonisjs/redis/services/main";
 import pidusage from 'pidusage'
 import si from 'systeminformation'
+import transmit from "@adonisjs/transmit/services/main";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -243,7 +244,9 @@ export default class FFMPEGStream {
         };
 
         // Publier les analytics sur Redis
-        await redis.publish(`stream:${streamId}:analytics`, JSON.stringify({ streamId, analyticsData }));
+       // await redis.publish(`stream:${streamId}:analytics`, JSON.stringify({ streamId, analyticsData }));
+        console.log(streamId, analyticsData)
+        transmit.broadcast(`streams/${streamId}/analytics`, { stats: analyticsData })
 
         console.log(`Analytics sent for stream ${streamId}`);
       } catch (err) {
