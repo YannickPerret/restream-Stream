@@ -3,7 +3,11 @@ import FFMPEGStream from '#models/ffmpeg'
 import redis from "@adonisjs/redis/services/main";
 
 export default class StreamProvider {
-  constructor(protected app: ApplicationService) {}
+  private streams: Map<string, FFMPEGStream> = new Map(); // Stocker les instances de streams
+
+  constructor(protected app: ApplicationService) {
+
+  }
 
   /**
    * Register bindings to the container
@@ -41,27 +45,36 @@ export default class StreamProvider {
       );
 
       const pid = await stream.startStream();
+      this.streams.set(streamData.id, stream);
 
-      // Stocker le PID dans Redis pour ce stream spécifique
       await redis.set(`stream:${streamData.id}:pid`, pid);
       await stream.sendAnalytics(streamData.id, pid);
     });
 
-   // Écouter le canal pour arrêter un stream spécifique
     redis.psubscribe('stream:*:stop', async (pattern, message) => {
-      const { pid } = JSON.parse(message);
+      const { id } = JSON.parse(message);
+      const pid = await redis.get(`stream:${id}:pid`);
 
       if (pid) {
-        try {
-          process.kill(pid, 'SIGKILL');
-          console.log(`Stream with PID ${pid} successfully stopped.`);
-        } catch (error) {
-          if (error.code === 'ESRCH') {
-            console.error(`No process found with PID ${pid}.`);
-          } else {
-            console.error(`Error stopping process with PID ${pid}: ${error.message}`);
+        const stream = this.streams.get(id);
+        if (stream) {
+          try {
+            await stream.stopStream(parseInt(pid));
+            this.streams.delete(id);
+
+            console.log(`Stream with PID ${pid} successfully stopped.`);
+          } catch (error) {
+            if (error.code === 'ESRCH') {
+              console.error(`No process found with PID ${pid}.`);
+            } else {
+              console.error(`Error stopping process with PID ${pid}: ${error.message}`);
+            }
           }
+        } else {
+          console.error(`No active stream found for ID ${id}.`);
         }
+      } else {
+        console.error(`No PID found for stream ID ${id}.`);
       }
     });
   }

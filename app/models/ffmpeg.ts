@@ -197,29 +197,6 @@ export default class FFMPEGStream {
     })
   }
 
-  private handleProcessOutputs(instance: any)  {
-    instance.stderr.on('data', (data: any) => {
-      const output = data.toString()
-      logger.info(output)
-
-      // Tentative de capturer le bitrate à partir des logs FFmpeg
-      /* const bitrateMatch = output.match(/bitrate=\s*(\d+\.?\d*)\s*kbits\/s/)
-       if (bitrateMatch) {
-         const bitrate = Number.parseFloat(bitrateMatch[1])
-         onBitrateUpdate(bitrate)
-       }*/
-    })
-
-    instance.on('error', (error: any) => {
-      logger.error(error)
-    })
-
-    instance.on('close', (code: any) => {
-      logger.info(`FFmpeg process closed with code: ${code}`)
-      this.removeFifos()
-    })
-  }
-
   sendAnalytics = async (streamId: string, pid: number) => {
     this.analyticsInterval = setInterval(async () => {
       try {
@@ -248,6 +225,16 @@ export default class FFMPEGStream {
         console.error(`Failed to send analytics for stream ${streamId}:`, err);
         clearInterval(this.analyticsInterval!);
       }
-    }, 8000); // Envoyer les analytics toutes les 8 secondes
+    }, 8000);
+  }
+
+  stopStream = async (pid: number) => {
+    if (this.instance) {
+      process.kill(pid, 'SIGKILL');
+      this.removeFifos();
+    }
+    if (this.analyticsInterval) {
+      clearInterval(this.analyticsInterval);
+    }
   }
 }
