@@ -243,12 +243,7 @@ export default class FFMPEGStream {
           },
         };
 
-        // Publier les analytics sur Redis
-       // await redis.publish(`stream:${streamId}:analytics`, JSON.stringify({ streamId, analyticsData }));
-        console.log(streamId, analyticsData)
         transmit.broadcast(`streams/${streamId}/analytics`, { stats: analyticsData })
-
-        console.log(`Analytics sent for stream ${streamId}`);
       } catch (err) {
         console.error(`Failed to send analytics for stream ${streamId}:`, err);
         clearInterval(this.analyticsInterval!);
