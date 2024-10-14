@@ -77,7 +77,7 @@ export default class FFMPEGStream {
         filterComplex.push(`[v1][1:v]overlay=(main_w-overlay_w)/2:10[fv]`);
       }
     } else {
-      filterComplex.push(`[v1]null[fv]`);
+      filterComplex.push(`[v1]copy[fv]`); // Just copy the output if no watermark
     }
 
     const encodingParameters = [
@@ -122,6 +122,7 @@ export default class FFMPEGStream {
 
     return Number.parseInt(this.instance.pid.toString(), 10);
   }
+
 
 
   private async startBrowserCapture() {
