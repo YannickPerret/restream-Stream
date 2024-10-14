@@ -6,7 +6,6 @@ import { spawn } from 'node:child_process'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
-import app from "@adonisjs/core/services/app";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -51,40 +50,21 @@ export default class FFMPEGStream {
 
     let filterComplex: string[] = [];
 
-    // Start browser capture if enabled
     if (this.enableBrowser) {
       await this.startBrowserCapture();
-      inputParameters.push('-i', SCREENSHOT_FIFO); // Browser input
+      inputParameters.push('-i', SCREENSHOT_FIFO);
       filterComplex.push(
-        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24[ckout];`,
+        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
         `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
       );
     } else {
       filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`);
     }
 
-    // Ajouter le watermark si demandé
-    if (this.showWatermark) {
-      const watermarkPath = app.publicPath('watermark/watermark.webp');
-      inputParameters.push('-i', watermarkPath); // Watermark input
-
-      // Overlay watermark au centre haut avec une marge de 10 pixels
-      if (this.enableBrowser) {
-        // Si browser enabled, watermark sera l'input [2:v]
-        filterComplex.push(`[v1][2:v]overlay=(main_w-overlay_w)/2:10[fv]`);
-      } else {
-        // Si browser disabled, watermark sera l'input [1:v]
-        filterComplex.push(`[v1][1:v]overlay=(main_w-overlay_w)/2:10[fv]`);
-      }
-    } else {
-      filterComplex.push(`[v1]`); // Just use the output [v1] directly
-    }
-
     const encodingParameters = [
       '-r', this.fps.toString(),
       '-filter_complex', filterComplex.join(''),
-      '-map', '[v1]', // Use [v1] or [fv] based on the condition
-      '-map', '0:a?',
+      '-map', '[v1]', '-map', '0:a?',
       '-s', this.resolution,
       '-c:a', 'aac', '-c:v', 'h264_rkmpp',
       '-b:v', this.bitrate,
@@ -93,7 +73,6 @@ export default class FFMPEGStream {
       '-flags', 'low_delay'
     ];
 
-    // Sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
       const channel = this.channels[0];
       const baseUrl = BASE_URLS[channel.type];
@@ -122,9 +101,6 @@ export default class FFMPEGStream {
 
     return Number.parseInt(this.instance.pid.toString(), 10);
   }
-
-
-
 
   private async startBrowserCapture() {
     const minimalArgs = [
