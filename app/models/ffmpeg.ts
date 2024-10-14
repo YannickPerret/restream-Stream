@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
+import app from "@adonisjs/core/services/app";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -29,7 +30,8 @@ export default class FFMPEGStream {
     private bitrate: string,
     private resolution: string,
     private fps: number,
-    private loop: boolean
+    private loop: boolean,
+    private showWatermark: boolean,
   ) {}
 
   async startStream() {
@@ -49,21 +51,28 @@ export default class FFMPEGStream {
 
     let filterComplex: string[] = [];
 
+    if (this.showWatermark) {
+      const watermarkPath = app.publicPath('watermark/watermark.webp');
+      inputParameters.push('-i', watermarkPath);
+      filterComplex.push(`[0:v][1:v]overlay=(main_w-overlay_w)/2:10[fv]`);
+    } else {
+      filterComplex.push(`[0:v]fps=fps=${this.fps}[fv]`);
+    }
+
     if (this.enableBrowser) {
       await this.startBrowserCapture();
       inputParameters.push('-i', SCREENSHOT_FIFO);
       filterComplex.push(
         `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
-        `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
+        `[fv][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
       );
-    } else {
-      filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`);
     }
 
     const encodingParameters = [
       '-r', this.fps.toString(),
       '-filter_complex', filterComplex.join(''),
-      '-map', '[v1]', '-map', '0:a?',
+      '-map', '[v1]',
+      '-map', '0:a?',
       '-s', this.resolution,
       '-c:a', 'aac', '-c:v', 'h264_rkmpp',
       '-b:v', this.bitrate,
