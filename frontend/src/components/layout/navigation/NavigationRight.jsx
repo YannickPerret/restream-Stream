@@ -25,14 +25,14 @@ export const NavigationRight = () => {
             <div className="flex flex-col md:flex-row">
                 <Link
                     href="/auth/login"
-                    className="text-white border border-white rounded-lg px-4 py-2 mb-4 md:mb-0 md:mr-4 hover:bg-white hover:text-black transition-all duration-300"
+                    className="no-underline text-white bg-sky-700 rounded-lg px-4 py-2 mb-4 md:mb-0 md:mr-4 hover:bg-sky-800 transition-all duration-300"
                 >
                     <LogIn className="inline-block mr-2" /> Login
                 </Link>
 
                 <Link
                     href="/auth/register"
-                    className="text-white bg-purple-600 rounded-lg px-4 py-2 hover:bg-purple-700 transition-all duration-300"
+                    className="no-underline text-white bg-purple-600 rounded-lg px-4 py-2 hover:bg-purple-700 transition-all duration-300"
                 >
                     <UserPlus className="inline-block mr-2" /> Register
                 </Link>

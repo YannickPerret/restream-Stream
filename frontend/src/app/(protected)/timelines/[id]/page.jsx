@@ -5,6 +5,7 @@ import {ArrowLeft} from "lucide-react";
 import TimelinesShowView from "@/views/timelines/show.jsx";
 import {useEffect} from "react";
 import {useParams} from "next/navigation";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 export default function TimelineShowPage() {
     const getTimeline = useTimelineStore.use.fetchTimelineById();
@@ -19,18 +20,12 @@ export default function TimelineShowPage() {
 
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-slate-500">
-                <header className="container mx-auto">
-                    <h1 className="text-3xl text-white py-4">Show Timeline Information</h1>
-                    <hr className="border-b-1 border-blueGray-300 pb-6"/>
-                    <div>
-                        <Link href={"/timelines"} className={"flex"}><ArrowLeft />&nbsp; Back to Timeline</Link>
-                    </div>
-                </header>
-
+        <Panel title="Timeline" className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Timelines', href: '/timelines' },
+            { label: 'Timeline', href: `/timelines/${id}` },
+        ]}>
                 <TimelinesShowView />
-            </div>
-        </section>
+        </Panel>
     )
 }

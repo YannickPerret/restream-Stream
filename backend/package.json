@@ -71,6 +71,7 @@
     "@nulix/adonis-pdf": "^0.5.1",
     "@rlanz/ally-twitch": "^0.1.2",
     "@vinejs/vine": "^2.1.0",
+    "@ybd-project/ytdl-core": "^6.0.3",
     "adonisjs-scheduler": "^1.0.5",
     "aws-sdk": "^2.1691.0",
     "edge.js": "^6.0.2",

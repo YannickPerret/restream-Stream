@@ -1,10 +1,11 @@
 import React from 'react';
 
-const TextArea = ({ label, placeholder, value, onChange }) => {
+const TextArea = ({ label, placeholder, value, onChange, name }) => {
     return (
         <div className="flex flex-col">
             <label className="text-sm text-gray-400 mb-1">{label}</label>
             <textarea
+                name={name}
                 placeholder={placeholder}
                 value={value}
                 onChange={onChange}

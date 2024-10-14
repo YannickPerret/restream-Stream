@@ -12,6 +12,7 @@ import useCheckoutStore from '#stores/useCheckoutStore.js';
 import OrderApi from '#api/order.js';
 import PriceToggle from '#components/priceList/PriceToggle.jsx';
 import { CheckoutForm } from '#components/shop/CheckoutForm.jsx';
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY);
 
@@ -119,6 +120,13 @@ const CheckoutPage = () => {
     return (
         <section className="flex flex-col h-full rounded-2xl justify-center shadow-2xl pt-44 bg-cover bg-no-repeat bg-center" style={{ backgroundImage: "url('/hero_background.svg')" }}>
             <div className="bg-gray-900 text-white p-8 rounded-t-lg">
+                <Breadcrumb
+                    paths={[
+                        { label: 'Home', href: '/' },
+                        //{ label: 'Shop', href: '/shop' },
+                        { label: 'Checkout', href: '/shop/checkout' },
+                    ]}
+                />
                 <div className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">Payment Checkout</h1>
                 </div>

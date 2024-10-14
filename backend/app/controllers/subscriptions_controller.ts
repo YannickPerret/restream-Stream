@@ -48,6 +48,7 @@ export default class SubscriptionsController {
       productId,
       status,
       expiresAt: formattedExpiresAt,
+      nextBillingDate: formattedExpiresAt,
     })
 
     return response.created({
@@ -70,46 +71,53 @@ export default class SubscriptionsController {
       .where('id', params.id)
       .firstOrFail()
 
+    console.log(subscription)
+
     return response.json(subscription)
   }
 
   async update({ params, request, response }: HttpContext) {
-    const { id } = params
-    const { title, features } = request.only(['title', 'features'])
+    const { id } = params;
+    const { title, features } = request.only(['title', 'features']);
 
+    console.log(features);
     // Récupérer le produit
-    const product = await Product.findOrFail(id)
+    const product = await Product.findOrFail(id);
 
     // Si nécessaire, mettre à jour le titre du produit
     if (title) {
-      product.title = title
+      product.title = title;
     }
 
     // Sauvegarder le produit
-    await product.save()
+    await product.save();
 
     // Gestion des features
     for (const featureData of features) {
-      let feature = await Feature.findBy('name', featureData.name)
+      let feature = await Feature.findBy('name', featureData.name);
 
       if (!feature) {
         // Créer la feature si elle n'existe pas
-        feature = await Feature.create({ name: featureData.name })
+        feature = await Feature.create({ name: featureData.name });
       }
 
       // D'abord, dissocier toutes les anciennes valeurs pour cette feature pour éviter les duplications
-      await product.related('features').detach([feature.id])
+      await product.related('features').detach([feature.id]);
+
+      // Assurer que featureData.value est bien un tableau
+      const values = Array.isArray(featureData.value) ? featureData.value : [featureData.value];
 
       // Ajouter chaque valeur individuellement dans product_features
-      for (const value of featureData.value) {
+      for (const value of values) {
         await product.related('features').attach({
           [feature.id]: { value },
-        })
+        });
       }
     }
 
-    return response.json({ success: true, product })
+    return response.json({ success: true, product });
   }
+
 
   async upgrade({ request, response, auth }: HttpContext) {
     const user = await auth.authenticate();

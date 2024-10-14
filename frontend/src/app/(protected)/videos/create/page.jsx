@@ -6,6 +6,7 @@ import Input from "#components/_forms/Input";
 import FileUpload from "#components/_forms/FileUpload";
 import Button from "#components/_forms/Button";
 import { VideoApi } from "#api/video.js";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 export default function VideoCreatePage() {
     const [videoUrl, setVideoUrl] = useState('');
@@ -113,12 +114,11 @@ export default function VideoCreatePage() {
     };
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
-                <div className="container mx-auto">
-                    <h1 className="text-3xl text-white py-4">Create a new Video</h1>
-                </div>
-                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+        <Panel title={"Create Video"} className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Videos', href: '/videos' },
+            { label: 'Create', href: '/videos/create' },
+        ]}>
 
                 <div className="p-6">
                     <FormGroup title="Stream URL (YouTube or Twitch)" type={"column"}>
@@ -158,7 +158,6 @@ export default function VideoCreatePage() {
                         ))}
                     </div>
                 </div>
-            </div>
-        </section>
+        </Panel>
     );
 }

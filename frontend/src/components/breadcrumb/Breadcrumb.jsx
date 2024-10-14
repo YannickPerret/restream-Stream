@@ -12,10 +12,8 @@ const Breadcrumb = ({ paths }) => {
                             <ChevronRight className="w-4 h-4 mx-1 text-gray-400" />
                         )}
                         {index < paths.length - 1 ? (
-                            <Link href={path.href}>
-                                <a className="hover:text-indigo-600 transition-colors duration-200">
-                                    {path.label}
-                                </a>
+                            <Link href={path.href} className="hover:text-indigo-600 transition-colors duration-200">
+                                {path.label}
                             </Link>
                         ) : (
                             <span className="text-gray-500">{path.label}</span>

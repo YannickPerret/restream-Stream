@@ -9,9 +9,6 @@ const HeroSection = () => {
 
             {/* Texte du Hero */}
             <div className="z-10 max-w-6xl mx-auto">
-                <span className="inline-block bg-purple-800 text-purple-200 rounded-full px-3 py-1 text-sm font-semibold mb-4">
-                    What's new
-                </span>
                 <h1 className="text-6xlxl md:text-7xl font-bold text-white">
                     Stream When You're Offline & Maximize Your Reach!
                 </h1>
@@ -22,8 +19,8 @@ const HeroSection = () => {
                     <Link href={"/auth/register"} className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded no-underline">
                         Start Earning Now
                     </Link>
-                    <Link href={"/#features"} className="bg-transparent border border-gray-700 text-gray-300 hover:text-white font-semibold py-3 px-6 rounded">
-                        Learn more →
+                    <Link href={"/#informations"} className="no-underline border border-gray-700 text-gray-300 hover:text-white font-semibold py-3 px-6 rounded bg-sky-600">
+                        Learn more
                     </Link>
                 </div>
             </div>

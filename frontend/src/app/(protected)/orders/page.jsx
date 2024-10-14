@@ -88,29 +88,34 @@ export default function OrdersIndexPage() {
     }
 
     return (
-        <Panel title="Your Orders" darkMode={true}>
-                <>
-                    <h2 className="text-white text-xl mb-4">Active Orders</h2>
-                    <Table
-                        columns={activeColumns}
-                        data={activeOrders}
-                        darkMode={false}
-                    />
-                </>
+        <Panel title="Your Orders" darkMode={true} breadcrumbPath={[
+            {href: '/', label: 'Home'},
+            {label: 'Orders'}
+        ]}>
 
-            {completedOrders.length > 0 && (
+            <h2 className="text-white text-xl mb-4">Active Orders</h2>
+            {activeOrders.length === 0 && completedOrders.length === 0 ? (
+                <p className="text-center text-white">No orders found.</p>
+            ) : (
+                <Table
+                    columns={activeColumns}
+                    data={activeOrders}
+                    darkMode={false}
+                />)}
+
+
+            <h2 className="text-white text-xl mt-8 mb-4">Completed / Cancelled Orders</h2>
+
+            {completedOrders.length > 0 ? (
                 <>
-                    <h2 className="text-white text-xl mt-8 mb-4">Completed / Cancelled Orders</h2>
                     <Table
                         columns={completedColumns}
                         data={completedOrders}
                         darkMode={false}
                     />
                 </>
-            )}
-
-            {activeOrders.length === 0 && completedOrders.length === 0 && (
-                <p className="text-center text-white">No orders found.</p>
+            ): (
+                <p className="text-center text-white">No completed orders found.</p>
             )}
         </Panel>
     );

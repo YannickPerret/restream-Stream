@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePlaylistStore } from "#stores/usePlaylistStore";
 import PlaylistIndexView from "@/views/playlists";
 import Link from "next/link";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 export default function PlaylistIndexPage() {
     const fetchPlaylists = usePlaylistStore.use.fetchPlaylists();
@@ -16,20 +17,12 @@ export default function PlaylistIndexPage() {
     }, [fetchPlaylists]);
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
-                <header className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-bold text-white">Your Playlists</h1>
-                    <Link href="/playlists/create">
-                        <button
-                            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            Add New Playlist
-                        </button>
-                    </Link>
-                </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+        <Panel title="Playlists" className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Playlists', href: '/playlists' },
+        ]} buttonLabel={'Add New Playlist'} buttonLink={'/playlists/create'}>
+
                 <PlaylistIndexView/>
-            </div>
-        </section>
+        </Panel>
     );
 }

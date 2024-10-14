@@ -5,7 +5,8 @@ import InputCalendar from '#components/_forms/InputCalendar'; // Custom InputCal
 import Dropdown from '#components/_forms/Dropdown';
 import { StreamScheduleApi } from '#api/streamSchedule.js';
 import { useStreamStore } from '#stores/useStreamStore.js';
-import { DateTime } from 'luxon'; // Import Luxon
+import { DateTime } from 'luxon';
+import Panel from "#components/layout/panel/Panel.jsx"; // Import Luxon
 
 const ScheduleCreatePage = () => {
     const [streamId, setStreamId] = useState('');
@@ -22,6 +23,7 @@ const ScheduleCreatePage = () => {
         const loadStreams = async () => {
             try {
                 const fetchedStreams = await fetchStreams();
+                console.log(fetchedStreams);
                 if (fetchedStreams.length > 0 && !streamId) {
                     setStreamId(fetchedStreams[0].id);
                 }
@@ -68,20 +70,19 @@ const ScheduleCreatePage = () => {
     };
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
-                <div className="container mx-auto">
-                    <h1 className="text-3xl text-white py-4">Create a New Schedule</h1>
-                </div>
-                <hr className="border-b-1 border-blueGray-300 pb-6" />
+        <Panel title="Create a New Schedule" className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'streams', href: '/streams' },
+            { label: 'Schedules', href: '/streams/schedules' },
+            { label: 'Create Schedule', href: '/streams/schedules/create' },
+        ]}>
 
-                <div className="p-6">
                     <form onSubmit={handleSubmit}>
 
                         <Dropdown
                             label="Stream"
                             options={streams.map((stream) => ({
-                                label: `${stream.name}, ${stream.provider.name}`,
+                                label: `${stream.name}, ${stream.providers.map((provider) => provider.name).join(', ')}`,
                                 value: stream.id.toString(), // Ensure value is a string for the Dropdown
                             }))}
                             value={streamId ? streamId.toString() : ''} // Convert to string for Dropdown
@@ -129,9 +130,7 @@ const ScheduleCreatePage = () => {
                             <Button label="Create Schedule" type="submit" color="blue" loading={loading} />
                         </div>
                     </form>
-                </div>
-            </div>
-        </section>
+                </Panel>
     );
 };
 

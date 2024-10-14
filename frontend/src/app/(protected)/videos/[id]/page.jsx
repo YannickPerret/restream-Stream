@@ -8,6 +8,7 @@ import {ArrowLeft} from "lucide-react";
 import VideosShowView from "@/views/videos/show";
 import StreamsEditView from "@/views/streams/edit.jsx";
 import VideosEditView from "@/views/videos/edit.jsx";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 export default function VideoShowPage() {
     const getVideo = useVideoStore.use.fetchVideoById();
@@ -24,7 +25,12 @@ export default function VideoShowPage() {
     }, [id]);
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
+        <Panel title="Show Video Information" className="p-6" darkMode={true} breadcrumbPath={[
+            {label: 'Home', href: '/'},
+            {label: 'Videos', href: '/videos'},
+            {label: 'Show Video Information', href: `/videos/${id}`}
+        ]}>
+
             {selectedVideo && (
                 <VideosEditView
                     videoToEdit={selectedVideo}
@@ -47,6 +53,6 @@ export default function VideoShowPage() {
 
                 <VideosShowView/>
             </div>
-        </section>
+        </Panel>
     )
 }

@@ -6,6 +6,7 @@ import Table from "#components/table/Table";
 import Image from "next/image";
 import Link from "next/link";
 import Button from "#components/_forms/Button.jsx";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const SubscriptionPage = () => {
     const { subscriptions, fetchSubscriptions, isLoading, error } = useSubscriptionStore();
@@ -47,12 +48,9 @@ const SubscriptionPage = () => {
     }));
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
-                <header className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-bold text-white">Subscriptions</h1>
-                </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6"/>
+        <Panel title="Subscriptions" className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Subscriptions', href: '/subscriptions' }]} buttonLabel={'Add New Subscription'} buttonLink={'/subscriptions/create'} >
                 {isLoading ? (
                     <div>Loading...</div>
                 ) : error ? (
@@ -60,8 +58,7 @@ const SubscriptionPage = () => {
                 ) : (
                     <Table columns={columns} data={data}/>
                 )}
-            </div>
-        </section>
+        </Panel>
     );
 };
 

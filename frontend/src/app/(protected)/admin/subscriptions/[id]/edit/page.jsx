@@ -8,6 +8,13 @@ import FormGroup from '#components/_forms/FormGroup';
 import Input from '#components/_forms/Input';
 import Label from '#components/_forms/Label';
 import { useSubscriptionStore } from "#stores/useSubscriptionStore.js";
+import Panel from "#components/layout/panel/Panel.jsx";
+
+// Fonction pour convertir une date de format 'dd/MM/yyyy' en 'yyyy-MM-dd'
+const convertToISODate = (dateStr) => {
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month}-${day}`; // Reformatage en ISO
+};
 
 const SubscriptionEditPage = () => {
     const router = useRouter();
@@ -26,17 +33,21 @@ const SubscriptionEditPage = () => {
     useEffect(() => {
         const loadSubscriptionData = async () => {
             const subscription = await fetchSubscriptionById(id);
+            console.log(subscription);
             if (subscription) {
                 setSelectedUser(subscription.user);
                 setSelectedProduct(subscription.product);
                 setStatus(subscription.status);
 
-                // Format the expiresAt date (assumes format like '9/5/2025')
+                // Conversion et formatage des dates avant de les utiliser
                 if (subscription.expiresAt) {
-                    const formattedDate = new Date(subscription.expiresAt).toISOString().split('T')[0];
-                    setExpiresAt(formattedDate); // Set formatted date for input
+                    const formattedExpiresAt = convertToISODate(subscription.expiresAt);
+                    setExpiresAt(formattedExpiresAt); // Formater la date pour l'input
                 }
-                setPurchaseDate(new Date(subscription.createdAt).toISOString().split('T')[0]);
+                if (subscription.createdAt) {
+                    const formattedCreatedAt = convertToISODate(subscription.createdAt);
+                    setPurchaseDate(formattedCreatedAt); // Formater la date pour l'input
+                }
 
                 setFeatures(subscription.features || []);
             }
@@ -60,7 +71,7 @@ const SubscriptionEditPage = () => {
             productId: selectedProduct.id,
             status,
             expiresAt,
-            features, // Include updated features
+            features, // Inclure les fonctionnalités mises à jour
             createdAt: purchaseDate,
         };
 
@@ -74,13 +85,13 @@ const SubscriptionEditPage = () => {
     };
 
     const handleCancelUserEdit = () => {
-        setSelectedUser(selectedSubscription?.user); // Revert to original user
-        setIsEditingUser(false); // Hide search component
+        setSelectedUser(selectedSubscription?.user); // Revenir à l'utilisateur original
+        setIsEditingUser(false); // Masquer le composant de recherche
     };
 
     const handleCancelProductEdit = () => {
-        setSelectedProduct(selectedSubscription?.product); // Revert to original product
-        setIsEditingProduct(false); // Hide search component
+        setSelectedProduct(selectedSubscription?.product); // Revenir au produit original
+        setIsEditingProduct(false); // Masquer le composant de recherche
     };
 
     const handleFeatureChange = (index, field, value) => {
@@ -90,7 +101,7 @@ const SubscriptionEditPage = () => {
     };
 
     const addFeature = () => {
-        setFeatures([...features, { name: '', value: '' }]);
+        setFeatures((prevFeatures) => Array.isArray(prevFeatures) ? [...prevFeatures, { name: '', value: '' }] : [{ name: '', value: '' }]);
     };
 
     const removeFeature = (index) => {
@@ -100,12 +111,16 @@ const SubscriptionEditPage = () => {
     };
 
     if (!selectedSubscription) {
-        return <div>Loading...</div>; // Show loading while subscription is being fetched
+        return <div>Loading...</div>;
     }
 
     return (
-        <div className="container mx-auto py-12 text-white">
-            <h1 className="text-3xl font-bold mb-6">Edit Subscription</h1>
+        <Panel title="Edit Subscription" darkMode={true} breadcrumbPath={[
+            {href: '/', label: 'Home'},
+            {href: '/admin', label: 'Admin'},
+            {href: '/admin/subscriptions', label: 'Subscriptions'},
+            {label: 'Edit'}
+        ]}>
             <Form onSubmit={handleSubmit}>
                 <FormGroup title="User">
                     {!isEditingUser ? (
@@ -183,35 +198,40 @@ const SubscriptionEditPage = () => {
 
                 {/* Features Section */}
                 <FormGroup title="Subscription Features">
-                    {features.map((feature, index) => (
-                        <div key={index} className="mb-4">
-                            <Label htmlFor={`feature-${index}-name`}>Feature Name</Label>
-                            <Input
-                                type="text"
-                                name={`feature-${index}-name`}
-                                value={feature.name}
-                                onChange={(e) => handleFeatureChange(index, 'name', e.target.value)}
-                                required
-                            />
-                            <Label htmlFor={`feature-${index}-value`}>Feature Value</Label>
-                            <Input
-                                type="text"
-                                name={`feature-${index}-value`}
-                                value={feature.value}
-                                onChange={(e) => handleFeatureChange(index, 'value', e.target.value)}
-                                required
-                            />
-                            <Button label="Remove Feature" onClick={() => removeFeature(index)} />
-                        </div>
-                    ))}
+                    {Array.isArray(features) && features.length > 0 ? (
+                        features.map((feature, index) => (
+                            <div key={index} className="mb-4">
+                                <Label htmlFor={`feature-${index}-name`}>Feature Name</Label>
+                                <Input
+                                    type="text"
+                                    name={`feature-${index}-name`}
+                                    value={feature.name}
+                                    onChange={(e) => handleFeatureChange(index, 'name', e.target.value)}
+                                    required
+                                />
+                                <Label htmlFor={`feature-${index}-value`}>Feature Value</Label>
+                                <Input
+                                    type="text"
+                                    name={`feature-${index}-value`}
+                                    value={feature.value}
+                                    onChange={(e) => handleFeatureChange(index, 'value', e.target.value)}
+                                    required
+                                />
+                                <Button label="Remove Feature" onClick={() => removeFeature(index)} />
+                            </div>
+                        ))
+                    ) : (
+                        <p>No features available</p>
+                    )}
                     <Button label="Add Feature" onClick={addFeature} />
                 </FormGroup>
 
+
                 <div className="flex justify-end mt-6">
-                    <Button label="Update Subscription" type="submit" />
+                    <Button label="Update Subscription" type="submit" color={'sky'} />
                 </div>
             </Form>
-        </div>
+        </Panel>
     );
 };
 

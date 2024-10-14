@@ -4,35 +4,35 @@ import Input from '#components/_forms/Input';
 import Textarea from '#components/_forms/TextArea';
 import Button from '#components/_forms/Button';
 import Form from '#components/_forms/Form';
-import FormGroup from '#components/_forms/FormGroup';
 import Image from 'next/image';
+import ContactApi from "#api/contact.js";
 
 const ContactForm = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        subject: '',
-        message: '',
-    });
-
+    // États individuels pour chaque champ d'entrée
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [subject, setSubject] = useState('');
+    const [message, setMessage] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Logique d'envoi des données du formulaire ici
-        setSuccessMessage('Thank you for contacting us! We will get back to you soon.');
-        // Réinitialiser le formulaire
-        setFormData({
-            name: '',
-            email: '',
-            subject: '',
-            message: '',
-        });
+
+        const formData = { name, email, subject, message };
+
+        try {
+            const contactApi = await ContactApi.send(formData);
+            if (!contactApi.ok) {
+                setSuccessMessage('Thank you for contacting us! We will get back to you soon.');
+            }
+            // Réinitialiser les champs du formulaire
+            setName('');
+            setEmail('');
+            setSubject('');
+            setMessage('');
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     return (
@@ -51,19 +51,20 @@ const ContactForm = () => {
                 <p className="text-lg text-center text-gray-300 mb-12">
                     Got a project idea or just want to say hi? Shoot me a message—let's make some tech magic happen!
                 </p>
-                {successMessage && (
-                    <div className="bg-green-600 text-white p-4 rounded-lg mb-6 text-center">
-                        {successMessage}
-                    </div>
-                )}
+
                 <Form onSubmit={handleSubmit} className="space-y-8">
+                    {successMessage && (
+                        <div className="bg-green-600 text-white p-4 rounded-lg mb-6 text-center">
+                            {successMessage}
+                        </div>
+                    )}
                     {/* Champs Full Name et Email */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <Input
                             label="Full Name"
                             name="name"
-                            value={formData.name}
-                            onChange={handleChange}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             placeholder="Full Name"
                             className="w-full bg-transparent border-b border-gray-600 text-white focus:outline-none focus:border-white"
                         />
@@ -71,8 +72,8 @@ const ContactForm = () => {
                             label="Email"
                             type="email"
                             name="email"
-                            value={formData.email}
-                            onChange={handleChange}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             placeholder="Email"
                             className="w-full bg-transparent border-b border-gray-600 text-white focus:outline-none focus:border-white"
                         />
@@ -83,8 +84,8 @@ const ContactForm = () => {
                         <Input
                             label="Subject"
                             name="subject"
-                            value={formData.subject}
-                            onChange={handleChange}
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
                             placeholder="Subject"
                             className="w-full bg-transparent border-b border-gray-600 text-white focus:outline-none focus:border-white"
                         />
@@ -95,8 +96,8 @@ const ContactForm = () => {
                         <Textarea
                             label="Message"
                             name="message"
-                            value={formData.message}
-                            onChange={handleChange}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
                             placeholder="Message Here"
                             className="w-full bg-transparent border-b border-gray-600 text-white focus:outline-none focus:border-white"
                         />
@@ -104,7 +105,11 @@ const ContactForm = () => {
 
                     {/* Bouton d'envoi */}
                     <div className="flex justify-center mt-12">
-                        <Button type="submit" label="Contact Us 👋" className="bg-black text-white py-3 px-6 rounded-lg hover:bg-gray-700 transition duration-200" />
+                        <Button
+                            type="submit"
+                            label="Contact Us 👋"
+                            className="bg-sky-600 text-white py-3 px-6 rounded-lg hover:bg-sky-700 transition duration-200"
+                        />
                     </div>
                 </Form>
             </div>

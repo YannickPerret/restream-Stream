@@ -13,13 +13,13 @@ const PriceToggle = () => {
             <button
                 type="button"
                 onClick={() => handleToggle(true)}
-                className={`px-6 py-2 rounded-full ${isMonthly ? 'bg-indigo-600 text-white' : 'text-gray-400'}`}>
+                className={`px-6 py-2 rounded-full ${isMonthly ? 'bg-sky-600 text-white' : 'text-gray-400'}`}>
                 Monthly
             </button>
             <button
                 type="button"
                 onClick={() => handleToggle(false)}
-                className={`px-6 py-2 rounded-full ${!isMonthly ? 'bg-indigo-600 text-white' : 'text-gray-400'}`}>
+                className={`px-6 py-2 rounded-full ${!isMonthly ? 'bg-sky-600 text-white' : 'text-gray-400'}`}>
                 Yearly
             </button>
         </div>

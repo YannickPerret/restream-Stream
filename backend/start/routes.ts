@@ -11,6 +11,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 import app from '@adonisjs/core/services/app'
 import * as fs from 'node:fs'
+const ContactsController = () => import('#controllers/contacts_controller')
 const NewslettersController = () => import('#controllers/newsletters_controller')
 const DiscountsController = () => import('#controllers/discounts_controller')
 const DiscountAdminsController = () => import('#controllers/admin/discount_admins_controller')
@@ -213,6 +214,12 @@ router
         router.post('/', [NewslettersController, 'store'])
       })
       .prefix('newsletters')
+
+    router
+      .group(() => {
+        router.post('/', [ContactsController, 'send'])
+      })
+      .prefix('contacts')
   })
   .prefix('api')
 

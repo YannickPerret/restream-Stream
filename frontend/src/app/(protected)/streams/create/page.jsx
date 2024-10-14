@@ -13,6 +13,7 @@ import AuthApi from "#api/auth.js";
 import {useRouter} from "next/navigation";
 import Checkbox from "#components/_forms/Checkbox.jsx";
 import {useProviderStore} from "#stores/useProviderStore.js";
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 export default function StreamCreate() {
     const [title, setTitle] = useState('');
@@ -25,6 +26,7 @@ export default function StreamCreate() {
     const { subscriptions, setSubscriptions } = useAuthStore();
     const [availableQualities, setAvailableQualities] = useState([]);
     const [maxStreamMultiChannel, setMaxStreamMultiChannel] = useState(0);
+    const [loop, setLoop] = useState(false);
 
     const [websiteUrl, setWebsiteUrl] = useState("");
     const router = useRouter()
@@ -40,6 +42,7 @@ export default function StreamCreate() {
         formData.append('runLive', runLive);
         formData.append('quality', quality);
         formData.append('websiteUrl', websiteUrl);
+        formData.append('loop', loop);
 
         // Append providers as individual formData entries
         providersToSubmit.forEach((provider, index) => {
@@ -83,6 +86,13 @@ export default function StreamCreate() {
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
             <div className="bg-gray-900 text-white p-8 rounded-t-lg">
+                <Breadcrumb
+                    paths={[
+                        { label: 'Home', href: '/' },
+                        { label: 'Streams', href: '/streams' },
+                        { label: 'Create' }
+                    ]}
+                />
                 <div className="container mx-auto">
                     <h1 className="text-3xl text-white py-4">Create a new Stream</h1>
                 </div>
@@ -157,6 +167,12 @@ export default function StreamCreate() {
                         </FormGroup>
 
                         <FormGroup title="Options">
+                            <Checkbox
+                                label={"Make stream loop"}
+                                checked={loop}
+                                onChange={(e) => {setLoop(e.target.checked)}}
+                            />
+
                             <Checkbox
                                 label="Launch live directly"
                                 checked={runLive}

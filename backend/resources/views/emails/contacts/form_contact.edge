@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Restream - Verify Your Account</title>
+  <title>New Contact Form Submission</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,6 +19,7 @@
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
+
     .banner {
       background: #2d202d;
       margin-bottom: 10px;
@@ -45,7 +46,9 @@
       color: #555555;
       line-height: 1.6;
     }
-
+    .content strong {
+      color: #333333;
+    }
     .footer {
       text-align: center;
       padding: 10px 0;
@@ -57,25 +60,23 @@
 </head>
 <body>
   <div class="container">
-   <div class="banner">
-          <img src="{{'https://s3.pub1.infomaniak.cloud/object/v1/AUTH_e99c1f0a844e46a6a881da20d4f30de8/arcanastream/logo_2.webp'}}" alt="ArcanaStream Logo" style="width: 250px; display: block; margin: 10px auto;" />
-      </div>
-
+    <div class="banner">
+        <img src="{{'https://s3.pub1.infomaniak.cloud/object/v1/AUTH_e99c1f0a844e46a6a881da20d4f30de8/arcanastream/logo_2.webp'}}" alt="ArcanaStream Logo" style="width: 250px; display: block; margin: 10px auto;" />
+    </div>
     <div class="header">
-      <h1>Restream - Verify Your Account</h1>
+      <h1>New Contact Form Submission</h1>
     </div>
     <div class="content">
-      <p>Hello {{ username }},</p>
-      <p>Thank you for registering with our service. To complete the registration process and activate your account, please verify your email address by clicking the button below:</p>
-      <a href="{{ FRONTEND_URL }}/auth/verify?token={{ token }}">Verify your account</a>
-      <p>This link will expire in 3 hours.</p>
-      <p>If the button above does not work, please copy and paste the following URL into your web browser:</p>
-      <a href="{{ FRONTEND_URL }}/auth/verify?token={{ token }}">{{ FRONTEND_URL }}/users/verify?token={{ token }}</a>
-      <p>If you did not create an account, no further action is required.</p>
-
+      <p>Hello,</p>
+      <p>You have received a new message via the contact form from ArcanaStream. Here are the details:</p>
+      <p><strong>Name:</strong> {{ name }}</p>
+      <p><strong>Email:</strong> {{ email }}</p>
+      <p><strong>Subject:</strong> {{ subject }}</p>
+      <p><strong>Message:</strong></p>
+      <p>{{ message }}</p>
     </div>
     <div class="footer">
-      <p>&copy; 2024 Restream. All rights reserved.</p>
+      <p>&copy; 2024 ArcanaStream. All rights reserved.</p>
     </div>
   </div>
 </body>

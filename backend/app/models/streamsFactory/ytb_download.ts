@@ -37,15 +37,36 @@ export default class YtDownload {
     }
   }
 
+  /**
+   * Get detailed information about a Twitch video using yt-dlp.
+   * @param url - The URL of the Twitch video.
+   * @returns The video information as an object.
+   */
   static async getVideoInfo(url: string): Promise<any> {
     try {
-      // Create a new instance of YtdlCore
-      const ytdl = new YtdlCore()
+      return await new Promise((resolve, reject) => {
+        const command = `yt-dlp -j ${url}`
+        const ytProcess = exec(command)
 
-      // Fetch basic info of the video
-      const info = await ytdl.getBasicInfo(url)
-      console.log(`Video title: ${info.videoDetails.title}`)
-      return info
+        let output = ''
+
+        ytProcess.stdout?.on('data', (data) => {
+          output += data
+        })
+
+        ytProcess.stderr?.on('data', (data) => {
+          console.error(`stderr: ${data}`)
+        })
+
+        ytProcess.on('close', (code) => {
+          if (code === 0) {
+            const videoInfo = JSON.parse(output)
+            resolve(videoInfo)
+          } else {
+            reject(new Error(`yt-dlp exited with code ${code}`))
+          }
+        })
+      })
     } catch (error) {
       console.error(`Error getting video info: ${error.message}`)
       throw error

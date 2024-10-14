@@ -24,6 +24,7 @@ import StreamSchedule from '#models/stream_schedule'
 import drive from '@adonisjs/drive/services/main'
 import Asset from '#models/asset'
 import RedisProvider from '#models/redis_provider'
+import Subscription from "#models/subscription";
 
 export default class Stream extends BaseModel {
   @column({ isPrimary: true })
@@ -80,6 +81,9 @@ export default class Stream extends BaseModel {
   @column()
   declare webpageUrl: string
 
+  @column()
+  declare loop: boolean
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
@@ -127,11 +131,6 @@ export default class Stream extends BaseModel {
     } else {
       console.log(`File ${guestKey} already exists.`)
     }
-  }
-
-  @beforeDelete()
-  static async deleteBaseFiles(stream: Stream) {
-    await stream.removeAssets()
   }
 
   async updateGuestText() {
@@ -218,6 +217,7 @@ export default class Stream extends BaseModel {
     await this.load('providers')
     await this.load('timeline')
 
+
     if (this.status === 'active') {
       logger.info('Stream is already active.')
       return
@@ -229,6 +229,19 @@ export default class Stream extends BaseModel {
       logger.error('No providers associated with the stream.')
       return
     }
+
+    await this.load('user')
+    const subscriptionsWithFeatures = await this.user.getActiveSubscriptionsWithFeatures()
+
+    // Vérifier si la fonctionnalité 'stream_show_watermark' est activée
+    let showWatermark = false
+    subscriptionsWithFeatures.forEach((subscription) => {
+      const feature = subscription.features.find(f => f.name === 'stream_show_watermark')
+      if (feature && feature.values.includes('true')) {
+        showWatermark = true
+      }
+    })
+
     const streamData = {
       id: this.id,
       name: this.name,
@@ -240,11 +253,13 @@ export default class Stream extends BaseModel {
       guestFile: this.guestFile,
       enableBrowser: this.enableBrowser,
       webpageUrl: this.webpageUrl,
+      loop: this.loop,
       timelinePath: await Asset.getPublicUrl(this.timeline.filePath),
       channels: this.providers.map((provider) => ({
         streamKey: provider.streamKey,
         type: provider.type,
       })),
+      showWatermark,
     }
 
     await RedisProvider.save('stream', this.id.toString(), streamData)
@@ -268,6 +283,7 @@ export default class Stream extends BaseModel {
 
     this.status = 'inactive'
     this.endTime = DateTime.now()
+    this.startTime = null
     this.pid = 0
 
     await this.save()
@@ -296,8 +312,6 @@ export default class Stream extends BaseModel {
         }
         return
       }
-
-      console.log('Sending analytics for stream', this.id)
       // Utiliser system information pour obtenir les statistiques réseau
       const networkStats = await si.networkStats()
       const inputBytes = networkStats[0]?.rx_bytes || 0 // Octets reçus
@@ -321,4 +335,5 @@ export default class Stream extends BaseModel {
       this.analyticsInterval = setTimeout(() => this.sendAnalytics(), 8000)
     })
   }
+
 }

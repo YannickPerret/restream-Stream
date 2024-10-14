@@ -1,13 +1,12 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { cuid } from '@adonisjs/core/helpers'
 import Video from '#models/video'
-import env from '#start/env'
 import logger from '@adonisjs/core/services/logger'
 import app from '@adonisjs/core/services/app'
-import Queue from '#models/queue'
 import * as fs from 'node:fs'
 import Asset from '#models/asset'
 import YtDdownload from '#models/streamsFactory/ytb_download'
+import TwitchDownload from "#models/streamsFactory/twitch_download";
 
 export default class VideosController {
   /**
@@ -51,15 +50,35 @@ export default class VideosController {
       let status = 'pending'
       let size = 0
       let duration = 0
+      let videoInfo: any
 
       if (videoUrl) {
-        console.log('YouTube URL detected. Starting download...')
-        videoPath = await YtDdownload.download(videoUrl)
+        if (videoUrl.includes('youtube')) {
+          console.log('YouTube URL detected. Starting download...')
 
-        const youtubeInfo = await YtDdownload.getVideoInfo(videoUrl)
-        title = youtubeInfo.videoDetails.title
-        description = youtubeInfo.videoDetails.description
-        duration = youtubeInfo.videoDetails.lengthSeconds
+          videoPath = await YtDdownload.download(videoUrl)
+
+          videoInfo = await YtDdownload.getVideoInfo(videoUrl)
+          title = videoInfo.videoDetails.title
+          description = videoInfo.videoDetails.description
+          duration = videoInfo.videoDetails.lengthSeconds
+
+        }
+        else if (videoUrl.includes('twitch')) {
+          console.log('Twitch URL detected. Starting download...')
+          videoPath = await TwitchDownload.download(videoUrl)
+          videoInfo = await TwitchDownload.getVideoInfo(videoUrl).then((data) => {
+            return data
+          })
+          title = videoInfo.title
+          description = videoInfo.description
+          duration = videoInfo.duration
+        }
+        else {
+          console.log('No YouTube URL detected. Creating presigned URL...')
+          videoPath = await Asset.createPresignedUrl(fileName, fileType)
+        }
+
         const metadata = await Asset.getInfo(videoPath)
         size = metadata.contentLength / (1024 * 1024)
         status = 'published'

@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import Table from '#components/table/Table';
 import useStreamScheduleStore from "#stores/useStreamScheduleStore.js";
 import Link from "next/link";
+import Panel from "#components/layout/panel/Panel.jsx";
 
 const ScheduleIndexPage = () => {
     const { streamSchedules, loading, fetchSchedules} = useStreamScheduleStore()
@@ -22,19 +23,11 @@ const ScheduleIndexPage = () => {
     ];
 
     return (
-        <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
-            <div className="bg-gray-900 text-white p-8 rounded-t-lg">
-                <header className="flex justify-between items-center mb-6">
-                    <h1 className="text-4xl font-bold text-white">Stream Schedule</h1>
-                    <Link href="/streams/schedules/create">
-                        <button
-                            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg">
-                            Add New Stream Schedule
-                        </button>
-                    </Link>
-                </header>
-                <hr className="border-b-1 border-blueGray-300 pb-6"/>
-
+        <Panel title="Stream Schedule" className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'streams', href: '/streams' },
+            { label: 'Schedules', href: '/streams/schedules' },
+        ]} buttonLabel={'Add New Stream Schedule'} buttonLink={'/streams/schedules/create'}>
                     {loading ? (
                         <p className="text-center text-white">Loading...</p>
                     ) : streamSchedules.length === 0 ? (
@@ -51,8 +44,7 @@ const ScheduleIndexPage = () => {
                             darkMode={true}
                         />
                     )}
-            </div>
-        </section>
+        </Panel>
     );
 };
 

@@ -7,6 +7,7 @@ import {useEffect, useState} from "react";
 import ProvidersShowView from "@/views/providers/show.jsx";
 import StreamsEditView from "@/views/streams/edit.jsx";
 import ProvidersEditView from "@/views/providers/edit.jsx";
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 export default function ProvidersShowPage() {
     const getProvider = useProviderStore.use.fetchProviderById()
@@ -26,6 +27,12 @@ export default function ProvidersShowPage() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
+            <Breadcrumb
+                paths={[
+                    { label: 'Providers', href: '/providers' },
+                    { label: 'Show Provider Information', href: '/providers/[id]' }
+                ]} />
+
             {selectedProvider && (
                 <ProvidersEditView
                     providerToEdit={selectedProvider}

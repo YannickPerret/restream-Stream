@@ -1,7 +1,6 @@
 // frontend/src/components/layout/header/Header.jsx
 'use client'
 import { useState, useEffect } from 'react';
-import Logo from "#public/coffeeStream.png";
 import Image from "next/image";
 import Navigation from "#components/layout/navigation/Navigation.jsx";
 import { NavigationRight } from "#components/layout/navigation/NavigationRight.jsx";
@@ -25,11 +24,11 @@ const Header = () => {
                 <div className="flex items-center">
                     {/* Responsive logo sizing */}
                     <Image
-                        src={Logo}
-                        alt="Coffee Stream"
-                        width={240}   // Desktop size
-                        height={80}
-                        className="object-contain w-[180px] h-[60px] md:w-[240px] md:h-[80px]" // Mobile and desktop responsive classes
+                        src={"https://s3.pub1.infomaniak.cloud/object/v1/AUTH_e99c1f0a844e46a6a881da20d4f30de8/arcanastream/logo_2.webp"}
+                        alt="Arcana Stream logo"
+                        width={280}   // Desktop size
+                        height={120}
+                        className="object-contain w-[200px] h-[70px] md:w-[320px] md:h-[110px] lg:w-[360px] lg:h-[120px]"
                     />
                 </div>
 
@@ -64,7 +63,7 @@ const Header = () => {
                 <div className="flex items-center justify-between p-4 border-b border-gray-700">
                     {/* Adjust logo size in mobile sidebar */}
                     <Image
-                        src={Logo}
+                        src={'https://s3.pub1.infomaniak.cloud/object/v1/AUTH_e99c1f0a844e46a6a881da20d4f30de8/arcanastream/logo_2.webp'}
                         alt="Coffee Stream"
                         width={150}
                         height={50}

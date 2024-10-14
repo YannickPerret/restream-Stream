@@ -42,7 +42,12 @@ const SubscriptionCreatePage = () => {
     };
 
     return (
-        <Panel title={'Create Subscription'} buttonLink={'/admin/subscriptions'} buttonLabel={'Back'} darkMode={true}>
+        <Panel title={'Create Subscription'} buttonLink={'/admin/subscriptions'} buttonLabel={'Back'} darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Admin', href: '/admin' },
+            { label: 'Subscriptions', href: '/admin/subscriptions' },
+            { label: 'Create', href: '/admin/subscriptions/create' },
+        ]}>
             <Form onSubmit={handleSubmit}>
                 <FormGroup title="Select User">
                     <Search

@@ -59,13 +59,24 @@ export default class StreamsController {
       .andWhere('userId', user.id)
       .firstOrFail()
 
+    const subscriptionsWithFeatures = await user.getActiveSubscriptionsWithFeatures()
+
+    subscriptionsWithFeatures.forEach((subscription) => {
+      const feature = subscription.features.find(f => f.name === 'max_stream_instances')
+      if (feature) {
+        const maxStreamInstances = Number.parseInt(feature.values[0], 10)
+        if (maxStreamInstances <= 0) {
+          return response.forbidden({ error: 'You have reached the maximum number of active streams.' })
+        }
+      }
+    })
+
     const streamManager = Stream_manager
     const streamInstance = await streamManager.getOrAddStream(params.id, stream)
 
     if (!stream) {
       return response.notFound({ error: 'Stream not found' })
     }
-
     await streamInstance.run()
     return response.ok({ message: 'Stream started' })
   }
@@ -87,12 +98,13 @@ export default class StreamsController {
 
   async store({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail();
-    const { title, timeline, quality, websiteUrl, providers } = request.only([
+    const { title, timeline, quality, websiteUrl, providers, loop } = request.only([
       'title',
       'timeline',
       'quality',
       'websiteUrl',
       'providers',
+      'loop',
     ]);
 
     const runLive = request.input('runLive') === 'true';
@@ -115,7 +127,6 @@ export default class StreamsController {
       enableBrowser = false;
     }
 
-    // Fetch active subscriptions for the user
     const subscriptions = await user.related('subscriptions').query().where('status', 'active');
     if (subscriptions.length === 0) {
       return response.forbidden({ error: 'You do not have an active subscription' });
@@ -143,7 +154,6 @@ export default class StreamsController {
       });
     }
 
-    // Ensure providers belong to the user and exist in the database
     const validProviders = [];
     for (const providerId of providers) {
       console.log(providerId);
@@ -194,15 +204,14 @@ export default class StreamsController {
       currentIndex: 0,
       enableBrowser: enableBrowser,
       webpageUrl: websiteUrl,
+      loop: loop === 'true',
       resolution: StreamResolutionByQuality[quality as keyof typeof StreamResolutionByQuality],
       bitrate: StreamQualityBiterate[quality as keyof typeof StreamQualityBiterate],
       fps: StreamFpsByQuality[quality as keyof typeof StreamFpsByQuality],
     });
 
-    // Attach providers to the stream (many-to-many relation)
     await stream.related('providers').attach(validProviders);
 
-    // Optionally, start the stream if 'runLive' is true
     if (runLive) {
       await stream.load('timeline');
       const streamManager = Stream_manager;
@@ -281,7 +290,6 @@ export default class StreamsController {
       return response.notFound({ error: 'Stream not found' })
     }
 
-    await stream.removeAssets()
     streamManager.removeStream(params.id)
     await stream.delete()
     return response.noContent()

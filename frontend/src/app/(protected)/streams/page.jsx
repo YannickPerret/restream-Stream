@@ -5,6 +5,7 @@ import StreamPageIndex from '@/views/streams';
 import Link from "next/link.js";
 import {useAuthStore} from "#stores/useAuthStore";
 import AuthApi from "#api/auth.js";
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 const StreamsPage = () => {
     const {fetchStreams} = useStreamStore();
@@ -51,6 +52,14 @@ const StreamsPage = () => {
     return (
         <section className="flex flex-col w-full h-full rounded-2xl justify-center shadow-2xl">
             <div className="bg-gray-900 text-white p-8 rounded-t-lg">
+                <Breadcrumb
+                    paths={
+                        [
+                            {label: 'Home', href: '/dashboard'},
+                            {label: 'Streams', href: '/streams'}
+                        ]
+                    }
+                />
                 <header className="flex justify-between items-center mb-6">
                     <h1 className="text-4xl font-bold text-white">
                         Streams {currentStreamCount} / {maxStreamInstance}

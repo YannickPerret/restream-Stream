@@ -76,7 +76,7 @@ export default function Page() {
           <div className="max-w-md mx-auto">
             {isVerifyStep ? (
                 <div className="p-8 bg-white rounded-lg shadow-lg text-center">
-                  <h2 className="text-4xl font-bold text-purple-400 mb-6">Verify Your Email</h2>
+                  <h2 className="text-4xl font-bold text-sky-400 mb-6">Verify Your Email</h2>
                   <p className="text-gray-500 mb-6">
                     Thank you for creating an account. A confirmation email has been sent to your inbox. Please check your email to confirm your account.
                   </p>
@@ -86,7 +86,7 @@ export default function Page() {
                 </div>
             ) : (
                 <>
-                  <h2 className="text-4xl font-bold text-purple-400 mb-6">Create An Account</h2>
+                  <h2 className="text-4xl font-bold text-sky-400 mb-6">Create An Account</h2>
                   <p className="text-gray-500 mb-6">
                     Create Your Account And Get Exciting New Features and Explore the New Automation
                   </p>

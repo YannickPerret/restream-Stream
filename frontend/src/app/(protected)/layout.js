@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import SideNavigation from "#components/layout/navigation/SideNavigation.jsx";
 
 export default function RootLayout({ children, error }) {
-    const { isAuthenticated, isLoggedIn } = useAuthStore(); // Directement depuis le store persisté
+    const { isAuthenticated, isLoggedIn } = useAuthStore();
     const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {

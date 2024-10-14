@@ -70,6 +70,7 @@ const UpgradeSubscriptionForm = ({ subscriptionId, products, user, selectedProdu
     };
 
     return (
+
         <Form onSubmit={handleSubmit}>
             <CheckoutCart
                 products={[selectedProduct]} // Pass the selected product

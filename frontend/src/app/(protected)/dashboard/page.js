@@ -3,6 +3,8 @@ import DashboardCard from "#components/dashboard/Card";
 import {useAuthStore} from "#stores/useAuthStore";
 import Table from "#components/table/Table";
 import React from "react";
+import Panel from "#components/layout/panel/Panel.jsx";
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 export default function DashBoard(){
     const {user} = useAuthStore()
@@ -23,20 +25,16 @@ export default function DashBoard(){
     ];
 
     return(
-        <section className=" min-h-screen bg-white px-8 rounded-lg shadow-lg overflow-hidden">
-            <header className=" py-6">
-                <div className="container mx-auto">
-                    <h1 className="text-3xl font-bold text-gray-900">Welcom {user?.username}</h1>
-                </div>
-            </header>
-
+        <Panel title={`Welcome ${user?.username}`} className="p-6" darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Dashboard', href: '/dashboard' },
+        ]}>
             <div className="container mx-auto px-4 py-6">
-
                 {/* Top Channels Section */}
                 <section className="mb-8">
                     <h2 className="text-2xl font-bold mb-4">Your active streams</h2>
                     <DashboardCard>
-                        <Table columns={columns} data={data} />
+                        <Table columns={columns} data={data}/>
                     </DashboardCard>
                 </section>
 
@@ -60,19 +58,18 @@ export default function DashBoard(){
                 </section>
 
 
-
                 {/* Campaign Visitors */}
                 <section>
                     <h2 className="text-2xl font-bold mb-4">Campaign Visitors</h2>
                     <DashboardCard>
-                        <p className="text-3xl font-bold">784k</p>
+                        <p className="text-3xl font-bold text-black">784k</p>
                         <p className="text-sm text-red-500">-1.5% since last week</p>
                         <div className="mt-4">
-                            <p>Graphique de visiteurs ici</p>
+                            <p className={"text-black"}>Graphique de visiteurs ici</p>
                         </div>
                     </DashboardCard>
                 </section>
             </div>
-        </section>
+        </Panel>
     )
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import logo from "#public/coffeeStream.png";
 import {Facebook, Twitch, Twitter, Instagram} from "lucide-react";
+import Discord from "#public/icones/discord.svg";
 
 const Footer = () => {
     return (
@@ -11,10 +11,10 @@ const Footer = () => {
                     <div className="mb-8 md:mb-0">
                         {/* Adjusted logo size */}
                         <Image
-                            src={logo}
-                            alt="Company Logo"
-                            width={200}
-                            height={200}
+                            src={"https://s3.pub1.infomaniak.cloud/object/v1/AUTH_e99c1f0a844e46a6a881da20d4f30de8/restream/logo_2.webp"}
+                            alt="Arcana Stream logo"
+                            width={150}
+                            height={100}
                             className="object-contain mb-4"
                         />
                         <p className="text-gray-400">
@@ -97,13 +97,17 @@ const Footer = () => {
                         © 2024 CoffeeStream, Inc. All rights reserved.
                     </p>
                     <div className="flex flex-row justify-center mt-4 space-x-4">
-                        <Link href="https://www.twitch.tv/beyondspeedruns" className="text-gray-400 hover:text-white">
+                        <Link href={"https://discord.gg/6dn44Z7ryt"} className={"text-gray-400 hover:text-white"}>
+                           <Image src={Discord} alt={"logo discord"} width={32} height={32} />
+                        </Link>
+
+                        <Link href="https://www.twitch.tv/arcana_stream" className="text-gray-400 hover:text-white">
                             <Twitch size={32}/>
                         </Link>
-                        <Link href="#" className="text-gray-400 hover:text-white">
+                        <Link href="https://twitter.com/arcanastream" className="text-gray-400 hover:text-white">
                             <Twitter size={32}/>
                         </Link>
-                        <Link href="#" className="text-gray-400 hover:text-white">
+                        <Link href="https://instagram.com/arcanastream" className="text-gray-400 hover:text-white">
                             <Instagram size={32}/>
                         </Link>
                     </div>

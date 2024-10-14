@@ -89,9 +89,11 @@ const SubscriptionIndexPage = () => {
             darkMode={true}
             buttonLink="/admin/subscriptions/create"
             buttonLabel="Create New Subscription"
-        >
-
-
+            breadcrumbPath={[
+                { label: 'Home', href: '/' },
+                { label: 'Admin', href: '/admin' },
+                { label: 'Subscriptions', href: '/admin/subscriptions' },
+                ]}>
             <Search
                 searchUrl="users"
                 label="Search Users"

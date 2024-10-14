@@ -6,7 +6,7 @@ const Button = ({ label, onClick, type = 'button', color, className }) => {
     const typeClass = type === 'reset'
         ? "bg-red-600 hover:bg-red-700"
         : type === 'submit'
-            ? "bg-blue-600 hover:bg-blue-700"
+            ? "bg-blue-600 hover:bg-sky-700"
             : "bg-gray-600 hover:bg-gray-700";
 
     const colorClass = color

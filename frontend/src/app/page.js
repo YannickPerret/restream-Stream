@@ -9,6 +9,7 @@ import Newsletter from "#components/newsletter/Newsletter.jsx";
 import ContactForm from "#components/contact/ContactForm.jsx";
 import ProductShowcase from "#components/productShowcase/productShowcase.jsx";
 import FAQSection from "#components/faq/FaqSection.jsx";
+import StreamShowCase from "#components/streamShowCase/StreamShowCase.jsx";
 
 export default function Home() {
     return (
@@ -17,11 +18,18 @@ export default function Home() {
                 <HeroSection/>
             </section>
 
-            <ProductShowcase/>
+            <section className="py-16 bg-gray-900 text-white" id={"informations"}>
+                <ProductShowcase/>
+            </section>
 
-            <section className="flex flex-col  w-full max-w-8xl" id={"features"}>
+            <section className="flex flex-col w-full max-w-8xl" id={"features"}>
                 <FeaturesSection/>
             </section>
+
+            <section className="flex flex-col w-full max-w-8xl my-40 mb-60" id={"liveStream"}>
+                <StreamShowCase/>
+            </section>
+
 
             <section className="relative w-full max-w-6xl mx-auto overflow-visible my-36 py-24" id={"testimonials"}>
                 <Testimonial

@@ -66,7 +66,10 @@ export default function VideosIndexPage() {
     }, [videos, maxVideoStorage]);
 
     return (
-        <Panel title={'Your Videos'} buttonLabel={'Create New Video'} buttonLink={'/videos/create'} buttonDisable={isStorageExceeded} darkMode={true}>
+        <Panel title={'Your Videos'} buttonLabel={'Create New Video'} buttonLink={'/videos/create'} buttonDisable={isStorageExceeded} darkMode={true} breadcrumbPath={[
+            { label: 'Home', href: '/' },
+            { label: 'Videos', href: '/videos' },
+        ]}>
             <div className="mb-4">
                 <p>Current Storage: {VideoFormatter.formatSize(currentVideoStorage)}  / {VideoFormatter.formatSize(maxVideoStorage)}</p>
             </div>

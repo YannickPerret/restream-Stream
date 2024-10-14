@@ -11,6 +11,7 @@ import StreamsEditView from "@/views/streams/edit.jsx";
 import Button from "@/components/_forms/Button.jsx";
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
+import Breadcrumb from "#components/breadcrumb/Breadcrumb.jsx";
 
 export default function StreamShowPage() {
     const { id } = useParams();
@@ -116,6 +117,13 @@ export default function StreamShowPage() {
 
     return (
         <section className="flex flex-col w-full h-full rounded-2xl shadow-2xl bg-gray-900">
+            <Breadcrumb
+                paths={[
+                    { label: 'Home', href: '/' },
+                    { label: 'Streams', href: '/streams' },
+                    { label: stream?.name || 'Stream' }
+                ]} />
+
             {selectedStream && (
                 <StreamsEditView
                     streamToEdit={selectedStream}

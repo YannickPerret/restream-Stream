@@ -66,7 +66,7 @@ export default function LoginPage() {
         {/* Section droite */}
         <div className="w-full lg:w-1/2 bg-white flex flex-col justify-center p-12">
           <div className="max-w-md mx-auto">
-            <h2 className="text-4xl font-bold text-purple-400 mb-6">Login</h2>
+            <h2 className="text-4xl font-bold text-sky-400 mb-6">Login</h2>
             <p className="text-gray-500 mb-6">
               Create Your Account And Get Exciting New Features and Explore the New Automation
             </p>
