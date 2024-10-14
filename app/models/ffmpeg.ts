@@ -77,13 +77,13 @@ export default class FFMPEGStream {
         filterComplex.push(`[v1][1:v]overlay=(main_w-overlay_w)/2:10[fv]`);
       }
     } else {
-      filterComplex.push(`[v1]copy[fv]`); // Just copy the output if no watermark
+      filterComplex.push(`[v1]`); // Just use the output [v1] directly
     }
 
     const encodingParameters = [
       '-r', this.fps.toString(),
       '-filter_complex', filterComplex.join(''),
-      '-map', '[fv]',
+      '-map', '[v1]', // Use [v1] or [fv] based on the condition
       '-map', '0:a?',
       '-s', this.resolution,
       '-c:a', 'aac', '-c:v', 'h264_rkmpp',
@@ -108,7 +108,6 @@ export default class FFMPEGStream {
       encodingParameters.push('-f', 'tee', teeOutput);
     }
 
-    console.log('FFmpeg command:', 'ffmpeg', [...inputParameters, ...encodingParameters]);
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true, stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -123,6 +122,7 @@ export default class FFMPEGStream {
 
     return Number.parseInt(this.instance.pid.toString(), 10);
   }
+
 
 
 
