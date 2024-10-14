@@ -34,72 +34,117 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream() {
-    this.createFifos();
+    this.createFifos()
 
     const inputParameters = [
       '-re',
-      '-hwaccel', 'rkmpp',
-      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-    ];
-
+      '-hwaccel',
+      'rkmpp',
+      '-protocol_whitelist',
+      'file,concat,http,https,tcp,tls,crypto',
+    ]
     if (this.loop) {
-      inputParameters.push('-stream_loop', '-1');
+      inputParameters.push('-stream_loop', '-1')
+    }
+    inputParameters.push(
+      '-f',
+      'concat',
+      '-safe',
+      '0',
+      '-i',
+      `concat:${this.timelinePath}`,
+      '-r',
+      this.fps.toString()
+    )
+
+    if (this.showWatermark) {
+      inputParameters.push('-i', app.publicPath('watermark/watermark.webp'))
     }
 
-    inputParameters.push('-f', 'concat', '-safe', '0', '-i', `concat:${this.timelinePath}`);
-
-    let filterComplex: string[] = [];
+    let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      await this.startBrowserCapture();
-      inputParameters.push('-i', SCREENSHOT_FIFO);
-      filterComplex.push(
-        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
-        `[0:v][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
-      );
+      await this.startBrowserCapture()
+      inputParameters.push('-i', SCREENSHOT_FIFO)
+    }
+
+    if (this.showWatermark) {
+      const logoScale = 'scale=200:-1'
+      const logoPosition = '(main_w-overlay_w)/2:10'
+
+      if (this.enableBrowser) {
+        filterComplex.push(
+          `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
+          `[watermarked][2:v]overlay=0:0,fps=fps=${this.fps}[vout]`
+        )
+      } else {
+        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
+      }
     } else {
-      filterComplex.push(`[0:v]fps=fps=${this.fps}[v1]`);
+      // Si pas de watermark
+      if (this.enableBrowser) {
+        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+      } else {
+        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+      }
     }
 
     const encodingParameters = [
-      '-r', this.fps.toString(),
-      '-filter_complex', filterComplex.join(''),
-      '-map', '[v1]', '-map', '0:a?',
-      '-s', this.resolution,
-      '-c:a', 'aac', '-c:v', 'h264_rkmpp',
-      '-b:v', this.bitrate,
-      '-maxrate', this.bitrate,
-      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
-      '-flags', 'low_delay'
-    ];
+      '-filter_complex',
+      filterComplex.join(''),
+      '-map',
+      '[vout]',
+      '-map',
+      '0:a?',
+      '-s',
+      this.resolution,
+      '-c:a',
+      'aac',
+      '-c:v',
+      'h264_rkmpp',
+      '-b:v',
+      this.bitrate,
+      '-maxrate',
+      this.bitrate,
+      '-bufsize',
+      `${Number.parseInt(this.bitrate) * 2}k`,
+      '-flags',
+      'low_delay',
+    ]
 
+    // Gestion de la sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
-      const channel = this.channels[0];
-      const baseUrl = BASE_URLS[channel.type];
-      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
-      encodingParameters.push('-f', 'flv', outputUrl);
+      const channel = this.channels[0]
+      const baseUrl = BASE_URLS[channel.type]
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+      encodingParameters.push('-f', 'flv', outputUrl)
     } else {
-      const teeOutput = this.channels.map(channel => {
-        const baseUrl = BASE_URLS[channel.type];
-        const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
-        return `[f=flv]${outputUrl}`;
-      }).join('|');
-      encodingParameters.push('-f', 'tee', teeOutput);
+      const teeOutput = this.channels
+        .map((channel) => {
+          const baseUrl = BASE_URLS[channel.type]
+          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+          return `[f=flv]${outputUrl}`
+        })
+        .join('|')
+      encodingParameters.push('-f', 'tee', teeOutput)
     }
 
+    console.log([...inputParameters, ...encodingParameters])
+
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
-      detached: true, stdio: ['ignore', 'pipe', 'pipe']
-    });
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
 
-    this.instance.stdout.on('data', data => {
-      console.log(`FFmpeg stdout: ${data}`);
-    });
+    this.instance.stdout.on('data', (data) => {
+      console.log(`FFmpeg stdout: ${data}`)
+    })
 
-    this.instance.stderr.on('data', data => {
-      logger.info(data.toString());
-    });
+    this.instance.stderr.on('data', (data) => {
+      logger.info(data.toString())
+    })
 
-    return Number.parseInt(this.instance.pid.toString(), 10);
+    return Number.parseInt(this.instance.pid.toString(), 10)
   }
 
   private async startBrowserCapture() {
