@@ -82,7 +82,6 @@ export default class FFMPEGStream {
         filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
       }
     } else {
-      // Si pas de watermark
       if (this.enableBrowser) {
         filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
       } else {
@@ -129,8 +128,6 @@ export default class FFMPEGStream {
         .join('|')
       encodingParameters.push('-f', 'tee', teeOutput)
     }
-
-    console.log([...inputParameters, ...encodingParameters])
 
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
