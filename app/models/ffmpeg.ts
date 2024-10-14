@@ -57,7 +57,9 @@ export default class FFMPEGStream {
     if (this.showWatermark) {
       const watermarkPath = app.publicPath('watermark/watermark.webp');
       inputParameters.push('-i', watermarkPath); // Le logo est la deuxième entrée (-i 1)
-      filterComplex.push(`[0:v][1:v]overlay=(main_w-overlay_w)/2:10[fv]`); // Le watermark est ajouté à la vidéo principale
+
+      // Appliquer le watermark sur la vidéo principale
+      filterComplex.push(`[0:v][1:v]overlay=(main_w-overlay_w)/2:10[fv]`); // Watermark en haut centre
     } else {
       filterComplex.push(`[0:v]fps=fps=${this.fps}[fv]`); // Si pas de watermark, juste le FPS
     }
