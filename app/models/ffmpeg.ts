@@ -43,27 +43,33 @@ export default class FFMPEGStream {
       '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
     ];
 
+    // Ajouter le stream loop si défini
     if (this.loop) {
       inputParameters.push('-stream_loop', '-1');
     }
 
+    // Ajouter la timeline en tant qu'entrée principale
     inputParameters.push('-f', 'concat', '-safe', '0', '-i', `concat:${this.timelinePath}`);
 
     let filterComplex: string[] = [];
 
+    // Ajouter le logo/watermark si activé
     if (this.showWatermark) {
       const watermarkPath = app.publicPath('watermark/watermark.webp');
-      inputParameters.push('-i', watermarkPath);
-      filterComplex.push(`[0:v][1:v]overlay=(main_w-overlay_w)/2:10[fv]`);
+      inputParameters.push('-i', watermarkPath); // Le logo est la deuxième entrée (-i 1)
+      filterComplex.push(`[0:v][1:v]overlay=(main_w-overlay_w)/2:10[fv]`); // Le watermark est ajouté à la vidéo principale
     } else {
-      filterComplex.push(`[0:v]fps=fps=${this.fps}[fv]`);
+      filterComplex.push(`[0:v]fps=fps=${this.fps}[fv]`); // Si pas de watermark, juste le FPS
     }
 
+    // Ajouter la capture d'écran du navigateur si activé
     if (this.enableBrowser) {
       await this.startBrowserCapture();
-      inputParameters.push('-i', SCREENSHOT_FIFO);
+      inputParameters.push('-i', SCREENSHOT_FIFO); // La capture d'écran devient la troisième entrée (-i 2 si le logo est activé)
+
+      // Ajustement du filtre pour overlay avec le navigateur
       filterComplex.push(
-        `[1:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24}[ckout];`,
+        `[2:v]colorkey=0xFFFFFF:0.1:0.2,fps=fps=24[ckout];`,
         `[fv][ckout]overlay=0:0,fps=fps=${this.fps}[v1]`
       );
     }
@@ -72,7 +78,7 @@ export default class FFMPEGStream {
       '-r', this.fps.toString(),
       '-filter_complex', filterComplex.join(''),
       '-map', '[v1]',
-      '-map', '0:a?',
+      '-map', '0:a?', // Mapping audio optionnel
       '-s', this.resolution,
       '-c:a', 'aac', '-c:v', 'h264_rkmpp',
       '-b:v', this.bitrate,
@@ -81,6 +87,7 @@ export default class FFMPEGStream {
       '-flags', 'low_delay'
     ];
 
+    // Gérer la sortie pour plusieurs channels
     if (this.channels.length === 1) {
       const channel = this.channels[0];
       const baseUrl = BASE_URLS[channel.type];
@@ -95,6 +102,7 @@ export default class FFMPEGStream {
       encodingParameters.push('-f', 'tee', teeOutput);
     }
 
+    // Lancer FFmpeg avec les paramètres
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true, stdio: ['ignore', 'pipe', 'pipe']
     });
