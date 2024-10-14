@@ -59,7 +59,7 @@ export default class FFMPEGStream {
     )
 
     if (this.showWatermark) {
-      inputParameters.push('-i', app.publicPath('watermark/watermark.webp'))
+      inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
 
     let filterComplex: string[] = []
