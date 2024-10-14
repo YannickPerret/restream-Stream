@@ -3,7 +3,6 @@ import * as fs from 'node:fs'
 import puppeteer from 'puppeteer'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn } from 'node:child_process'
-import redis from "@adonisjs/redis/services/main";
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
@@ -29,16 +28,24 @@ export default class FFMPEGStream {
     private webpageUrl: string,
     private bitrate: string,
     private resolution: string,
-    private fps: number
+    private fps: number,
+    private loop: boolean
   ) {}
 
   async startStream() {
     this.createFifos();
 
     const inputParameters = [
-      '-re', '-hwaccel', 'rkmpp', '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-      '-f', 'concat', '-safe', '0', '-i', `concat:${this.timelinePath}`
+      '-re',
+      '-hwaccel', 'rkmpp',
+      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
     ];
+
+    if (this.loop) {
+      inputParameters.push('-stream_loop', '-1');
+    }
+
+    inputParameters.push('-f', 'concat', '-safe', '0', '-i', `concat:${this.timelinePath}`);
 
     let filterComplex: string[] = [];
 
@@ -54,10 +61,14 @@ export default class FFMPEGStream {
     }
 
     const encodingParameters = [
-      '-r', this.fps.toString(), '-filter_complex', filterComplex.join(''),
-      '-map', '[v1]', '-map', '0:a?', '-s', this.resolution,
-      '-c:a', 'aac', '-c:v', 'h264_rkmpp', '-b:v', this.bitrate,
-      '-maxrate', this.bitrate, '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
+      '-r', this.fps.toString(),
+      '-filter_complex', filterComplex.join(''),
+      '-map', '[v1]', '-map', '0:a?',
+      '-s', this.resolution,
+      '-c:a', 'aac', '-c:v', 'h264_rkmpp',
+      '-b:v', this.bitrate,
+      '-maxrate', this.bitrate,
+      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
       '-flags', 'low_delay'
     ];
 

@@ -41,7 +41,8 @@ export default class StreamProvider {
         streamData.webpageUrl,
         streamData.bitrate,
         streamData.resolution,
-        streamData.fps
+        streamData.fps,
+        streamData.loop
       );
 
       const pid = await stream.startStream();
