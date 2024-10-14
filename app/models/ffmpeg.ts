@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
+import app from "@adonisjs/core/services/app";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
