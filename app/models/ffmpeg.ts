@@ -1,6 +1,6 @@
 import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
-import puppeteer from 'puppeteer'
+import { chromium } from 'playwright'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn } from 'node:child_process'
 import pidusage from 'pidusage'
@@ -180,7 +180,23 @@ export default class FFMPEGStream {
   }
 
   private async startBrowserCapture() {
-    const minimal_args = [
+    const browser1 = await chromium.launch({
+      args: [
+        '--window-size=640,480',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-software-rasterizer',
+        '--disable-web-security',
+        '--disable-features=AudioServiceOutOfProcess',
+        '--use-gl=swiftshader',
+        '--mute-audio',
+      ],
+      headless: true,
+      executablePath: '/usr/bin/chromium-browser', // Chemin personnalisé pour utiliser le navigateur système
+    });
+
+    /*const minimal_args = [
       '--autoplay-policy=user-gesture-required',
       '--disable-background-networking',
       '--disable-background-timer-throttling',
@@ -236,7 +252,9 @@ export default class FFMPEGStream {
     const browser1 = await puppeteer.launch({
       args: ["--window-size=640,480", "--window-position=640,0", "--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox","--disable-software-rasterizer", "--disable-web-security", ...minimal_args],
       ignoreDefaultArgs: ['--disable-dev-shm-usage'],
-    });
+    });*/
+
+
 
     //const browser2 = await puppeteer.launch(launchOptions);
 
@@ -250,7 +268,7 @@ export default class FFMPEGStream {
     //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
-  private async captureAudioVideo(page: puppeteer.Page, fifoPath: string) {
+  private async captureAudioVideo(page: any, fifoPath: string) {
     let writeStream;
     try {
       writeStream = fs.createWriteStream(fifoPath, { flags: 'a' });
@@ -277,7 +295,8 @@ export default class FFMPEGStream {
       if (writeStream) {
         writeStream.end();
       }
-      await page.browser().close();
+      await page.close();
+      await page.context().browser().close();
     }
   }
 
