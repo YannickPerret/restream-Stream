@@ -47,10 +47,9 @@ export default class StreamProvider {
         streamData.showWatermark,
       );
 
-      const pid = await stream.startStream();
-      this.streams.set(streamData.id, stream);
+      await stream.startStream();
 
-      await redis.set(`stream:${streamData.id}:pid`, pid);
+      const pid = await redis.get(`stream:${streamData.id}:pid`);
       await stream.sendAnalytics(streamData.id, pid);
     });
 

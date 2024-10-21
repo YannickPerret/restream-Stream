@@ -41,7 +41,7 @@ export default class FFMPEGStream {
     private showWatermark: boolean,
   ) {}
 
-  async startStream(p0: (bitrate: any) => void) {
+  async startStream( ) {
     console.log('Starting stream...');
     if (this.enableBrowser) {
       console.log('Browser capture enabled.');
@@ -194,8 +194,8 @@ export default class FFMPEGStream {
         setTimeout(() => this.startStream(), RESTART_DELAY_MS);
       }
     });
-
-    return Number.parseInt(this.instance.pid.toString(), 10)
+    const pid = Number.parseInt(this.instance.pid.toString(), 10)
+    await redis.set(`stream:${this.streamId}:pid`, pid);
   }
 
   private async startBrowserCapture() {
