@@ -106,9 +106,8 @@ export default class FFMPEGStream {
 
       if (this.enableBrowser) {
         filterComplex.push(
-          `[0:v]scale=640:480[background];`,  // Redimensionne l'arrière-plan à 640x480
-          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Applique blend avec le navigateur
-          `[background][blended]overlay=0:0[watermarked];`,  // Superpose les deux
+          `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,  // Traiter le flux navigateur avec colorkey
+          `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];`,  // Superpose le navigateur au centre
           `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`  // Ajoute le watermark
         );
       } else {
@@ -120,9 +119,8 @@ export default class FFMPEGStream {
     } else {
       if (this.enableBrowser) {
         filterComplex.push(
-          `[0:v]scale=640:480[background];`,  // Redimensionne l'arrière-plan à 640x480
-          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Utiliser blend pour mélanger le navigateur avec le fond
-          `[background][blended]overlay=0:0,fps=fps=${this.fps}[vout]`
+          `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,  // Traiter le flux navigateur avec colorkey
+          `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2,fps=fps=${this.fps}[vout]`  // Superposer au centre de la vidéo principale
         );
       } else {
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
@@ -194,7 +192,9 @@ export default class FFMPEGStream {
         setTimeout(() => this.startStream(), RESTART_DELAY_MS);
       }
     });
+
     const pid = Number.parseInt(this.instance.pid.toString(), 10)
+    console.log(`Stream started with PID ${pid}.`)
     await redis.set(`stream:${this.streamId}:pid`, pid);
   }
 
