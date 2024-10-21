@@ -61,6 +61,8 @@ export default class FFMPEGStream {
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
     ]
+
+    console.log(inputParameters)
     const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
     if (savedElapsedTime) {
       const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
@@ -224,7 +226,6 @@ export default class FFMPEGStream {
           const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
           if (writeStream.writable) {
             writeStream.write(screenshot);
-            logger.info('Screenshot written to FIFO.');
           } else {
             logger.error('Write stream is not writable.');
             break;
