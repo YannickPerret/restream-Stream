@@ -11,6 +11,7 @@ import redis from "@adonisjs/redis/services/main";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
+const RESTART_DELAY_MS = 10000;
 
 const BASE_URLS: Record<string, string> = {
   twitch: 'rtmp://live.twitch.tv/app',
@@ -22,6 +23,7 @@ export default class FFMPEGStream {
   private analyticsInterval: NodeJS.Timeout | null = null
   private timeTrackingInterval: NodeJS.Timeout | null = null;
   private elapsedTime: number = 0;
+  private isStopping: boolean = false;
 
   constructor(
     private streamId: string,
@@ -150,6 +152,7 @@ export default class FFMPEGStream {
     }
 
     this.startTimeTracking();
+    this.isStopping = false;
 
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
@@ -165,8 +168,9 @@ export default class FFMPEGStream {
     })
 
     this.instance.on('exit', async (code) => {
-      if (code !== 0) {
-        await this.startStream();
+      if (code !== 0 && !this.isStopping) {
+        console.log(`Stream exited unexpectedly. Attempting to restart in ${RESTART_DELAY_MS / 1000} seconds...`);
+        setTimeout(() => this.startStream(), RESTART_DELAY_MS);
       }
     });
 
@@ -323,6 +327,7 @@ export default class FFMPEGStream {
   }
 
   stopStream = async (pid: number) => {
+    this.isStopping = true;
     if (this.instance) {
       process.kill(pid, 'SIGKILL');
       this.removeFifos();
