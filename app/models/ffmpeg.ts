@@ -43,7 +43,11 @@ export default class FFMPEGStream {
 
   async startStream(p0: (bitrate: any) => void) {
     console.log('Starting stream...')
-    this.createFifos()
+    if (this.enableBrowser) {
+      console.log('Browser capture enabled.')
+      this.createFifos()
+      await this.startBrowserCapture()
+    }
 
     const inputParameters = [
       '-re',
@@ -85,7 +89,6 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      await this.startBrowserCapture()
       inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
       //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
     }
@@ -264,7 +267,7 @@ export default class FFMPEGStream {
     await page1.goto(this.webpageUrl);
     //await page2.goto(this.webpageUrl)
 
-    await this.captureAudioVideo(page1, SCREENSHOT_FIFO + '_1');
+   // await this.captureAudioVideo(page1, SCREENSHOT_FIFO + '_1');
     //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
