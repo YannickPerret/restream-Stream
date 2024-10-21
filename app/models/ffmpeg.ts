@@ -189,12 +189,14 @@ export default class FFMPEGStream {
     this.instance.on('exit', async (code) => {
       if (code !== 0 && !this.isStopping) {
         console.log(`Stream exited unexpectedly. Attempting to restart in ${RESTART_DELAY_MS / 1000} seconds...`);
-        setTimeout(() => this.startStream(), RESTART_DELAY_MS);
+        setTimeout(async () => {
+          await this.startStream();
+        }, RESTART_DELAY_MS);
       }
     });
 
-    const pid = Number.parseInt(this.instance.pid.toString(), 10)
-    console.log(`Stream started with PID ${pid}.`)
+    const pid = this.instance.pid;
+    console.log(`Stream ${this.streamId} started with PID ${pid}`);
     await redis.set(`stream:${this.streamId}:pid`, pid);
   }
 
