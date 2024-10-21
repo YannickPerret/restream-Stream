@@ -199,7 +199,6 @@ export default class FFMPEGStream {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 640, height: 480, deviceScaleFactor: 1 });
 
     await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
     logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
