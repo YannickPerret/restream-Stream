@@ -257,7 +257,6 @@ export default class FFMPEGStream {
     }
   }
 
-
   private async createFifos() {
     const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
     for (const fifo of fifoPaths) {
