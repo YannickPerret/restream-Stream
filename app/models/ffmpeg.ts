@@ -57,6 +57,7 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
+      '-thread_queue_size', '512',
       '-re',
       '-hwaccel',
       'rkmpp',
@@ -105,23 +106,29 @@ export default class FFMPEGStream {
 
       if (this.enableBrowser) {
         filterComplex.push(
-          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Appliquer blend sur le flux du navigateur
-          `[0:v][blended]overlay=0:0[watermarked];`,  // Superposer le contenu du navigateur
-          `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`  // Ajouter le watermark
+          `[0:v]scale=640:480[background];`,  // Redimensionne l'arrière-plan à 640x480
+          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Applique blend avec le navigateur
+          `[background][blended]overlay=0:0[watermarked];`,  // Superpose les deux
+          `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`  // Ajoute le watermark
         );
       } else {
-        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`);
+        filterComplex.push(
+          `[1:v]${logoScale}[logo];`,  // Redimensionne le logo
+          `[0:v][logo]overlay=${logoPosition}[vout]`  // Ajoute le logo à l'arrière-plan
+        );
       }
     } else {
       if (this.enableBrowser) {
         filterComplex.push(
+          `[0:v]scale=640:480[background];`,  // Redimensionne l'arrière-plan à 640x480
           `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Utiliser blend pour mélanger le navigateur avec le fond
-          `[0:v][blended]overlay=0:0,fps=fps=${this.fps}[vout]`
+          `[background][blended]overlay=0:0,fps=fps=${this.fps}[vout]`
         );
       } else {
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
       }
     }
+
 
     const encodingParameters = [
       '-filter_complex',
