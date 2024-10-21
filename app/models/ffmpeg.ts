@@ -223,10 +223,11 @@ export default class FFMPEGStream {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-web-security',
+        '--disable-software-rasterizer',
         ...minimalArgs,
       ],
-      //executablePath: '/usr/bin/chromium-browser',
-      ignoreDefaultArgs: ['--enable-automation'],
+      executablePath: '/usr/bin/chromium-browser',
+      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
     }
 
     const browser1 = await puppeteer.launch(launchOptions);
