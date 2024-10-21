@@ -182,19 +182,19 @@ export default class FFMPEGStream {
   private async startBrowserCapture() {
     const browser1 = await chromium.launch({
       args: [
-        '--window-size=640,480',
         '--disable-gpu',
         '--no-sandbox',
-        '--disable-setuid-sandbox',
         '--disable-software-rasterizer',
-        '--disable-web-security',
-        '--disable-features=AudioServiceOutOfProcess',
+        '--disable-dev-shm-usage',
         '--use-gl=swiftshader',
-        '--mute-audio',
+        '--disable-web-security',
+        '--disable-features=VaapiVideoDecoder,WebRTC',
       ],
       headless: true,
-      executablePath: '/usr/bin/chromium-browser', // Chemin personnalisé pour utiliser le navigateur système
+      executablePath: '/usr/bin/chromium-browser',
     });
+
+
 
     /*const minimal_args = [
       '--autoplay-policy=user-gesture-required',
