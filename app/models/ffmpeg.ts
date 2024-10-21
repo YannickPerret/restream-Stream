@@ -230,16 +230,16 @@ export default class FFMPEGStream {
     }
 
     const browser1 = await puppeteer.launch(launchOptions);
-    const browser2 = await puppeteer.launch(launchOptions);
+    //const browser2 = await puppeteer.launch(launchOptions);
 
     const page1 = await browser1.newPage();
-    const page2 = await browser2.newPage();
+    //const page2 = await browser2.newPage();
 
     await page1.goto(this.webpageUrl);
-    await page2.goto(this.webpageUrl)
+    //await page2.goto(this.webpageUrl)
 
     await this.captureAudioVideo(page1, SCREENSHOT_FIFO + '_1');
-    await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
+    //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
   private async captureAudioVideo(page: puppeteer.Page, fifoPath: string) {
