@@ -45,7 +45,11 @@ export default class FFMPEGStream {
     console.log('Starting stream...')
     if (this.enableBrowser) {
       console.log('Browser capture enabled.')
-      this.createFifos()
+      await this.createFifos()
+      if (!this.checkFifos()) {
+        console.error('Cannot start stream. FIFOs are not ready.');
+        return;
+      }
       await this.startBrowserCapture()
     }
 
@@ -56,8 +60,6 @@ export default class FFMPEGStream {
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
     ]
-
-
     const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
     if (savedElapsedTime) {
       const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
@@ -182,7 +184,7 @@ export default class FFMPEGStream {
   }
 
   private async startBrowserCapture() {
-    const browser1 = await chromium.launch({
+    const browser = await chromium.launch({
       args: [
         '--disable-gpu',
         '--no-sandbox',
@@ -196,77 +198,14 @@ export default class FFMPEGStream {
       executablePath: '/usr/bin/chromium-browser',
     });
 
+    const page = await browser.newPage();
+    await page.setViewport({ width: 640, height: 480, deviceScaleFactor: 1 });
+
+    await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
+    logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
 
 
-    /*const minimal_args = [
-      '--autoplay-policy=user-gesture-required',
-      '--disable-background-networking',
-      '--disable-background-timer-throttling',
-      '--disable-backgrounding-occluded-windows',
-      '--disable-breakpad',
-      '--disable-client-side-phishing-detection',
-      '--disable-component-update',
-      '--disable-default-apps',
-      '--disable-dev-shm-usage',
-      '--disable-domain-reliability',
-      '--disable-extensions',
-      '--disable-features=AudioServiceOutOfProcess',
-      '--disable-hang-monitor',
-      '--disable-ipc-flooding-protection',
-      '--disable-notifications',
-      '--disable-offer-store-unmasked-wallet-cards',
-      '--disable-popup-blocking',
-      '--disable-print-preview',
-      '--disable-prompt-on-repost',
-      '--disable-renderer-backgrounding',
-      '--disable-setuid-sandbox',
-      '--disable-speech-api',
-      '--disable-sync',
-      '--hide-scrollbars',
-      '--ignore-gpu-blacklist',
-      '--metrics-recording-only',
-      '--mute-audio',
-      '--no-default-browser-check',
-      '--no-first-run',
-      '--no-pings',
-      '--no-sandbox',
-      '--no-zygote',
-      '--password-store=basic',
-      '--use-gl=swiftshader',
-      '--use-mock-keychain',
-    ];
-
-    const launchOptions = {
-      args: [
-        '--window-size=640,480',
-        '--window-position=640,0',
-        '--disable-gpu',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-        '--disable-software-rasterizer',
-        ...minimalArgs,
-      ],
-      //executablePath: '/usr/bin/chromium-browser',
-      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
-    }
-
-    const browser1 = await puppeteer.launch({
-      args: ["--window-size=640,480", "--window-position=640,0", "--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox","--disable-software-rasterizer", "--disable-web-security", ...minimal_args],
-      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
-    });*/
-
-
-
-    //const browser2 = await puppeteer.launch(launchOptions);
-
-    const page1 = await browser1.newPage();
-    //const page2 = await browser2.newPage();
-
-    await page1.goto(this.webpageUrl);
-    //await page2.goto(this.webpageUrl)
-
-    await this.captureAudioVideo(page1, SCREENSHOT_FIFO);
+    await this.captureAudioVideo(page, SCREENSHOT_FIFO);
     //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
@@ -302,7 +241,7 @@ export default class FFMPEGStream {
     }
   }
 
-  private createFifos() {
+  private async createFifos() {
     [SCREENSHOT_FIFO, OUTPUT_FIFO].forEach(fifo => {
       if (fs.existsSync(fifo)) {
         fs.unlinkSync(fifo);
@@ -384,4 +323,22 @@ export default class FFMPEGStream {
       await redis.set(`stream:${this.streamId}:elapsed_time`, this.elapsedTime.toString());
     }, 10000);
   }
+
+  private checkFifos(): boolean {
+    const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
+    for (const fifo of fifoPaths) {
+      if (!fs.existsSync(fifo)) {
+        logger.error(`FIFO ${fifo} does not exist.`);
+        return false;
+      }
+      try {
+        fs.accessSync(fifo, fs.constants.W_OK | fs.constants.R_OK);
+      } catch (err) {
+        logger.error(`No read/write access to FIFO ${fifo}: ${err.message}`);
+        return false;
+      }
+    }
+    return true;
+  }
+
 }
