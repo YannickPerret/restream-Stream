@@ -42,6 +42,7 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream(p0: (bitrate: any) => void) {
+    console.log('Starting stream...')
     this.createFifos()
 
     const inputParameters = [
@@ -60,7 +61,7 @@ export default class FFMPEGStream {
       const minutes = Math.floor((resumeTimeInSeconds % 3600) / 60).toString().padStart(2, '0');
       const seconds = (resumeTimeInSeconds % 60).toString().padStart(2, '0');
       const resumeTime = `${hours}:${minutes}:${seconds}`;
-      inputParameters.push('-ss', resumeTime); // Reprendre à partir du temps sauvegardé
+      inputParameters.push('-ss', resumeTime);
     }
 
     if (this.loop) {
@@ -123,6 +124,7 @@ export default class FFMPEGStream {
       '-c:a',
       'aac',
       '-c:v',
+      //'h264',
       'h264_rkmpp',
       '-b:v',
       this.bitrate,
@@ -178,7 +180,7 @@ export default class FFMPEGStream {
   }
 
   private async startBrowserCapture() {
-    const minimalArgs = [
+    const minimal_args = [
       '--autoplay-policy=user-gesture-required',
       '--disable-background-networking',
       '--disable-background-timer-throttling',
@@ -214,7 +216,8 @@ export default class FFMPEGStream {
       '--password-store=basic',
       '--use-gl=swiftshader',
       '--use-mock-keychain',
-    ]
+    ];
+
     const launchOptions = {
       args: [
         '--window-size=640,480',
@@ -226,11 +229,15 @@ export default class FFMPEGStream {
         '--disable-software-rasterizer',
         ...minimalArgs,
       ],
-      executablePath: '/usr/bin/chromium-browser',
+      //executablePath: '/usr/bin/chromium-browser',
       ignoreDefaultArgs: ['--disable-dev-shm-usage'],
     }
 
-    const browser1 = await puppeteer.launch(launchOptions);
+    const browser1 = await puppeteer.launch({
+      args: ["--window-size=640,480", "--window-position=640,0", "--disable-gpu", "--no-sandbox", "--disable-setuid-sandbox","--disable-software-rasterizer", "--disable-web-security", ...minimal_args],
+      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
+    });
+
     //const browser2 = await puppeteer.launch(launchOptions);
 
     const page1 = await browser1.newPage();
