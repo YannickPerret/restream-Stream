@@ -103,13 +103,13 @@ export default class FFMPEGStream {
           `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
         );*/
       } else {
-        //filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
+        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
       }
     } else {
       if (this.enableBrowser) {
-        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+        //filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
       } else {
-        //filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
       }
     }
 
