@@ -89,7 +89,7 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
+      inputParameters.push('-i', SCREENSHOT_FIFO);
       //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
     }
 
@@ -267,7 +267,7 @@ export default class FFMPEGStream {
     await page1.goto(this.webpageUrl);
     //await page2.goto(this.webpageUrl)
 
-    await this.captureAudioVideo(page1, SCREENSHOT_FIFO + '_1');
+    await this.captureAudioVideo(page1, SCREENSHOT_FIF);
     //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
@@ -304,7 +304,7 @@ export default class FFMPEGStream {
   }
 
   private createFifos() {
-    ;[SCREENSHOT_FIFO + '_1', SCREENSHOT_FIFO + '_2', OUTPUT_FIFO].forEach((fifo) => {
+    [SCREENSHOT_FIFO, OUTPUT_FIFO].forEach(fifo => {
       if (fs.existsSync(fifo)) {
         fs.unlinkSync(fifo);
       }
@@ -313,7 +313,7 @@ export default class FFMPEGStream {
   }
 
   private removeFifos() {
-    ;[SCREENSHOT_FIFO + '_1', SCREENSHOT_FIFO + '_2', OUTPUT_FIFO].forEach((fifo) => {
+    ;[SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
       try {
         if (fs.existsSync(fifo)) {
           fs.unlinkSync(fifo)
