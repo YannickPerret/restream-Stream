@@ -127,7 +127,6 @@ export default class FFMPEGStream {
       '-c:a',
       'aac',
       '-c:v',
-      //'h264',
       'h264_rkmpp',
       '-b:v',
       this.bitrate,
