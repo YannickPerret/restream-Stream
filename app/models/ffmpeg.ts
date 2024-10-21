@@ -64,8 +64,6 @@ export default class FFMPEGStream {
       'file,concat,http,https,tcp,tls,crypto',
     ];
 
-    console.log('FFmpeg input parameters:', inputParameters);
-
     const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
     if (savedElapsedTime) {
       const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
@@ -107,7 +105,7 @@ export default class FFMPEGStream {
 
       if (this.enableBrowser) {
         filterComplex.push(
-          `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
+          `[0:v][1:v]colorkey=0xFFFFFF:0.1:0.2,overlay=(main_w-overlay_w)/2:10[watermarked];`,
           `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
         );
       } else {
@@ -115,7 +113,7 @@ export default class FFMPEGStream {
       }
     } else {
       if (this.enableBrowser) {
-        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v][1:v]colorkey=0xFFFFFF:0.1:0.2,overlay=0:0,fps=fps=${this.fps}[vout]`)
       } else {
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
       }
@@ -193,6 +191,8 @@ export default class FFMPEGStream {
     (async () => {
       const browser = await chromium.launch({
         args: [
+          '--window-size=640,480',
+          '--window-position=640,0',
           '--disable-gpu',
           '--no-sandbox',
           '--disable-software-rasterizer',
@@ -201,6 +201,7 @@ export default class FFMPEGStream {
           '--disable-web-security',
           '--disable-features=VaapiVideoDecoder,WebRTC',
         ],
+        ignoreDefaultArgs: ['--disable-dev-shm-usage'],
         headless: true,
         executablePath: '/usr/bin/chromium-browser',
       });
@@ -238,7 +239,7 @@ export default class FFMPEGStream {
             logger.error('Write stream is not writable.');
             break;
           }
-          await new Promise((resolve) => setTimeout(resolve, 1000 / 60)); // 60 fps
+          await new Promise((resolve) => setTimeout(resolve, 1000 / this.fps));
         } catch (error) {
           logger.error('Error capturing screenshot or writing to FIFO:', error.message);
           this.enableBrowser = false;
