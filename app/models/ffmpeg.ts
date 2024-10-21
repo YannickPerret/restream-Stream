@@ -267,7 +267,7 @@ export default class FFMPEGStream {
     await page1.goto(this.webpageUrl);
     //await page2.goto(this.webpageUrl)
 
-    await this.captureAudioVideo(page1, SCREENSHOT_FIF);
+    await this.captureAudioVideo(page1, SCREENSHOT_FIFO);
     //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
