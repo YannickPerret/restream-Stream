@@ -42,15 +42,17 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream(p0: (bitrate: any) => void) {
-    console.log('Starting stream...')
+    console.log('Starting stream...');
     if (this.enableBrowser) {
-      console.log('Browser capture enabled.')
-      await this.createFifos()
+      console.log('Browser capture enabled.');
+      await this.createFifos();
       if (!this.checkFifos()) {
         console.error('Cannot start stream. FIFOs are not ready.');
         return;
       }
-      await this.startBrowserCapture()
+
+      // Lance la capture du navigateur sans bloquer la suite du code
+      this.startBrowserCapture();
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
@@ -60,9 +62,10 @@ export default class FFMPEGStream {
       'rkmpp',
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
-    ]
+    ];
 
-    console.log(inputParameters)
+    console.log('FFmpeg input parameters:', inputParameters);
+
     const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
     if (savedElapsedTime) {
       const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
@@ -187,28 +190,33 @@ export default class FFMPEGStream {
   }
 
   private async startBrowserCapture() {
-    const browser = await chromium.launch({
-      args: [
-        '--disable-gpu',
-        '--no-sandbox',
-        '--disable-software-rasterizer',
-        '--disable-dev-shm-usage',
-        '--use-gl=swiftshader',
-        '--disable-web-security',
-        '--disable-features=VaapiVideoDecoder,WebRTC',
-      ],
-      headless: true,
-      executablePath: '/usr/bin/chromium-browser',
+    (async () => {
+      const browser = await chromium.launch({
+        args: [
+          '--disable-gpu',
+          '--no-sandbox',
+          '--disable-software-rasterizer',
+          '--disable-dev-shm-usage',
+          '--use-gl=swiftshader',
+          '--disable-web-security',
+          '--disable-features=VaapiVideoDecoder,WebRTC',
+        ],
+        headless: true,
+        executablePath: '/usr/bin/chromium-browser',
+      });
+
+      const page = await browser.newPage();
+
+      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
+      logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
+
+      // Capture les screenshots de manière asynchrone
+      this.captureAudioVideo(page, SCREENSHOT_FIFO).catch((error) => {
+        logger.error('Error in capture process:', error.message);
+      });
+    })().catch((error) => {
+      logger.error('Failed to start browser capture:', error.message);
     });
-
-    const page = await browser.newPage();
-
-    await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
-    logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
-
-
-    await this.captureAudioVideo(page, SCREENSHOT_FIFO);
-    //await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
   }
 
   private async captureAudioVideo(page: any, fifoPath: string) {
