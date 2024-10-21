@@ -41,17 +41,10 @@ export default class FFMPEGStream {
     private showWatermark: boolean,
   ) {}
 
-  async startStream( ) {
+  async startStream() {
     console.log('Starting stream...');
     if (this.enableBrowser) {
       console.log('Browser capture enabled.');
-      await this.createFifos();
-      if (!this.checkFifos()) {
-        console.error('Cannot start stream. FIFOs are not ready.');
-        return;
-      }
-
-      // Lance la capture du navigateur sans bloquer la suite du code
       this.startBrowserCapture();
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
@@ -63,6 +56,8 @@ export default class FFMPEGStream {
       'rkmpp',
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
+      '-f', 'mjpeg', // Utiliser mjpeg pour le flux
+      '-i', 'pipe:0' // Lire à partir de l'entrée standard
     ];
 
     const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
@@ -76,7 +71,7 @@ export default class FFMPEGStream {
     }
 
     if (this.loop) {
-      inputParameters.push('-stream_loop', '-1')
+      inputParameters.push('-stream_loop', '-1');
     }
     inputParameters.push(
       '-f',
@@ -87,46 +82,29 @@ export default class FFMPEGStream {
       `concat:${this.timelinePath}`,
       '-r',
       this.fps.toString()
-    )
+    );
 
     if (this.showWatermark) {
-      inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
+      inputParameters.push('-i', app.publicPath('watermark/watermark.png'));
     }
 
-    let filterComplex: string[] = []
+    let filterComplex: string[] = [];
 
     if (this.enableBrowser) {
-      inputParameters.push('-i', SCREENSHOT_FIFO);
-      //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
+      filterComplex.push(
+        `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,
+        `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];`
+      );
     }
 
     if (this.showWatermark) {
-      const logoScale = 'scale=200:-1';
       const logoPosition = '(main_w-overlay_w)/2:10';
-
-      if (this.enableBrowser) {
-        filterComplex.push(
-          `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,  // Traiter le flux navigateur avec colorkey
-          `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];`,  // Superpose le navigateur au centre
-          `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`  // Ajoute le watermark
-        );
-      } else {
-        filterComplex.push(
-          `[1:v]${logoScale}[logo];`,  // Redimensionne le logo
-          `[0:v][logo]overlay=${logoPosition}[vout]`  // Ajoute le logo à l'arrière-plan
-        );
-      }
+      filterComplex.push(
+        `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`
+      );
     } else {
-      if (this.enableBrowser) {
-        filterComplex.push(
-          `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,  // Traiter le flux navigateur avec colorkey
-          `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2,fps=fps=${this.fps}[vout]`  // Superposer au centre de la vidéo principale
-        );
-      } else {
-        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
-      }
+      filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
     }
-
 
     const encodingParameters = [
       '-filter_complex',
@@ -135,8 +113,6 @@ export default class FFMPEGStream {
       '[vout]',
       '-map',
       '0:a?',
-      //'-map',
-      //'1:a?',
       '-s',
       this.resolution,
       '-c:a',
@@ -151,23 +127,23 @@ export default class FFMPEGStream {
       `${Number.parseInt(this.bitrate) * 2}k`,
       '-flags',
       'low_delay',
-    ]
+    ];
 
     // Gestion de la sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
-      const channel = this.channels[0]
-      const baseUrl = BASE_URLS[channel.type]
-      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
-      encodingParameters.push('-f', 'flv', outputUrl)
+      const channel = this.channels[0];
+      const baseUrl = BASE_URLS[channel.type];
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
+      encodingParameters.push('-f', 'flv', outputUrl);
     } else {
       const teeOutput = this.channels
         .map((channel) => {
-          const baseUrl = BASE_URLS[channel.type]
-          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
-          return `[f=flv]${outputUrl}`
+          const baseUrl = BASE_URLS[channel.type];
+          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
+          return `[f=flv]${outputUrl}`;
         })
-        .join('|')
-      encodingParameters.push('-f', 'tee', teeOutput)
+        .join('|');
+      encodingParameters.push('-f', 'tee', teeOutput);
     }
 
     this.startTimeTracking();
@@ -175,16 +151,19 @@ export default class FFMPEGStream {
 
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    })
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    // Consommer les captures d'écran via Redis et les envoyer à ffmpeg
+    this.consumeRedisAndPipeToFfmpeg(this.instance.stdin);
 
     this.instance.stdout.on('data', (data) => {
-      console.log(`FFmpeg stdout: ${data}`)
-    })
+      console.log(`FFmpeg stdout: ${data}`);
+    });
 
     this.instance.stderr.on('data', (data) => {
-      logger.info(data.toString())
-    })
+      logger.info(data.toString());
+    });
 
     this.instance.on('exit', async (code) => {
       if (code !== 0 && !this.isStopping) {
@@ -220,21 +199,48 @@ export default class FFMPEGStream {
       });
 
       const page = await browser.newPage();
-
       await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
       await page.evaluate(() => {
         document.body.style.background = 'transparent';
       });
 
-      // Capture les screenshots de manière asynchrone
-      this.captureAudioVideo(page, SCREENSHOT_FIFO).catch((error) => {
+      // Capture et publication via Redis
+      this.captureAndPublishToRedis(page).catch((error) => {
         logger.error('Error in capture process:', error.message);
       });
     })().catch((error) => {
       logger.error('Failed to start browser capture:', error.message);
     });
   }
+
+  private async captureAndPublishToRedis(page: any) {
+    while (this.enableBrowser) {
+      try {
+        const screenshot = await page.screenshot({ type: 'jpeg', quality: 30 });
+        const screenshotBase64 = screenshot.toString('base64');
+        await redis.publish(`stream:${this.streamId}:screenshots`, screenshotBase64);
+        await new Promise((resolve) => setTimeout(resolve, 1000 / this.fps));
+      } catch (error) {
+        logger.error('Error capturing screenshot or publishing to Redis:', error.message);
+        this.enableBrowser = false;
+        break;
+      }
+    }
+  }
+
+  private async consumeRedisAndPipeToFfmpeg(ffmpegStdin: any) {
+    redis.subscribe(`stream:${this.streamId}:screenshots`, async (message: string) => {
+      const screenshotBuffer = Buffer.from(message, 'base64')
+      ffmpegStdin.write(screenshotBuffer)
+    });
+
+    this.instance.on('close', () => {
+      redis.unsubscribe(`stream:${this.streamId}:screenshots`);
+    });
+  }
+
+
 
   private async captureAudioVideo(page: any, fifoPath: string) {
     let writeStream;
