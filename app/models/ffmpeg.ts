@@ -100,26 +100,26 @@ export default class FFMPEGStream {
     }
 
     if (this.showWatermark) {
-      const logoScale = 'scale=200:-1'
-      const logoPosition = '(main_w-overlay_w)/2:10'
+      const logoScale = 'scale=200:-1';
+      const logoPosition = '(main_w-overlay_w)/2:10';
 
       if (this.enableBrowser) {
         filterComplex.push(
-          `[1:v]colorkey=0xFFFFFF:0.1:0.2[transparent];`,
-          `[0:v][transparent]overlay=0:0[watermarked];`,
-          `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`
+          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Appliquer blend sur le flux du navigateur
+          `[0:v][blended]overlay=0:0[watermarked];`,  // Superposer le contenu du navigateur
+          `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`  // Ajouter le watermark
         );
       } else {
-        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
+        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`);
       }
     } else {
       if (this.enableBrowser) {
         filterComplex.push(
-          `[1:v]colorkey=0xFFFFFF:0.1:0.2[transparent];`,
-          `[0:v][transparent]overlay=0:0,fps=fps=${this.fps}[vout]`
-        )
+          `[1:v]format=rgba,blend=all_mode='overlay',format=yuv420p[blended];`,  // Utiliser blend pour mélanger le navigateur avec le fond
+          `[0:v][blended]overlay=0:0,fps=fps=${this.fps}[vout]`
+        );
       } else {
-        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
       }
     }
 
@@ -214,6 +214,9 @@ export default class FFMPEGStream {
 
       await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
+      await page.evaluate(() => {
+        document.body.style.background = 'transparent';
+      });
 
       // Capture les screenshots de manière asynchrone
       this.captureAudioVideo(page, SCREENSHOT_FIFO).catch((error) => {
@@ -230,20 +233,19 @@ export default class FFMPEGStream {
       writeStream = fs.createWriteStream(fifoPath, { flags: 'a' });
 
       writeStream.on('error', (error) => {
-        logger.error('Write stream error:', error.message);
         this.enableBrowser = false;
       });
 
       while (this.enableBrowser) {
         try {
-          const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
+          const screenshot = await page.screenshot({ type: 'jpeg', quality: 30 });
           if (writeStream.writable) {
             writeStream.write(screenshot);
           } else {
             logger.error('Write stream is not writable.');
             break;
           }
-          await new Promise((resolve) => setTimeout(resolve, 1000 / this.fps));
+          await new Promise((resolve) => setTimeout(resolve, 1000 / 30));
         } catch (error) {
           logger.error('Error capturing screenshot or writing to FIFO:', error.message);
           this.enableBrowser = false;
