@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import FFMPEGStream from '#models/ffmpeg'
 
 export default class StreamsController {
-  async startStream({request, response, params}: HttpContext) {
+  async startStream({request, response}: HttpContext) {
     const {
       channels,
       timelinePath,
@@ -14,6 +14,8 @@ export default class StreamsController {
       bitrate,
       resolution,
       fps,
+      loop,
+      showWatermark
     } = request.all()
 
     const stream = new FFMPEGStream(
@@ -26,10 +28,12 @@ export default class StreamsController {
       webpageUrl,
       bitrate,
       resolution,
-      fps
+      fps,
+      loop,
+      showWatermark
     )
 
-    stream.startStream((bitrate) => {
+    await stream.startStream((bitrate) => {
       response.json({bitrate})
     })
   }
@@ -37,7 +41,7 @@ export default class StreamsController {
   async stopStream({response, params}: HttpContext) {
     const {id} = params
 
-    FFMPEGStream.stopStream(parseInt(id))
+    await FFMPEGStream.stopStream(parseInt(id))
 
     response.json({message: 'Stream stopped'})
   }

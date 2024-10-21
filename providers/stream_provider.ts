@@ -32,6 +32,7 @@ export default class StreamProvider {
       const streamData = JSON.parse(message);
 
       const stream = new FFMPEGStream(
+        streamData.id,
         streamData.channels,
         streamData.timelinePath,
         streamData.logo,
@@ -77,6 +78,22 @@ export default class StreamProvider {
         }
       } else {
         console.error(`No PID found for stream ID ${id}.`);
+      }
+    });
+
+    redis.psubscribe('stream:*:restart', async (pattern, message) => {
+      const { id } = JSON.parse(message);
+
+      // Récupérer les données du stream pour redémarrer
+      const streamData = await redis.get(`stream:${id}:data`);
+      if (streamData) {
+        const streamInstance = this.streams.get(id);
+        if (streamInstance) {
+          console.log(`Attempting to restart stream: ${id}`);
+          await streamInstance.startStream();
+        } else {
+          console.error(`Stream instance not found for ID: ${id}`);
+        }
       }
     });
   }

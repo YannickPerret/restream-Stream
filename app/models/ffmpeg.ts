@@ -7,6 +7,7 @@ import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
 import app from "@adonisjs/core/services/app";
+import redis from "@adonisjs/redis/services/main";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -19,7 +20,11 @@ const BASE_URLS: Record<string, string> = {
 export default class FFMPEGStream {
   private instance: any
   private analyticsInterval: NodeJS.Timeout | null = null
+  private timeTrackingInterval: NodeJS.Timeout | null = null;
+  private elapsedTime: number = 0;
+
   constructor(
+    private streamId: string,
     private channels: { type: string; streamKey: string }[],
     private timelinePath: string,
     private logo: string,
@@ -34,7 +39,7 @@ export default class FFMPEGStream {
     private showWatermark: boolean,
   ) {}
 
-  async startStream() {
+  async startStream(p0: (bitrate: any) => void) {
     this.createFifos()
 
     const inputParameters = [
@@ -44,6 +49,18 @@ export default class FFMPEGStream {
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
     ]
+
+
+    const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
+    if (savedElapsedTime) {
+      const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
+      const hours = Math.floor(resumeTimeInSeconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((resumeTimeInSeconds % 3600) / 60).toString().padStart(2, '0');
+      const seconds = (resumeTimeInSeconds % 60).toString().padStart(2, '0');
+      const resumeTime = `${hours}:${minutes}:${seconds}`;
+      inputParameters.push('-ss', resumeTime); // Reprendre à partir du temps sauvegardé
+    }
+
     if (this.loop) {
       inputParameters.push('-stream_loop', '-1')
     }
@@ -66,7 +83,8 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       await this.startBrowserCapture()
-      inputParameters.push('-i', SCREENSHOT_FIFO)
+      inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
+      //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
     }
 
     if (this.showWatermark) {
@@ -76,8 +94,8 @@ export default class FFMPEGStream {
       if (this.enableBrowser) {
         filterComplex.push(
           `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
-          `[watermarked][2:v]overlay=0:0,fps=fps=${this.fps}[vout]`
-        )
+          `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
+        );
       } else {
         filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
       }
@@ -96,6 +114,8 @@ export default class FFMPEGStream {
       '[vout]',
       '-map',
       '0:a?',
+      '-map',
+      '1:a?',
       '-s',
       this.resolution,
       '-c:a',
@@ -129,6 +149,8 @@ export default class FFMPEGStream {
       encodingParameters.push('-f', 'tee', teeOutput)
     }
 
+    this.startTimeTracking();
+
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -141,6 +163,12 @@ export default class FFMPEGStream {
     this.instance.stderr.on('data', (data) => {
       logger.info(data.toString())
     })
+
+    this.instance.on('exit', async (code) => {
+      if (code !== 0) {
+        await this.startStream();
+      }
+    });
 
     return Number.parseInt(this.instance.pid.toString(), 10)
   }
@@ -183,7 +211,7 @@ export default class FFMPEGStream {
       '--use-gl=swiftshader',
       '--use-mock-keychain',
     ]
-    const browser = await puppeteer.launch({
+    const launchOptions = {
       args: [
         '--window-size=640,480',
         '--window-position=640,0',
@@ -195,52 +223,63 @@ export default class FFMPEGStream {
       ],
       //executablePath: '/usr/bin/chromium-browser',
       ignoreDefaultArgs: ['--enable-automation'],
-    })
+    }
 
-    const page = await browser.newPage()
-    await page.goto(this.webpageUrl)
+    const browser1 = await puppeteer.launch(launchOptions);
+    const browser2 = await puppeteer.launch(launchOptions);
 
-    let writeStream
+    const page1 = await browser1.newPage();
+    const page2 = await browser2.newPage();
+
+    await page1.goto(this.webpageUrl);
+    await page2.goto(this.webpageUrl)
+
+    await this.captureAudioVideo(page1, SCREENSHOT_FIFO + '_1');
+    await this.captureAudioVideo(page2, SCREENSHOT_FIFO + '_2');
+  }
+
+  private async captureAudioVideo(page: puppeteer.Page, fifoPath: string) {
+    let writeStream;
     try {
-      writeStream = fs.createWriteStream(SCREENSHOT_FIFO, { flags: 'a' })
+      writeStream = fs.createWriteStream(fifoPath, { flags: 'a' });
 
       writeStream.on('error', (error) => {
-        logger.error('Write stream error:', error.message)
-        this.enableBrowser = false
-      })
+        logger.error('Write stream error:', error.message);
+        this.enableBrowser = false;
+      });
 
       while (this.enableBrowser) {
         try {
-          const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 })
-          writeStream.write(screenshot)
-          await new Promise((resolve) => setTimeout(resolve, 1))
+          const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
+          writeStream.write(screenshot);
+          await new Promise((resolve) => setTimeout(resolve, 1));
         } catch (error) {
-          logger.error('Error capturing screenshot or writing to FIFO:', error.message)
-          this.enableBrowser = false
-          break
+          logger.error('Error capturing screenshot or writing to FIFO:', error.message);
+          this.enableBrowser = false;
+          break;
         }
       }
     } catch (error) {
-      logger.error('Error initializing write stream:', error.message)
+      logger.error('Error initializing write stream:', error.message);
     } finally {
       if (writeStream) {
-        writeStream.end()
+        writeStream.end();
       }
-      await browser.close()
+      await page.browser().close();
     }
   }
 
   private createFifos() {
-    ;[SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
+    ;[SCREENSHOT_FIFO + '_1', SCREENSHOT_FIFO + '_2', OUTPUT_FIFO].forEach((fifo) => {
       if (fs.existsSync(fifo)) {
-        fs.unlinkSync(fifo)
+        fs.unlinkSync(fifo);
       }
-      spawn('mkfifo', [fifo])
-    })
+      spawn('mkfifo', [fifo]);
+    });
   }
 
   private removeFifos() {
-    ;[SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
+    ;[SCREENSHOT_FIFO + '_1', SCREENSHOT_FIFO + '_2', OUTPUT_FIFO].forEach((fifo) => {
       try {
         if (fs.existsSync(fifo)) {
           fs.unlinkSync(fifo)
@@ -291,5 +330,24 @@ export default class FFMPEGStream {
     if (this.analyticsInterval) {
       clearInterval(this.analyticsInterval);
     }
+
+    if (this.analyticsInterval) {
+      clearInterval(this.analyticsInterval);
+    }
+
+    if (this.timeTrackingInterval) {
+      clearInterval(this.timeTrackingInterval);
+    }
+
+    await redis.del(`stream:${this.streamId}:elapsed_time`);
+  }
+
+  private startTimeTracking() {
+    this.elapsedTime = 0;
+
+    this.timeTrackingInterval = setInterval(async () => {
+      this.elapsedTime += 10;
+      await redis.set(`stream:${this.streamId}:elapsed_time`, this.elapsedTime.toString());
+    }, 10000);
   }
 }
