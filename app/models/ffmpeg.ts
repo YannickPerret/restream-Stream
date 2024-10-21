@@ -89,7 +89,7 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
+      //inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
       //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
     }
 
@@ -109,7 +109,7 @@ export default class FFMPEGStream {
       if (this.enableBrowser) {
         filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
       } else {
-        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+        //filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
       }
     }
 
