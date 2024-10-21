@@ -55,7 +55,7 @@ export default class FFMPEGStream {
       '-hwaccel',
       'rkmpp',
       '-protocol_whitelist',
-      'file,concat,http,https,tcp,tls,crypto',
+      'file,concat,http,https,tcp,tls,crypto, pipe',
       '-f', 'mjpeg', // Utiliser mjpeg pour le flux
       '-i', 'pipe:0' // Lire à partir de l'entrée standard
     ];
