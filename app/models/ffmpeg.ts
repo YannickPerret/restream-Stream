@@ -51,6 +51,7 @@ export default class FFMPEGStream {
         return;
       }
       await this.startBrowserCapture()
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     const inputParameters = [
@@ -221,8 +222,14 @@ export default class FFMPEGStream {
       while (this.enableBrowser) {
         try {
           const screenshot = await page.screenshot({ type: 'jpeg', quality: 50 });
-          writeStream.write(screenshot);
-          await new Promise((resolve) => setTimeout(resolve, 1));
+          if (writeStream.writable) {
+            writeStream.write(screenshot);
+            logger.info('Screenshot written to FIFO.');
+          } else {
+            logger.error('Write stream is not writable.');
+            break;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 1000 / 60)); // 60 fps
         } catch (error) {
           logger.error('Error capturing screenshot or writing to FIFO:', error.message);
           this.enableBrowser = false;
@@ -239,6 +246,7 @@ export default class FFMPEGStream {
       await page.context().browser().close();
     }
   }
+
 
   private async createFifos() {
     const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
