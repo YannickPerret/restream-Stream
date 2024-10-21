@@ -89,7 +89,7 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.enableBrowser) {
-      //inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
+      inputParameters.push('-i', SCREENSHOT_FIFO + '_1');
       //inputParameters.push('-i', SCREENSHOT_FIFO + '_2');
     }
 
@@ -98,16 +98,16 @@ export default class FFMPEGStream {
       const logoPosition = '(main_w-overlay_w)/2:10'
 
       if (this.enableBrowser) {
-        /*filterComplex.push(
+        filterComplex.push(
           `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
           `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
-        );*/
+        );
       } else {
         filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
       }
     } else {
       if (this.enableBrowser) {
-        //filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
       } else {
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
       }
