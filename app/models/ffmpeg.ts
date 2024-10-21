@@ -242,12 +242,27 @@ export default class FFMPEGStream {
   }
 
   private async createFifos() {
-    [SCREENSHOT_FIFO, OUTPUT_FIFO].forEach(fifo => {
-      if (fs.existsSync(fifo)) {
-        fs.unlinkSync(fifo);
+    const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
+    for (const fifo of fifoPaths) {
+      try {
+        if (fs.existsSync(fifo)) {
+          fs.unlinkSync(fifo); // Supprime l'ancien FIFO s'il existe
+          console.log(`Existing FIFO ${fifo} removed.`);
+        }
+        await new Promise((resolve, reject) => {
+          spawn('mkfifo', [fifo]).on('close', (code) => {
+            if (code === 0) {
+              console.log(`FIFO ${fifo} created successfully.`);
+              resolve(true);
+            } else {
+              reject(`Failed to create FIFO ${fifo} with exit code ${code}.`);
+            }
+          });
+        });
+      } catch (error) {
+        console.error(`Failed to create FIFO ${fifo}:`, error.message);
       }
-      spawn('mkfifo', [fifo]);
-    });
+    }
   }
 
   private removeFifos() {
