@@ -2,16 +2,15 @@ import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
 import { chromium } from 'playwright'
 import encryption from '@adonisjs/core/services/encryption'
-import { spawn } from 'node:child_process'
+import { spawn, execSync } from 'node:child_process'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
-import transmit from "@adonisjs/transmit/services/main";
-import redis from "@adonisjs/redis/services/main";
-import {Readable} from "node:stream";
+import transmit from '@adonisjs/transmit/services/main'
+import redis from '@adonisjs/redis/services/main'
+import app from '@adonisjs/core/services/app'
 
-const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
-const OUTPUT_FIFO = '/tmp/puppeteer_stream'
-const RESTART_DELAY_MS = 10000;
+const FIFO_PATH = '/tmp/ffmpeg_fifo'
+const RESTART_DELAY_MS = 10000
 
 const BASE_URLS: Record<string, string> = {
   twitch: 'rtmp://live.twitch.tv/app',
@@ -21,11 +20,10 @@ const BASE_URLS: Record<string, string> = {
 export default class FFMPEGStream {
   private instance: any
   private analyticsInterval: NodeJS.Timeout | null = null
-  private timeTrackingInterval: NodeJS.Timeout | null = null;
-  private elapsedTime: number = 0;
-  private isStopping: boolean = false;
-  private screenshotStream: Readable;
-
+  private timeTrackingInterval: NodeJS.Timeout | null = null
+  private elapsedTime: number = 0
+  private isStopping: boolean = false
+  private fifoWriteStream: fs.WriteStream
 
   constructor(
     private streamId: string,
@@ -40,46 +38,60 @@ export default class FFMPEGStream {
     private resolution: string,
     private fps: number,
     private loop: boolean,
-    private showWatermark: boolean,
+    private showWatermark: boolean
   ) {}
 
   async startStream() {
-    console.log('Starting stream...');
+    console.log('Starting stream...')
 
-    // Créez le flux de captures d'écran
-    this.screenshotStream = new Readable({
-      read() {},
-    });
+    // Supprimer le FIFO existant s'il existe
+    if (fs.existsSync(FIFO_PATH)) {
+      fs.unlinkSync(FIFO_PATH)
+    }
+
+    // Créer le FIFO en exécutant la commande `mkfifo`
+    try {
+      execSync(`mkfifo ${FIFO_PATH}`)
+    } catch (error) {
+      console.error('Failed to create FIFO:', error)
+      throw error
+    }
 
     if (this.enableBrowser) {
-      console.log('Browser capture enabled.');
+      console.log('Browser capture enabled.')
       this.startBrowserCapture().catch((error) => {
-        logger.error('Failed to start browser capture:', error.message);
-      });
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+        logger.error('Failed to start browser capture:', error.message)
+      })
 
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     const inputParameters = [
-      '-re',
-      '-f', 'image2pipe',
-      '-vcodec', 'png',
-      '-r', this.fps.toString(),
-      '-i', 'pipe:0',
+      '-init_hw_device', 'rkmpp:rockchip',
+      '-filter_hw_device', 'rockchip',
+      '-f',
+      'image2pipe',
+      '-framerate',
+      '15',
+      '-vcodec',
+      'png',
+      '-i',
+      FIFO_PATH,
+      '-protocol_whitelist',
+      'file,concat,http,https,tcp,tls,crypto',
+      '-safe',
+      '0',
+      '-f',
+      'concat',
+      '-i',
+      this.timelinePath,
     ];
 
-    if (this.loop) {
-      inputParameters.push('-stream_loop', '-1');
+    if (this.showWatermark) {
+      inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
+    let filterComplex: string[] = []
 
-    inputParameters.push(
-      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-      '-safe', '0',
-      '-f', 'concat',
-      '-i', this.timelinePath,
-    );
-
-    let filterComplex = []
 
     if (this.showWatermark) {
       const logoScale = 'scale=200:-1'
@@ -102,16 +114,22 @@ export default class FFMPEGStream {
     }
 
     const encodingParameters = [
-      '-filter_complex', filterComplex.join(''),
-      '-map', '[vout]',
-      '-map', '0:a?',
-      '-s', this.resolution,
-      '-c:a', 'aac',
-      '-c:v', 'h264_rkmpp',
-      '-b:v', this.bitrate,
-      '-maxrate', this.bitrate,
-      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
-      '-flags', 'low_delay',
+      '-filter_complex',
+      filterComplex.join(''),
+      '-map',
+      '[final]',
+      '-c:a',
+      'aac',
+      '-c:v',
+      'h264_rkmpp',
+      '-rc_mode',
+      'CBR',
+      '-b:v',
+      this.bitrate,
+      '-maxrate',
+      this.bitrate,
+      '-bufsize',
+      `${Number.parseInt(this.bitrate) * 2}k`,
     ];
 
     // Gérer la sortie pour un ou plusieurs canaux
@@ -131,153 +149,133 @@ export default class FFMPEGStream {
       encodingParameters.push('-f', 'tee', teeOutput)
     }
 
-    this.isStopping = false;
-    this.startTimeTracking();
+    this.isStopping = false
+    this.startTimeTracking()
 
     // Démarrer le processus FFmpeg
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
-      stdio: ['pipe', 'inherit', 'inherit'],
-    });
+      stdio: ['ignore', 'inherit', 'inherit'],
+    })
 
-    // Pipeliner le flux de captures d'écran vers stdin de FFmpeg
-    this.screenshotStream.pipe(this.instance.stdin);
+    this.instance.on('error', (error) => {
+      console.error(`FFmpeg process error: ${error.message}`)
+    })
+
+    this.instance.on('close', (code, signal) => {
+      console.log(`FFmpeg process closed with code ${code} and signal ${signal}`)
+    })
 
     this.instance.on('exit', (code) => {
+      console.log(`FFmpeg process exited with code ${code}`)
       if (code !== 0 && !this.isStopping) {
-        console.log('FFmpeg exited unexpectedly. Attempting to restart...');
-        setTimeout(() => this.startStream(), RESTART_DELAY_MS);
+        console.log('FFmpeg exited unexpectedly. Attempting to restart...')
+        setTimeout(() => this.startStream(), RESTART_DELAY_MS)
       }
-    });
+    })
 
-    const pid = this.instance.pid;
-    console.log(`Stream ${this.streamId} started with PID ${pid}`);
-    // Enregistrez le PID si nécessaire
+    const pid = this.instance.pid
+    console.log(`Stream ${this.streamId} started with PID ${pid}`)
   }
+
   private async startBrowserCapture() {
-    (async () => {
-      const browser = await chromium.launch({
-        args: [
-          '--window-size=640,480',
-          '--window-position=640,0',
-          '--disable-gpu',
-          '--no-sandbox',
-          '--disable-software-rasterizer',
-          '--disable-dev-shm-usage',
-          '--use-gl=swiftshader',
-          '--disable-web-security',
-          '--disable-features=VaapiVideoDecoder,WebRTC',
-        ],
-        ignoreDefaultArgs: ['--disable-dev-shm-usage'],
-        headless: true,
-        executablePath: '/usr/bin/chromium-browser',
-      });
+    const browser = await chromium.launch({
+      args: [
+        '--window-size=640,480',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-web-security',
+        '--disable-extensions',
+        '--disable-sync',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-translate',
+        '--disable-notifications',
+        '--disable-hang-monitor',
+        '--disable-popup-blocking',
+        '--disable-prompt-on-repost',
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-device-discovery-notifications',
+      ],
+      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
+      headless: true,
+      executablePath: '/usr/bin/chromium-browser',
+    })
 
-      const page = await browser.newPage();
-      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
-      logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
-      /*await page.evaluate(() => {
-        document.body.style.background = 'transparent';
-      });*/
+    const [width, height] = this.resolution.split('x').map(Number)
 
-      this.captureAndStreamScreenshots(page).catch((error) => {
-        logger.error('Error in capture process:', error.message);
-      });
-    })().catch((error) => {
-      logger.error('Failed to start browser capture:', error.message);
-    });
+    const page = await browser.newPage({
+      viewport: { width, height },
+    })
+
+    await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 7000 })
+    logger.info(`Browser navigated to ${this.webpageUrl} successfully.`)
+
+    // Ouvrir le FIFO en écriture
+    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH)
+
+    this.captureAndStreamScreenshots(page).catch((error) => {
+      logger.error('Error in capture process:', error.message)
+    })
   }
 
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
-        const screenshotBuffer = await page.screenshot({ type: 'png', omitBackground: true });
-        // Pousser le buffer dans le flux
-        this.screenshotStream.push(screenshotBuffer);
-        await new Promise((resolve) => setTimeout(resolve, 1000 / this.fps));
+        const screenshotBuffer = await page.screenshot({
+          type: 'png',
+          omitBackground: true,
+          compressionLevel: 9,
+        })
+
+        // Écrire le buffer dans le FIFO
+        this.fifoWriteStream.write(screenshotBuffer)
+
+        await new Promise((resolve) => setTimeout(resolve, 1000 / 15)) // 15 FPS
       }
     } catch (error) {
-      logger.error('Error capturing screenshot:', error.message);
-      this.enableBrowser = false;
+      logger.error('Error capturing screenshot:', error.message)
+      this.enableBrowser = false
     } finally {
-      // Terminer le flux
-      this.screenshotStream.push(null);
-      await page.close();
-      await page.context().browser().close();
+      // Fermer le FIFO
+      if (this.fifoWriteStream) {
+        this.fifoWriteStream.end()
+      }
+      await page.close()
+      await page.context().browser().close()
     }
   }
 
-  private async captureAudioVideo(page: any, fifoPath: string) {
-    let writeStream;
-    try {
-      writeStream = fs.createWriteStream(fifoPath, { flags: 'a' });
+  stopStream = async (pid: number) => {
+    this.isStopping = true
+    if (this.instance) {
+      process.kill(pid, 'SIGKILL')
+    }
+    if (this.analyticsInterval) {
+      clearInterval(this.analyticsInterval)
+    }
+    if (this.timeTrackingInterval) {
+      clearInterval(this.timeTrackingInterval)
+    }
+    await redis.del(`stream:${this.streamId}:elapsed_time`)
 
-      writeStream.on('error', (error) => {
-        this.enableBrowser = false;
-      });
-
-      while (this.enableBrowser) {
-        try {
-          const screenshot = await page.screenshot({ type: 'jpeg', quality: 30 });
-          if (writeStream.writable) {
-            writeStream.write(screenshot);
-          } else {
-            logger.error('Write stream is not writable.');
-            break;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 1000 / 30));
-        } catch (error) {
-          logger.error('Error capturing screenshot or writing to FIFO:', error.message);
-          this.enableBrowser = false;
-          break;
-        }
-      }
-    } catch (error) {
-      logger.error('Error initializing write stream:', error.message);
-    } finally {
-      if (writeStream) {
-        writeStream.end();
-      }
-      await page.close();
-      await page.context().browser().close();
+    // Supprimer le FIFO s'il existe
+    if (fs.existsSync(FIFO_PATH)) {
+      fs.unlinkSync(FIFO_PATH)
     }
   }
 
-  private async createFifos() {
-    const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
-    for (const fifo of fifoPaths) {
-      try {
-        if (fs.existsSync(fifo)) {
-          fs.unlinkSync(fifo); // Supprime l'ancien FIFO s'il existe
-          console.log(`Existing FIFO ${fifo} removed.`);
-        }
-        await new Promise((resolve, reject) => {
-          spawn('mkfifo', [fifo]).on('close', (code) => {
-            if (code === 0) {
-              console.log(`FIFO ${fifo} created successfully.`);
-              resolve(true);
-            } else {
-              reject(`Failed to create FIFO ${fifo} with exit code ${code}.`);
-            }
-          });
-        });
-      } catch (error) {
-        console.error(`Failed to create FIFO ${fifo}:`, error.message);
-      }
-    }
-  }
+  private startTimeTracking() {
+    this.elapsedTime = 0
 
-  private removeFifos() {
-    ;[SCREENSHOT_FIFO, OUTPUT_FIFO].forEach((fifo) => {
-      try {
-        if (fs.existsSync(fifo)) {
-          fs.unlinkSync(fifo)
-          console.log(`FIFO ${fifo} removed successfully.`)
-        }
-      } catch (error) {
-        console.error(`Failed to remove FIFO ${fifo}:`, error.message)
-      }
-    })
+    this.timeTrackingInterval = setInterval(async () => {
+      this.elapsedTime += 10
+      await redis.set(`stream:${this.streamId}:elapsed_time`, this.elapsedTime.toString())
+    }, 10000)
   }
 
   sendAnalytics = async (streamId: string, pid: number) => {
@@ -310,52 +308,4 @@ export default class FFMPEGStream {
       }
     }, 8000);
   }
-
-  stopStream = async (pid: number) => {
-    this.isStopping = true;
-    if (this.instance) {
-      process.kill(pid, 'SIGKILL');
-      this.removeFifos();
-    }
-    if (this.analyticsInterval) {
-      clearInterval(this.analyticsInterval);
-    }
-
-    if (this.analyticsInterval) {
-      clearInterval(this.analyticsInterval);
-    }
-
-    if (this.timeTrackingInterval) {
-      clearInterval(this.timeTrackingInterval);
-    }
-
-    await redis.del(`stream:${this.streamId}:elapsed_time`);
-  }
-
-  private startTimeTracking() {
-    this.elapsedTime = 0;
-
-    this.timeTrackingInterval = setInterval(async () => {
-      this.elapsedTime += 10;
-      await redis.set(`stream:${this.streamId}:elapsed_time`, this.elapsedTime.toString());
-    }, 10000);
-  }
-
-  private checkFifos(): boolean {
-    const fifoPaths = [SCREENSHOT_FIFO, OUTPUT_FIFO];
-    for (const fifo of fifoPaths) {
-      if (!fs.existsSync(fifo)) {
-        logger.error(`FIFO ${fifo} does not exist.`);
-        return false;
-      }
-      try {
-        fs.accessSync(fifo, fs.constants.W_OK | fs.constants.R_OK);
-      } catch (err) {
-        logger.error(`No read/write access to FIFO ${fifo}: ${err.message}`);
-        return false;
-      }
-    }
-    return true;
-  }
-
 }
