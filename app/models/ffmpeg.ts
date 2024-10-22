@@ -66,15 +66,18 @@ export default class FFMPEGStream {
       '-vcodec', 'png',
       '-r', this.fps.toString(),
       '-i', 'pipe:0',
-      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-      '-safe', '0',
-      '-f', 'concat',
-      '-i', this.timelinePath,
     ];
 
     if (this.loop) {
       inputParameters.push('-stream_loop', '-1');
     }
+
+    inputParameters.push(
+      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
+      '-safe', '0',
+      '-f', 'concat',
+      '-i', this.timelinePath,
+    );
 
     let filterComplex = '';
 
