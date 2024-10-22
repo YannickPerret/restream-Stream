@@ -103,13 +103,6 @@ export default class FFMPEGStream {
     }
     let filterComplex: string[] = []
 
-
-    if (this.showWatermark) {
-      inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
-    }
-    let filterComplex: string[] = []
-
-
     if (this.showWatermark) {
       const logoScale = 'scale=200:-1'
       const logoPosition = '(main_w-overlay_w)/2:10'
