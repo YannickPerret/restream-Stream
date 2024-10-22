@@ -57,9 +57,7 @@ export default class FFMPEGStream {
         console.error('Failed to create FIFO:', error)
         throw error
       }
-    }
 
-    if (this.enableBrowser) {
       console.log('Browser capture enabled.')
       this.startBrowserCapture().catch((error) => {
         logger.error('Failed to start browser capture:', error.message)
@@ -100,8 +98,6 @@ export default class FFMPEGStream {
       this.fps.toString(),
     )
 
-
-    console.log(this.showWatermark)
     if (this.showWatermark) {
       inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
