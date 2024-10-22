@@ -169,6 +169,7 @@ export default class FFMPEGStream {
     this.startTimeTracking()
 
     // Démarrer le processus FFmpeg
+    console.log([...inputParameters, ...encodingParameters])
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
       stdio: ['ignore', 'inherit', 'inherit'],
