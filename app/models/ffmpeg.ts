@@ -89,7 +89,7 @@ export default class FFMPEGStream {
     if (this.enableBrowser) {
       inputParameters.push(
         '-f',
-        'image2',
+        'image2pipe',
         '-thread_queue_size', '3072',
         '-framerate', '15.9',
         '-vcodec',
