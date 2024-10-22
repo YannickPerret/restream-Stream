@@ -69,8 +69,7 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
-      'hwaccel',
-      'h264_rkmpp']
+      '-hwaccel', 'h264_rkmpp']
 
     if (this.enableBrowser) {
       inputParameters.push(
@@ -223,8 +222,9 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'jpeg',
-          quality: 40,
+          type: 'png',
+          quality: 50,
+          compression: 7,
           omitBackground: true,
         })
 
