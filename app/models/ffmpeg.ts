@@ -99,6 +99,7 @@ export default class FFMPEGStream {
     )
 
 
+    console.log(this.showWatermark)
     if (this.showWatermark) {
       inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
