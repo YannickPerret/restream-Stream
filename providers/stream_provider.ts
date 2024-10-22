@@ -1,6 +1,7 @@
 import type { ApplicationService } from '@adonisjs/core/types'
 import FFMPEGStream from '#models/ffmpeg'
 import redis from "@adonisjs/redis/services/main";
+import GStreamerStream from "#models/gstreamer";
 
 export default class StreamProvider {
   private streams: Map<string, FFMPEGStream> = new Map(); // Stocker les instances de streams
@@ -31,26 +32,48 @@ export default class StreamProvider {
     redis.psubscribe('stream:*:start', async (pattern, message) => {
       const streamData = JSON.parse(message);
 
-      const stream = new FFMPEGStream(
-        streamData.id,
-        streamData.channels,
-        streamData.timelinePath,
-        streamData.logo,
-        streamData.overlay,
-        streamData.guestFile,
-        streamData.enableBrowser,
-        streamData.webpageUrl,
-        streamData.bitrate,
-        streamData.resolution,
-        streamData.fps,
-        streamData.loop,
-        streamData.showWatermark,
-      );
+      if (streamData.type === 'gstreamer') {
+        const stream = new GStreamerStream(
+          streamData.id,
+          streamData.channels,
+          streamData.timelinePath,
+          streamData.logo,
+          streamData.overlay,
+          streamData.enableBrowser,
+          streamData.webpageUrl,
+          streamData.bitrate,
+          streamData.resolution,
+          streamData.fps,
+          streamData.loop,
+          streamData.showWatermark,
+        );
 
-      await stream.startStream();
+        await stream.startStream();
+      }
+      else if (streamData.type === 'ffmpeg') {
 
-      const pid = await redis.get(`stream:${streamData.id}:pid`);
-      await stream.sendAnalytics(streamData.id, pid);
+        const stream = new FFMPEGStream(
+          streamData.id,
+          streamData.channels,
+          streamData.timelinePath,
+          streamData.logo,
+          streamData.overlay,
+          streamData.guestFile,
+          streamData.enableBrowser,
+          streamData.webpageUrl,
+          streamData.bitrate,
+          streamData.resolution,
+          streamData.fps,
+          streamData.loop,
+          streamData.showWatermark,
+        );
+
+        await stream.startStream();
+        const pid = await redis.get(`stream:${streamData.id}:pid`);
+        await stream.sendAnalytics(streamData.id, pid);
+      }
+
+
     });
 
     redis.psubscribe('stream:*:stop', async (pattern, message) => {

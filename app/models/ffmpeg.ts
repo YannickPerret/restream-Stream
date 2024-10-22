@@ -8,6 +8,7 @@ import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
 import app from "@adonisjs/core/services/app";
 import redis from "@adonisjs/redis/services/main";
+import {Readable} from "node:stream";
 
 const SCREENSHOT_FIFO = '/tmp/screenshot_fifo'
 const OUTPUT_FIFO = '/tmp/puppeteer_stream'
@@ -24,6 +25,9 @@ export default class FFMPEGStream {
   private timeTrackingInterval: NodeJS.Timeout | null = null;
   private elapsedTime: number = 0;
   private isStopping: boolean = false;
+
+  private screenshotStream: Readable;
+
 
   constructor(
     private streamId: string,
@@ -43,142 +47,116 @@ export default class FFMPEGStream {
 
   async startStream() {
     console.log('Starting stream...');
+
+    // Créez le flux de captures d'écran
+    this.screenshotStream = new Readable({
+      read() {
+        // L'implémentation est vide car nous pousserons les données manuellement
+      },
+    });
+
     if (this.enableBrowser) {
       console.log('Browser capture enabled.');
-      this.startBrowserCapture();
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      this.startBrowserCapture().catch((error) => {
+        logger.error('Failed to start browser capture:', error.message);
+      });
+      // Pas besoin d'attendre ici car les captures d'écran seront poussées au fur et à mesure
     }
 
     const inputParameters = [
-      '-thread_queue_size', '512',
       '-re',
-      '-hwaccel',
-      'rkmpp',
-      '-protocol_whitelist',
-      'file,concat,http,https,tcp,tls,crypto, pipe',
-      '-f', 'mjpeg', // Utiliser mjpeg pour le flux
-      '-i', 'pipe:0' // Lire à partir de l'entrée standard
+      '-f', 'image2pipe',
+      '-vcodec', 'png',
+      '-r', this.fps.toString(),
+      '-i', 'pipe:0',
+      // Ajoutez d'autres entrées si nécessaire
+      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
+      '-safe', '0',
+      '-f', 'concat',
+      '-i', this.timelinePath,
     ];
-
-    const savedElapsedTime = await redis.get(`stream:${this.streamId}:elapsed_time`);
-    if (savedElapsedTime) {
-      const resumeTimeInSeconds = parseInt(savedElapsedTime, 10);
-      const hours = Math.floor(resumeTimeInSeconds / 3600).toString().padStart(2, '0');
-      const minutes = Math.floor((resumeTimeInSeconds % 3600) / 60).toString().padStart(2, '0');
-      const seconds = (resumeTimeInSeconds % 60).toString().padStart(2, '0');
-      const resumeTime = `${hours}:${minutes}:${seconds}`;
-      inputParameters.push('-ss', resumeTime);
-    }
 
     if (this.loop) {
       inputParameters.push('-stream_loop', '-1');
     }
-    inputParameters.push(
-      '-f',
-      'concat',
-      '-safe',
-      '0',
-      '-i',
-      `concat:${this.timelinePath}`,
-      '-r',
-      this.fps.toString()
-    );
 
-    if (this.showWatermark) {
-      inputParameters.push('-i', app.publicPath('watermark/watermark.png'));
-    }
+    let filterComplex = '';
 
-    let filterComplex: string[] = [];
-
-    if (this.enableBrowser) {
-      filterComplex.push(
-        `[1:v]scale=640:480,colorkey=0x000000:0.1:0.2[transparent];`,
-        `[0:v][transparent]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];`
-      );
-    }
-
-    if (this.showWatermark) {
-      const logoPosition = '(main_w-overlay_w)/2:10';
-      filterComplex.push(
-        `[watermarked][2:v]overlay=${logoPosition},fps=fps=${this.fps}[vout]`
-      );
+    // Construisez le filter_complex en fonction des entrées
+    if (this.enableBrowser && this.showWatermark) {
+      filterComplex = `
+        [1:v]scale=640:480[overlay];
+        [0:v][overlay]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];
+        [watermarked][2:v]overlay=10:10[final];
+      `;
+    } else if (this.enableBrowser) {
+      filterComplex = `
+        [1:v]scale=640:480[overlay];
+        [0:v][overlay]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[final];
+      `;
+    } else if (this.showWatermark) {
+      filterComplex = `
+        [0:v][1:v]overlay=10:10[final];
+      `;
     } else {
-      filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
+      filterComplex = `
+        [0:v]scale=${this.resolution}[final];
+      `;
     }
 
     const encodingParameters = [
-      '-filter_complex',
-      filterComplex.join(''),
-      '-map',
-      '[vout]',
-      '-map',
-      '0:a?',
-      '-s',
-      this.resolution,
-      '-c:a',
-      'aac',
-      '-c:v',
-      'h264_rkmpp',
-      '-b:v',
-      this.bitrate,
-      '-maxrate',
-      this.bitrate,
-      '-bufsize',
-      `${Number.parseInt(this.bitrate) * 2}k`,
-      '-flags',
-      'low_delay',
+      '-filter_complex', filterComplex.trim(),
+      '-map', '[final]',
+      '-map', '0:a?',
+      '-s', this.resolution,
+      '-c:a', 'aac',
+      '-c:v', 'libx264',
+      '-preset', 'veryfast',
+      '-b:v', this.bitrate,
+      '-maxrate', this.bitrate,
+      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
+      '-pix_fmt', 'yuv420p',
+      '-f', 'flv',
     ];
 
-    // Gestion de la sortie pour un ou plusieurs canaux
+    // Gérer la sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
       const channel = this.channels[0];
-      const baseUrl = BASE_URLS[channel.type];
-      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
-      encodingParameters.push('-f', 'flv', outputUrl);
+      const outputUrl = this.getOutputUrl(channel);
+      encodingParameters.push(outputUrl);
     } else {
       const teeOutput = this.channels
         .map((channel) => {
-          const baseUrl = BASE_URLS[channel.type];
-          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
+          const outputUrl = this.getOutputUrl(channel);
           return `[f=flv]${outputUrl}`;
         })
         .join('|');
       encodingParameters.push('-f', 'tee', teeOutput);
     }
 
-    this.startTimeTracking();
     this.isStopping = false;
+    this.startTimeTracking();
 
+    // Démarrer le processus FFmpeg
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['pipe', 'inherit', 'inherit'],
     });
 
-    // Consommer les captures d'écran via Redis et les envoyer à ffmpeg
-    this.consumeRedisAndPipeToFfmpeg(this.instance.stdin);
+    // Pipeliner le flux de captures d'écran vers stdin de FFmpeg
+    this.screenshotStream.pipe(this.instance.stdin);
 
-    this.instance.stdout.on('data', (data) => {
-      console.log(`FFmpeg stdout: ${data}`);
-    });
-
-    this.instance.stderr.on('data', (data) => {
-      logger.info(data.toString());
-    });
-
-    this.instance.on('exit', async (code) => {
+    this.instance.on('exit', (code) => {
       if (code !== 0 && !this.isStopping) {
-        console.log(`Stream exited unexpectedly. Attempting to restart in ${RESTART_DELAY_MS / 1000} seconds...`);
-        setTimeout(async () => {
-          await this.startStream();
-        }, RESTART_DELAY_MS);
+        console.log('FFmpeg exited unexpectedly. Attempting to restart...');
+        setTimeout(() => this.startStream(), 5000);
       }
     });
 
     const pid = this.instance.pid;
     console.log(`Stream ${this.streamId} started with PID ${pid}`);
-    await redis.set(`stream:${this.streamId}:pid`, pid);
+    // Enregistrez le PID si nécessaire
   }
-
   private async startBrowserCapture() {
     (async () => {
       const browser = await chromium.launch({
@@ -206,7 +184,7 @@ export default class FFMPEGStream {
       });
 
       // Capture et publication via Redis
-      this.captureAndPublishToRedis(page).catch((error) => {
+      this.captureAndStreamScreenshots(page).catch((error) => {
         logger.error('Error in capture process:', error.message);
       });
     })().catch((error) => {
@@ -214,18 +192,22 @@ export default class FFMPEGStream {
     });
   }
 
-  private async captureAndPublishToRedis(page: any) {
-    while (this.enableBrowser) {
-      try {
-        const screenshot = await page.screenshot({ type: 'jpeg', quality: 30 });
-        const screenshotBase64 = screenshot.toString('base64');
-        await redis.publish(`stream:${this.streamId}:screenshots`, screenshotBase64);
+  private async captureAndStreamScreenshots(page: any) {
+    try {
+      while (this.enableBrowser) {
+        const screenshotBuffer = await page.screenshot({ type: 'png', omitBackground: true });
+        // Pousser le buffer dans le flux
+        this.screenshotStream.push(screenshotBuffer);
         await new Promise((resolve) => setTimeout(resolve, 1000 / this.fps));
-      } catch (error) {
-        logger.error('Error capturing screenshot or publishing to Redis:', error.message);
-        this.enableBrowser = false;
-        break;
       }
+    } catch (error) {
+      logger.error('Error capturing screenshot:', error.message);
+      this.enableBrowser = false;
+    } finally {
+      // Terminer le flux
+      this.screenshotStream.push(null);
+      await page.close();
+      await page.context().browser().close();
     }
   }
 
