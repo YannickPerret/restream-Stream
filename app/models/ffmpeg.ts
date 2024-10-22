@@ -106,13 +106,12 @@ export default class FFMPEGStream {
       '-map', '0:a?',
       '-s', this.resolution,
       '-c:a', 'aac',
-      '-c:v', 'libx264',
+      '-c:v', 'h264_rkmpp',
       '-preset', 'veryfast',
       '-b:v', this.bitrate,
       '-maxrate', this.bitrate,
       '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
-      '-pix_fmt', 'yuv420p',
-      '-f', 'flv',
+      '-flags', 'low_delay',
     ];
 
     // Gérer la sortie pour un ou plusieurs canaux
