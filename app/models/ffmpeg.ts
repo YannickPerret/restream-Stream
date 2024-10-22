@@ -49,12 +49,14 @@ export default class FFMPEGStream {
       fs.unlinkSync(FIFO_PATH)
     }
 
-    // Créer le FIFO en exécutant la commande `mkfifo`
-    try {
-      execSync(`mkfifo ${FIFO_PATH}`)
-    } catch (error) {
-      console.error('Failed to create FIFO:', error)
-      throw error
+    // Créer le FIFO seulement si le navigateur est activé
+    if (this.enableBrowser) {
+      try {
+        execSync(`mkfifo ${FIFO_PATH}`)
+      } catch (error) {
+        console.error('Failed to create FIFO:', error)
+        throw error
+      }
     }
 
     if (this.enableBrowser) {
@@ -63,18 +65,26 @@ export default class FFMPEGStream {
         logger.error('Failed to start browser capture:', error.message)
       })
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 5000))
     }
 
     const inputParameters = [
-      '-f',
-      'image2pipe',
-      '-framerate',
-      '15',
-      '-vcodec',
-      'png',
-      '-i',
-      FIFO_PATH,
+      'hwaccel',
+      'h264_rkmpp']
+
+    if (this.enableBrowser) {
+      inputParameters.push(
+        '-f',
+        'image2pipe',
+        '-framerate',
+        '15',
+        '-vcodec',
+        'mjpeg',
+        '-i',
+        FIFO_PATH
+      )
+    }
+    inputParameters.push(
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
       '-safe',
@@ -82,8 +92,9 @@ export default class FFMPEGStream {
       '-f',
       'concat',
       '-i',
-      this.timelinePath,
-    ];
+      this.timelinePath
+    )
+
 
     if (this.showWatermark) {
       inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
