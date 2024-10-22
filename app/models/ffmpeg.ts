@@ -254,7 +254,16 @@ export default class FFMPEGStream {
   stopStream = async (pid: number) => {
     this.isStopping = true
     if (this.instance) {
-      process.kill(pid, 'SIGKILL')
+      try {
+        process.kill(pid, 'SIGKILL')
+        console.log(`Stream with PID ${pid} successfully stopped.`)
+      } catch (error) {
+        if (error.code === 'ESRCH') {
+          console.error(`No process found with PID ${pid}.`)
+        } else {
+          console.error(`Error stopping process with PID ${pid}: ${error.message}`)
+        }
+      }
     }
     if (this.analyticsInterval) {
       clearInterval(this.analyticsInterval)
