@@ -186,6 +186,7 @@ export default class FFMPEGStream {
     })
 
     const pid = this.instance.pid
+    await redis.set(`stream:${this.streamId}:pid`, pid.toString());
     console.log(`Stream ${this.streamId} started with PID ${pid}`)
   }
 
@@ -258,6 +259,7 @@ export default class FFMPEGStream {
       clearInterval(this.timeTrackingInterval)
     }
     await redis.del(`stream:${this.streamId}:elapsed_time`)
+    await redis.del(`stream:${this.streamId}:pid`);
 
     // Supprimer le FIFO s'il existe
     if (fs.existsSync(FIFO_PATH)) {
