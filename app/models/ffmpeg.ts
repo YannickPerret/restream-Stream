@@ -67,8 +67,6 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
-      '-init_hw_device', 'rkmpp:rockchip',
-      '-filter_hw_device', 'rockchip',
       '-f',
       'image2pipe',
       '-framerate',
