@@ -75,7 +75,8 @@ export default class FFMPEGStream {
       inputParameters.push(
         '-f',
         'image2pipe',
-        '-thread_queue_size', '512',
+        '-thread_queue_size', '2048',
+        '-framerate', '60',
         '-vcodec',
         'mjpeg',
         '-i',
@@ -234,6 +235,7 @@ export default class FFMPEGStream {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
           type: 'jpeg',
+          quality: 40,
         })
 
         // Écrire le buffer dans le FIFO
