@@ -125,7 +125,7 @@ export default class FFMPEGStream {
       '-filter_complex',
       filterComplex.join(''),
       '-map',
-      '[final]',
+      '[vout]',
       '-c:a',
       'aac',
       '-c:v',
