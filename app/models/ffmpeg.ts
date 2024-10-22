@@ -1,6 +1,6 @@
 import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
-import { chromium } from 'playwright'
+import { chromium } from 'playwright-core'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn, execSync } from 'node:child_process'
 import pidusage from 'pidusage'
@@ -181,29 +181,16 @@ export default class FFMPEGStream {
   private async startBrowserCapture() {
     const browser = await chromium.launch({
       args: [
-        '--window-size=640,480',
         '--disable-gpu',
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
         '--disable-accelerated-2d-canvas',
         '--disable-web-security',
         '--disable-extensions',
-        '--disable-sync',
         '--disable-background-networking',
-        '--disable-default-apps',
-        '--disable-translate',
-        '--disable-notifications',
-        '--disable-hang-monitor',
-        '--disable-popup-blocking',
-        '--disable-prompt-on-repost',
         '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-device-discovery-notifications',
       ],
-      ignoreDefaultArgs: ['--disable-dev-shm-usage'],
       headless: true,
-      executablePath: '/usr/bin/chromium-browser',
     })
 
     const [width, height] = this.resolution.split('x').map(Number)
@@ -227,15 +214,15 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'png',
+          type: 'jpeg',
+          quality: 40,
           omitBackground: true,
-          compressionLevel: 9,
         })
 
         // Écrire le buffer dans le FIFO
         this.fifoWriteStream.write(screenshotBuffer)
 
-        await new Promise((resolve) => setTimeout(resolve, 1000 / 15)) // 15 FPS
+        await new Promise((resolve) => setTimeout(resolve, 1000 / 10)) // 10 FPS
       }
     } catch (error) {
       logger.error('Error capturing screenshot:', error.message)
