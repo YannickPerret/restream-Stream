@@ -76,8 +76,6 @@ export default class FFMPEGStream {
         '-f',
         'image2pipe',
         '-thread_queue_size', '512',
-        '-framerate',
-        '15',
         '-vcodec',
         'mjpeg',
         '-i',
