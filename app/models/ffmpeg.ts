@@ -69,8 +69,8 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
-      '-hwaccel', 'rkmpp',
       '-re',
+      '-hwaccel', 'rkmpp',
     ]
 
     if (this.enableBrowser) {
@@ -90,12 +90,14 @@ export default class FFMPEGStream {
       '-stream_loop', this.loop ? '-1' : '0',
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
-      '-safe',
-      '0',
       '-f',
       'concat',
+      '-safe',
+      '0',
       '-i',
-      this.timelinePath
+      this.timelinePath,
+      '-r',
+      this.fps.toString(),
     )
 
 
@@ -131,6 +133,10 @@ export default class FFMPEGStream {
       filterComplex.join(''),
       '-map',
       '[vout]',
+      '-map',
+      '0:a?',
+      '-s',
+      this.resolution,
       '-c:a',
       'aac',
       '-c:v',
@@ -143,6 +149,8 @@ export default class FFMPEGStream {
       this.bitrate,
       '-bufsize',
       `${Number.parseInt(this.bitrate) * 2}k`,
+      '-flags',
+      'low_delay',
       '-pix_fmt',
       'yuv420p',
     ];
@@ -190,6 +198,7 @@ export default class FFMPEGStream {
     })
 
     const pid = this.instance.pid
+    console.log(`FFmpeg process started with PID ${pid}`)
     await redis.set(`stream:${this.streamId}:pid`, pid.toString());
     console.log(`Stream ${this.streamId} started with PID ${pid}`)
   }
