@@ -79,38 +79,35 @@ export default class FFMPEGStream {
       '-i', this.timelinePath,
     );
 
-    let filterComplex = '';
+    let filterComplex = []
 
-    // Construisez le filter_complex en fonction des entrées
-    if (this.enableBrowser && this.showWatermark) {
-      filterComplex = `
-        [1:v]scale=640:480[overlay];
-        [0:v][overlay]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[watermarked];
-        [watermarked][2:v]overlay=10:10[final];
-      `;
-    } else if (this.enableBrowser) {
-      filterComplex = `
-        [1:v]scale=640:480[overlay];
-        [0:v][overlay]overlay=(main_w-overlay_w)/2:(main_h-overlay_h)/2[final];
-      `;
-    } else if (this.showWatermark) {
-      filterComplex = `
-        [0:v][1:v]overlay=10:10[final];
-      `;
+    if (this.showWatermark) {
+      const logoScale = 'scale=200:-1'
+      const logoPosition = '(main_w-overlay_w)/2:10'
+
+      if (this.enableBrowser) {
+        filterComplex.push(
+          `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
+          `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
+        );
+      } else {
+        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
+      }
     } else {
-      filterComplex = `
-        [0:v]scale=${this.resolution}[final];
-      `;
+      if (this.enableBrowser) {
+        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+      } else {
+        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+      }
     }
 
     const encodingParameters = [
-      '-filter_complex', filterComplex.trim(),
-      '-map', '[final]',
+      '-filter_complex', filterComplex.join(''),
+      '-map', '[vout]',
       '-map', '0:a?',
       '-s', this.resolution,
       '-c:a', 'aac',
       '-c:v', 'h264_rkmpp',
-      '-preset', 'veryfast',
       '-b:v', this.bitrate,
       '-maxrate', this.bitrate,
       '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
