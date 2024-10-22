@@ -115,16 +115,16 @@ export default class FFMPEGStream {
       if (this.enableBrowser) {
         filterComplex.push(
           `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
-          `[watermarked][2:v][3:v]overlay=0:0,fps=fps=${this.fps}[vout]`
+          `[watermarked][2:v][3:v]overlay=0:0[vout]`
         );
       } else {
         filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
       }
     } else {
       if (this.enableBrowser) {
-        filterComplex.push(`[0:v][1:v]overlay=0:0,fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v][1:v]overlay=0:0[vout]`)
       } else {
-        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v][vout]`)
       }
     }
 

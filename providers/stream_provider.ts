@@ -69,7 +69,9 @@ export default class StreamProvider {
         );
 
         await stream.startStream();
+        this.streams.set(streamData.id, stream);
         const pid = await redis.get(`stream:${streamData.id}:pid`);
+        console.log("test", pid)
         //await stream.sendAnalytics(streamData.id, pid);
       }
 
