@@ -47,6 +47,9 @@ importers:
       pidusage:
         specifier: ^3.0.2
         version: 3.0.2
+      playwright-core:
+        specifier: ^1.48.1
+        version: 1.48.1
       puppeteer:
         specifier: ^23.5.3
         version: 23.5.3(typescript@5.5.4)

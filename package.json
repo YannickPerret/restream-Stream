@@ -64,6 +64,7 @@
     "luxon": "^3.5.0",
     "mysql2": "^3.11.3",
     "pidusage": "^3.0.2",
+    "playwright-core": "^1.48.1",
     "puppeteer": "^23.5.3",
     "reflect-metadata": "^0.2.2",
     "systeminformation": "^5.23.5"
