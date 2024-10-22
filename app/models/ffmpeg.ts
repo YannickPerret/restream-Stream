@@ -69,7 +69,9 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
-      '-hwaccel', 'rkmpp']
+      '-hwaccel', 'rkmpp',
+      '-re',
+    ]
 
     if (this.enableBrowser) {
       inputParameters.push(
@@ -85,6 +87,7 @@ export default class FFMPEGStream {
       )
     }
     inputParameters.push(
+      '-stream_loop', this.loop ? '-1' : '0',
       '-protocol_whitelist',
       'file,concat,http,https,tcp,tls,crypto',
       '-safe',
