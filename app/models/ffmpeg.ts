@@ -188,8 +188,8 @@ export default class FFMPEGStream {
     this.instance.on('exit', (code) => {
       console.log(`FFmpeg process exited with code ${code}`)
       if (code !== 0 && !this.isStopping) {
-        console.log('FFmpeg exited unexpectedly. Attempting to restart...')
-        setTimeout(() => this.startStream(), RESTART_DELAY_MS)
+        console.log('FFmpeg exited unexpectedly. Stopping retry due to explicit stop request.');
+        this.isStopping = true; // Prevent further restart attempts
       }
     })
 
