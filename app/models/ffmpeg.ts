@@ -71,18 +71,6 @@ export default class FFMPEGStream {
       '-hwaccel', 'rkmpp',
     ]
 
-    if (this.enableBrowser) {
-      inputParameters.push(
-        '-f',
-        'image2pipe',
-        '-thread_queue_size', '2048',
-        '-framerate', '60',
-        '-vcodec',
-        'mjpeg',
-        '-i',
-        FIFO_PATH
-      )
-    }
     inputParameters.push(
       '-stream_loop', this.loop ? '-1' : '0',
       '-protocol_whitelist',
@@ -96,6 +84,19 @@ export default class FFMPEGStream {
       '-r',
       this.fps.toString(),
     )
+
+
+    if (this.enableBrowser) {
+      inputParameters.push(
+        '-f',
+        'image2pipe',
+        '-thread_queue_size', '2048',
+        '-vcodec',
+        'mjpeg',
+        '-i',
+        FIFO_PATH
+      )
+    }
 
     if (this.showWatermark) {
       inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
