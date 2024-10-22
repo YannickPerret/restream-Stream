@@ -75,6 +75,7 @@ export default class FFMPEGStream {
       inputParameters.push(
         '-f',
         'image2pipe',
+        '-thread_queue_size', '512',
         '-framerate',
         '15',
         '-vcodec',
@@ -138,6 +139,8 @@ export default class FFMPEGStream {
       this.bitrate,
       '-bufsize',
       `${Number.parseInt(this.bitrate) * 2}k`,
+      '-pix_fmt',
+      'yuv420p',
     ];
 
     // Gérer la sortie pour un ou plusieurs canaux
