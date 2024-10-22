@@ -92,6 +92,8 @@ export default class FFMPEGStream {
         'image2',
         '-thread_queue_size', '3072',
         '-framerate', '15.9',
+        '-vcodec',
+        'mjpeg',
         '-i',
         FIFO_PATH,
       )
