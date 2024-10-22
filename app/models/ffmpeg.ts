@@ -69,7 +69,7 @@ export default class FFMPEGStream {
     }
 
     const inputParameters = [
-      '-hwaccel', 'h264_rkmpp']
+      '-hwaccel', 'rkmpp']
 
     if (this.enableBrowser) {
       inputParameters.push(
@@ -222,10 +222,7 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'png',
-          quality: 50,
-          compression: 7,
-          omitBackground: true,
+          type: 'jpeg',
         })
 
         // Écrire le buffer dans le FIFO
