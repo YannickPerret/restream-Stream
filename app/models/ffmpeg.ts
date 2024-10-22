@@ -48,9 +48,7 @@ export default class FFMPEGStream {
 
     // Créez le flux de captures d'écran
     this.screenshotStream = new Readable({
-      read() {
-        // L'implémentation est vide car nous pousserons les données manuellement
-      },
+      read() {},
     });
 
     if (this.enableBrowser) {
@@ -58,6 +56,8 @@ export default class FFMPEGStream {
       this.startBrowserCapture().catch((error) => {
         logger.error('Failed to start browser capture:', error.message);
       });
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
     }
 
     const inputParameters = [
