@@ -6,7 +6,6 @@ import { spawn } from 'node:child_process'
 import pidusage from 'pidusage'
 import si from 'systeminformation'
 import transmit from "@adonisjs/transmit/services/main";
-import app from "@adonisjs/core/services/app";
 import redis from "@adonisjs/redis/services/main";
 import {Readable} from "node:stream";
 
@@ -25,7 +24,6 @@ export default class FFMPEGStream {
   private timeTrackingInterval: NodeJS.Timeout | null = null;
   private elapsedTime: number = 0;
   private isStopping: boolean = false;
-
   private screenshotStream: Readable;
 
 
@@ -60,7 +58,6 @@ export default class FFMPEGStream {
       this.startBrowserCapture().catch((error) => {
         logger.error('Failed to start browser capture:', error.message);
       });
-      // Pas besoin d'attendre ici car les captures d'écran seront poussées au fur et à mesure
     }
 
     const inputParameters = [
@@ -69,7 +66,6 @@ export default class FFMPEGStream {
       '-vcodec', 'png',
       '-r', this.fps.toString(),
       '-i', 'pipe:0',
-      // Ajoutez d'autres entrées si nécessaire
       '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
       '-safe', '0',
       '-f', 'concat',
@@ -121,17 +117,19 @@ export default class FFMPEGStream {
 
     // Gérer la sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
-      const channel = this.channels[0];
-      const outputUrl = this.getOutputUrl(channel);
-      encodingParameters.push(outputUrl);
+      const channel = this.channels[0]
+      const baseUrl = BASE_URLS[channel.type]
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+      encodingParameters.push('-f', 'flv', outputUrl)
     } else {
       const teeOutput = this.channels
         .map((channel) => {
-          const outputUrl = this.getOutputUrl(channel);
-          return `[f=flv]${outputUrl}`;
+          const baseUrl = BASE_URLS[channel.type]
+          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+          return `[f=flv]${outputUrl}`
         })
-        .join('|');
-      encodingParameters.push('-f', 'tee', teeOutput);
+        .join('|')
+      encodingParameters.push('-f', 'tee', teeOutput)
     }
 
     this.isStopping = false;
@@ -149,7 +147,7 @@ export default class FFMPEGStream {
     this.instance.on('exit', (code) => {
       if (code !== 0 && !this.isStopping) {
         console.log('FFmpeg exited unexpectedly. Attempting to restart...');
-        setTimeout(() => this.startStream(), 5000);
+        setTimeout(() => this.startStream(), RESTART_DELAY_MS);
       }
     });
 
@@ -179,11 +177,10 @@ export default class FFMPEGStream {
       const page = await browser.newPage();
       await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
-      await page.evaluate(() => {
+      /*await page.evaluate(() => {
         document.body.style.background = 'transparent';
-      });
+      });*/
 
-      // Capture et publication via Redis
       this.captureAndStreamScreenshots(page).catch((error) => {
         logger.error('Error in capture process:', error.message);
       });
@@ -210,19 +207,6 @@ export default class FFMPEGStream {
       await page.context().browser().close();
     }
   }
-
-  private async consumeRedisAndPipeToFfmpeg(ffmpegStdin: any) {
-    redis.subscribe(`stream:${this.streamId}:screenshots`, async (message: string) => {
-      const screenshotBuffer = Buffer.from(message, 'base64')
-      ffmpegStdin.write(screenshotBuffer)
-    });
-
-    this.instance.on('close', () => {
-      redis.unsubscribe(`stream:${this.streamId}:screenshots`);
-    });
-  }
-
-
 
   private async captureAudioVideo(page: any, fifoPath: string) {
     let writeStream;
