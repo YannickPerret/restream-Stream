@@ -53,6 +53,9 @@ importers:
       puppeteer:
         specifier: ^23.5.3
         version: 23.5.3(typescript@5.5.4)
+      puppeteer-recorder:
+        specifier: ^1.0.7
+        version: 1.0.7(puppeteer@23.5.3(typescript@5.5.4))
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
@@ -3027,6 +3030,11 @@ packages:
   puppeteer-core@23.5.3:
     resolution: {integrity: sha512-V58MZD/B3CwkYsqSEQlHKbavMJptF04fzhMdUpiCRCmUVhwZNwSGEPhaiZ1f8I3ABQUirg3VNhXVB6Z1ubHXtQ==}
     engines: {node: '>=18'}
+
+  puppeteer-recorder@1.0.7:
+    resolution: {integrity: sha512-SgJ8U/HP6iiH3saNYOk/fddnEYdX1spDgfi3yxrvHsywvahD8vPO6gqvFXkAn4R6LVO9SOpgPNFhCjCMkv36IQ==}
+    peerDependencies:
+      puppeteer: '>= 0.9.0'
 
   puppeteer@23.5.3:
     resolution: {integrity: sha512-FghmfBsr/UUpe48OiCg1gV3W4vVfQJKjQehbF07SjnQvEpWcvPTah1nykfGWdOQQ1ydJPIXcajzWN7fliCU3zw==}
@@ -7352,6 +7360,10 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  puppeteer-recorder@1.0.7(puppeteer@23.5.3(typescript@5.5.4)):
+    dependencies:
+      puppeteer: 23.5.3(typescript@5.5.4)
 
   puppeteer@23.5.3(typescript@5.5.4):
     dependencies:
