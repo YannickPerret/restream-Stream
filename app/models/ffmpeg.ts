@@ -223,24 +223,31 @@ export default class FFMPEGStream {
         '--disable-background-timer-throttling',
       ],
       headless: true,
-    })
+    });
 
-    const [width, height] = this.resolution.split('x').map(Number)
+    const [width, height] = this.resolution.split('x').map(Number);
 
     const page = await browser.newPage({
       viewport: { width, height },
-    })
+    });
 
-    await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 7000 })
-    logger.info(`Browser navigated to ${this.webpageUrl} successfully.`)
+    try {
+      await page.goto(this.webpageUrl, { waitUntil: 'networkidle', timeout: 10000 });
+      logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
+    } catch (error) {
+      logger.error(`Failed to load webpage: ${error.message}`);
+      await browser.close(); // Close the browser if navigation fails
+      return;
+    }
 
-    // Ouvrir le FIFO en écriture
-    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH)
+    // Open the FIFO for writing
+    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH);
 
     this.captureAndStreamScreenshots(page).catch((error) => {
-      logger.error('Error in capture process:', error.message)
-    })
+      logger.error('Error in capture process:', error.message);
+    });
   }
+
 
   private async captureAndStreamScreenshots(page: any) {
     try {
@@ -249,26 +256,31 @@ export default class FFMPEGStream {
           type: 'webp',       // Use 'webp' for efficient compression
           quality: 30,        // Lower quality for smaller size and faster processing
           omitBackground: true,
-          optimizeForSpeed: true,
-        })
+        });
 
-        // Écrire le buffer dans le FIFO
-        this.fifoWriteStream.write(screenshotBuffer)
+        // Check if FIFO stream is open before writing
+        if (this.fifoWriteStream && this.fifoWriteStream.writable) {
+          this.fifoWriteStream.write(screenshotBuffer);
+        } else {
+          logger.error('FIFO write stream is not writable.');
+          break; // Stop capturing if FIFO is not working
+        }
 
-        await new Promise((resolve) => setTimeout(resolve, 1000 / 14))
+        await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
       }
     } catch (error) {
-      logger.error('Error capturing screenshot:', error.message)
-      this.enableBrowser = false
+      logger.error('Error capturing screenshot:', error.message);
+      this.enableBrowser = false;
     } finally {
-      // Fermer le FIFO
+      // Close FIFO and clean up
       if (this.fifoWriteStream) {
-        this.fifoWriteStream.end()
+        this.fifoWriteStream.end();
       }
-      await page.close()
-      await page.context().browser().close()
+      await page.close();
+      await page.context().browser().close();
     }
   }
+
 
   stopStream = async (pid: number) => {
     this.isStopping = true
