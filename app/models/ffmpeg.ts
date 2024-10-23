@@ -221,7 +221,6 @@ export default class FFMPEGStream {
     await page.close();
     await browser.close();
   }
-}
 
   private async captureAndStreamScreenshots(page: any) {
     try {
