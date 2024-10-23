@@ -252,21 +252,30 @@ export default class FFMPEGStream {
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
-        const screenshotBuffer = await page.captureScreenshot({
+        // Start logging before taking a screenshot
+        logger.info('Attempting to capture screenshot...');
+
+        const screenshotBuffer = await page.screenshot({
           type: 'webp',       // Use 'webp' for efficient compression
           quality: 30,        // Lower quality for smaller size and faster processing
-          omitBackground: true,
+          omitBackground: true, // Maintain transparency
+          optimizeForSpeed: true, // Optimize for faster captures
         });
+
+        logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
 
         // Check if FIFO stream is open before writing
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
           this.fifoWriteStream.write(screenshotBuffer);
+          logger.info('Successfully wrote screenshot to FIFO.');
         } else {
-          logger.error('FIFO write stream is not writable.');
+          logger.error('FIFO write stream is not writable. Skipping this capture.');
           break; // Stop capturing if FIFO is not working
         }
 
+        // Log after the delay
         await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
+        logger.info('Screenshot capture cycle completed.');
       }
     } catch (error) {
       logger.error('Error capturing screenshot:', error.message);
@@ -275,11 +284,15 @@ export default class FFMPEGStream {
       // Close FIFO and clean up
       if (this.fifoWriteStream) {
         this.fifoWriteStream.end();
+        logger.info('Closed FIFO write stream.');
       }
       await page.close();
+      logger.info('Closed browser page.');
       await page.context().browser().close();
+      logger.info('Closed browser context.');
     }
   }
+
 
 
   stopStream = async (pid: number) => {
