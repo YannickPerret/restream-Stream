@@ -252,7 +252,7 @@ export default class FFMPEGStream {
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
-        const screenshotBuffer = await page.screenshot({
+        const screenshotBuffer = await page.captureScreenshot({
           type: 'webp',       // Use 'webp' for efficient compression
           quality: 30,        // Lower quality for smaller size and faster processing
           omitBackground: true,
