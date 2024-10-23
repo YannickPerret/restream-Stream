@@ -59,11 +59,14 @@ export default class FFMPEGStream {
       '-f', 'image2pipe',
       '-framerate', '15',
       '-i', FIFO_PATH,
-      '-c:v', 'libx264',
+      '-c:v', 'h264_rkmpp',
       '-pix_fmt', 'yuv420p',
       '-f', 'flv',
       SCREENSHOT_VIDEO
-    ], { detached: true });
+    ], {
+      detached: true,
+      stdio: ['ignore', 'inherit', 'inherit'],
+    });
 
     if (this.enableBrowser) {
       this.startBrowserCapture().catch((error) => {
