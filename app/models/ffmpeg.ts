@@ -91,7 +91,7 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'webp_pipe',
+        '-f', 'png_pipe',
         '-thread_queue_size', '1024',
         '-i', FIFO_PATH,
       )
@@ -258,18 +258,18 @@ export default class FFMPEGStream {
         logger.info('Attempting to capture screenshot...');
 
         const screenshotBuffer = await page.screenshot({
-          type: 'png', // Capture as PNG to retain quality before compression
+          type: 'png', // Capture as PNG
           omitBackground: true, // Maintain transparency
         });
 
         logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
 
-        // Compress using sharp
+        // Compress the PNG using sharp
         const compressedBuffer = await sharp(screenshotBuffer)
-          .png({ quality: 30 }) // Convert to webp with compression
+          .png({ compressionLevel: 9, adaptiveFiltering: true }) // Compress PNG
           .toBuffer();
 
-        logger.info(`Compressed screenshot to size: ${compressedBuffer.length} bytes`);
+        logger.info(`Compressed PNG screenshot to size: ${compressedBuffer.length} bytes`);
 
         // Check if FIFO stream is open before writing
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
@@ -299,9 +299,6 @@ export default class FFMPEGStream {
       logger.info('Closed browser context.');
     }
   }
-
-
-
 
   stopStream = async (pid: number) => {
     this.isStopping = true
