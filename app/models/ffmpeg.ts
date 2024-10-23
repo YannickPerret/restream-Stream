@@ -88,7 +88,7 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'mjpeg',
+        '-f', 'png_pipe',
         '-thread_queue_size', '1024',
         '-i', FIFO_PATH,
       )
@@ -208,6 +208,11 @@ export default class FFMPEGStream {
         '--disable-extensions',
         '--disable-background-networking',
         '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-sync',
+        '--disable-default-apps',
+        '--disable-translate',
       ],
       headless: true,
     })
@@ -233,15 +238,16 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'jpeg',
-          quality: 80,
+          type: 'webp',
+          quality: 50,
           omitBackground: true,
+          optimizeForSpeed: true,
         })
 
         // Écrire le buffer dans le FIFO
         this.fifoWriteStream.write(screenshotBuffer)
 
-        await new Promise((resolve) => setTimeout(resolve, 1000 / 15))
+        await new Promise((resolve) => setTimeout(resolve, 1000 / 14))
       }
     } catch (error) {
       logger.error('Error capturing screenshot:', error.message)
