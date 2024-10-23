@@ -88,7 +88,7 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'png_pipe',
+        '-f', 'webp_pipe',
         '-thread_queue_size', '1024',
         '-i', FIFO_PATH,
       )
@@ -97,29 +97,42 @@ export default class FFMPEGStream {
     if (this.showWatermark) {
       inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
-    let filterComplex: string[] = []
+    let filterComplex: string[] = [];
 
     if (this.showWatermark) {
       const logoScale = 'scale=200:-1';
       const logoPosition = '(main_w-overlay_w)/2:10';
 
       if (this.enableBrowser) {
+        // Handle browser overlay + watermark
         filterComplex.push(
-          `[0:v]scale=${this.resolution}[main];[main][1:v]overlay=${logoPosition}[watermarked];`,
-          `[watermarked]fps=fps=${this.fps}[vout]`
+          `[0:v]scale=${this.resolution}[main];` +
+          `[1:v]${logoScale}[logo];` +
+          `[main][logo]overlay=${logoPosition}[watermarked];` +
+          `[watermarked][2:v]overlay=0:0[composite];` +
+          `[composite]fps=fps=${this.fps}[vout]`
         );
       } else {
+        // Handle only watermark
         filterComplex.push(
-          `[1:v]${logoScale}[logo];[0:v][logo]overlay=${logoPosition}[vout]`
+          `[1:v]${logoScale}[logo];` +
+          `[0:v][logo]overlay=${logoPosition}[vout]`
         );
       }
     } else {
       if (this.enableBrowser) {
-        filterComplex.push(`[0:v]overlay=0:0[vout]`);
+        // Handle only browser overlay
+        filterComplex.push(
+          `[0:v]scale=${this.resolution}[main];` +
+          `[main][1:v]overlay=0:0[composite];` +
+          `[composite]fps=fps=${this.fps}[vout]`
+        );
       } else {
+        // No watermark or browser overlay, just the main video
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
       }
     }
+
 
     const encodingParameters = [
       '-filter_complex',
