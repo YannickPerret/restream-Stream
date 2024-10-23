@@ -8,6 +8,7 @@ import si from 'systeminformation'
 import transmit from '@adonisjs/transmit/services/main'
 import redis from '@adonisjs/redis/services/main'
 import app from '@adonisjs/core/services/app'
+import sharp from "sharp";
 
 const FIFO_PATH = '/tmp/ffmpeg_fifo'
 const RESTART_DELAY_MS = 10000
@@ -250,7 +251,6 @@ export default class FFMPEGStream {
     });
   }
 
-
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
@@ -258,16 +258,23 @@ export default class FFMPEGStream {
         logger.info('Attempting to capture screenshot...');
 
         const screenshotBuffer = await page.screenshot({
-          type: 'webp',       // Use 'webp' for efficient compression
-          quality: 30,        // Lower quality for smaller size and faster processing
+          type: 'png', // Capture as PNG to retain quality before compression
+          omitBackground: true, // Maintain transparency
         });
 
         logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
 
+        // Compress using sharp
+        const compressedBuffer = await sharp(screenshotBuffer)
+          .png({ quality: 30 }) // Convert to webp with compression
+          .toBuffer();
+
+        logger.info(`Compressed screenshot to size: ${compressedBuffer.length} bytes`);
+
         // Check if FIFO stream is open before writing
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
-          this.fifoWriteStream.write(screenshotBuffer);
-          logger.info('Successfully wrote screenshot to FIFO.');
+          this.fifoWriteStream.write(compressedBuffer);
+          logger.info('Successfully wrote compressed screenshot to FIFO.');
         } else {
           logger.error('FIFO write stream is not writable. Skipping this capture.');
           break; // Stop capturing if FIFO is not working
@@ -278,7 +285,7 @@ export default class FFMPEGStream {
         logger.info('Screenshot capture cycle completed.');
       }
     } catch (error) {
-      logger.error('Error capturing screenshot:', error.message);
+      logger.error('Error capturing or compressing screenshot:', error.message);
       this.enableBrowser = false;
     } finally {
       // Close FIFO and clean up
@@ -292,6 +299,7 @@ export default class FFMPEGStream {
       logger.info('Closed browser context.');
     }
   }
+
 
 
 

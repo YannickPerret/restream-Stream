@@ -68,6 +68,7 @@
     "puppeteer": "^23.5.3",
     "puppeteer-recorder": "^1.0.7",
     "reflect-metadata": "^0.2.2",
+    "sharp": "^0.33.5",
     "systeminformation": "^5.23.5"
   },
   "hotHook": {
