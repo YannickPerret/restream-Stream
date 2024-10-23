@@ -287,10 +287,7 @@ export default class FFMPEGStream {
           logger.error('FIFO write stream is not writable. Skipping this capture.');
           break; // Stop capturing if FIFO is not working
         }
-
-        // Log after the delay
         await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
-        logger.info('Screenshot capture cycle completed.');
       }
     } catch (error) {
       logger.error('Error capturing or compressing screenshot:', error.message);
