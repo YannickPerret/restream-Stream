@@ -69,6 +69,8 @@ export default class FFMPEGStream {
     const inputParameters = [
       '-re',
       '-hwaccel', 'rkmpp',
+      '-probesize', '10M',
+      '-analyzeduration','10M',
     ]
 
     inputParameters.push(
