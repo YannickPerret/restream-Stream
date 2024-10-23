@@ -100,22 +100,24 @@ export default class FFMPEGStream {
     let filterComplex: string[] = []
 
     if (this.showWatermark) {
-      const logoScale = 'scale=200:-1'
-      const logoPosition = '(main_w-overlay_w)/2:10'
+      const logoScale = 'scale=200:-1';
+      const logoPosition = '(main_w-overlay_w)/2:10';
 
       if (this.enableBrowser) {
         filterComplex.push(
-          `[0:v][1:v]overlay=(main_w-overlay_w)/2:10[watermarked];`,
-          `[watermarked]overlay=0:0,fps=fps=60[vout]`
-        )
+          `[0:v]scale=${this.resolution}[main];[main][1:v]overlay=${logoPosition}[watermarked];`,
+          `[watermarked]fps=fps=${this.fps}[vout]`
+        );
       } else {
-        filterComplex.push(`[1:v]${logoScale}[logo];`, `[0:v][logo]overlay=${logoPosition}[vout]`)
+        filterComplex.push(
+          `[1:v]${logoScale}[logo];[0:v][logo]overlay=${logoPosition}[vout]`
+        );
       }
     } else {
       if (this.enableBrowser) {
-        filterComplex.push(`[0:v]overlay=0:0[vout]`)
+        filterComplex.push(`[0:v]overlay=0:0[vout]`);
       } else {
-        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`)
+        filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
       }
     }
 
