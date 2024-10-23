@@ -216,14 +216,32 @@ export default class FFMPEGStream {
   private async startBrowserCapture() {
     const browser = await chromium.launch({
       args: [
-        '--disable-gpu',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-accelerated-2d-canvas',
-        '--disable-web-security',
-        '--disable-extensions',
-        '--disable-background-networking',
-        '--disable-background-timer-throttling',
+        '--disable-gpu', // Disable GPU hardware acceleration
+        '--no-sandbox', // Disable sandbox for performance
+        '--disable-setuid-sandbox', // Disable setuid sandbox
+        '--disable-accelerated-2d-canvas', // Disable 2D canvas acceleration
+        '--disable-web-security', // Disable web security (CORS-related issues)
+        '--disable-extensions', // Disable all browser extensions
+        '--disable-background-networking', // Reduce background networking
+        '--disable-background-timer-throttling', // Prevent throttling of background timers
+        '--disable-backgrounding-occluded-windows', // Disable backgrounding of occluded windows
+        '--disable-renderer-backgrounding', // Prevent renderer from being backgrounded
+        '--disable-sync', // Disable syncing to cloud services
+        '--disable-default-apps', // Disable default apps
+        '--disable-translate', // Disable translation services
+        '--disable-dev-shm-usage', // Disable /dev/shm usage (avoid memory issues in Docker)
+        '--mute-audio', // Mute audio to save resources
+        '--no-first-run', // Skip the first run tasks
+        '--no-zygote', // Disable zygote process
+        '--single-process', // Run in a single process mode
+        '--disable-software-rasterizer', // Disable software rasterizer
+        '--headless', // Headless mode
+        '--disable-features=site-per-process', // Disable site isolation (reduces memory usage)
+        '--disable-features=IsolateOrigins,site-per-process', // Further disable features
+        '--disable-notifications', // Disable web notifications
+        '--incognito', // Use incognito mode for reduced memory footprint
+        '--disable-popup-blocking', // Disable popup blocking
+        '--no-sandbox', // Disable sandbox for performance
       ],
       headless: true,
     });
@@ -235,11 +253,11 @@ export default class FFMPEGStream {
     });
 
     try {
-      await page.goto(this.webpageUrl, { waitUntil: 'networkidle', timeout: 10000 });
+      await page.goto(this.webpageUrl, { waitUntil: 'networkidle', timeout: 7000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
     } catch (error) {
       logger.error(`Failed to load webpage: ${error.message}`);
-      await browser.close(); // Close the browser if navigation fails
+      await browser.close();
       return;
     }
 
@@ -254,27 +272,19 @@ export default class FFMPEGStream {
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
-        // Start logging before taking a screenshot
-        logger.info('Attempting to capture screenshot...');
-
         const screenshotBuffer = await page.screenshot({
-          type: 'png', // Capture as PNG
-          omitBackground: true, // Maintain transparency
+          type: 'png',
+          omitBackground: true,
         });
-
-        logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
 
         // Compress the PNG using sharp
         const compressedBuffer = await sharp(screenshotBuffer)
-          .png({ compressionLevel: 9, adaptiveFiltering: true }) // Compress PNG
+          .png({ compressionLevel: 7, adaptiveFiltering: true })
           .toBuffer();
-
-        logger.info(`Compressed PNG screenshot to size: ${compressedBuffer.length} bytes`);
 
         // Check if FIFO stream is open before writing
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
           this.fifoWriteStream.write(compressedBuffer);
-          logger.info('Successfully wrote compressed screenshot to FIFO.');
         } else {
           logger.error('FIFO write stream is not writable. Skipping this capture.');
           break; // Stop capturing if FIFO is not working
