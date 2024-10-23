@@ -260,8 +260,6 @@ export default class FFMPEGStream {
         const screenshotBuffer = await page.screenshot({
           type: 'webp',       // Use 'webp' for efficient compression
           quality: 30,        // Lower quality for smaller size and faster processing
-          omitBackground: true, // Maintain transparency
-          optimizeForSpeed: true, // Optimize for faster captures
         });
 
         logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
