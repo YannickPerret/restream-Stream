@@ -208,11 +208,6 @@ export default class FFMPEGStream {
         '--disable-extensions',
         '--disable-background-networking',
         '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-sync',
-        '--disable-default-apps',
-        '--disable-translate',
       ],
       headless: true,
     })
@@ -238,8 +233,8 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'webp',
-          quality: 50,
+          type: 'webp',       // Use 'webp' for efficient compression
+          quality: 30,        // Lower quality for smaller size and faster processing
           omitBackground: true,
           optimizeForSpeed: true,
         })
