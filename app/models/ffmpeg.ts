@@ -232,16 +232,14 @@ export default class FFMPEGStream {
         '--disable-dev-shm-usage', // Disable /dev/shm usage (avoid memory issues in Docker)
         '--mute-audio', // Mute audio to save resources
         '--no-first-run', // Skip the first run tasks
-        '--no-zygote', // Disable zygote process
-        '--single-process', // Run in a single process mode
         '--disable-software-rasterizer', // Disable software rasterizer
-        '--headless', // Headless mode
         '--disable-features=site-per-process', // Disable site isolation (reduces memory usage)
         '--disable-features=IsolateOrigins,site-per-process', // Further disable features
         '--disable-notifications', // Disable web notifications
         '--incognito', // Use incognito mode for reduced memory footprint
         '--disable-popup-blocking', // Disable popup blocking
-        '--no-sandbox', // Disable sandbox for performance
+        '--disable-infobars', // Disable infobars (e.g., Chrome is being controlled by automated software)
+        '--ignore-certificate-errors', // Ignore SSL certificate errors
       ],
       headless: true,
     });
@@ -253,7 +251,7 @@ export default class FFMPEGStream {
     });
 
     try {
-      await page.goto(this.webpageUrl, { waitUntil: 'networkidle', timeout: 7000 });
+      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 7000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
     } catch (error) {
       logger.error(`Failed to load webpage: ${error.message}`);
