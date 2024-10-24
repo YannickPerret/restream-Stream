@@ -1,6 +1,6 @@
 import logger from '@adonisjs/core/services/logger'
 import * as fs from 'node:fs'
-import { chromium, webkit } from 'playwright-core'
+import { chromium } from 'playwright-core'
 import encryption from '@adonisjs/core/services/encryption'
 import { spawn, execSync } from 'node:child_process'
 import pidusage from 'pidusage'
@@ -8,11 +8,9 @@ import si from 'systeminformation'
 import transmit from '@adonisjs/transmit/services/main'
 import redis from '@adonisjs/redis/services/main'
 import app from '@adonisjs/core/services/app'
-import sharp from "sharp";
 
 const FIFO_PATH = '/tmp/ffmpeg_fifo'
 const RESTART_DELAY_MS = 10000
-const SCREENSHOT_VIDEO = '/tmp/ffmpeg_screenshot_output.flv';
 
 const BASE_URLS: Record<string, string> = {
   twitch: 'rtmp://live.twitch.tv/app',
@@ -44,62 +42,63 @@ export default class FFMPEGStream {
   ) {}
 
   async startStream() {
-    console.log('Starting stream...');
+    console.log('Starting stream...')
 
     // Supprimer le FIFO existant s'il existe
     if (fs.existsSync(FIFO_PATH)) {
-      fs.unlinkSync(FIFO_PATH);
+      fs.unlinkSync(FIFO_PATH)
     }
 
-    // Créer le FIFO pour les screenshots
-    execSync(`mkfifo ${FIFO_PATH}`);
-
-    // Lancer le processus FFmpeg pour les screenshots
-    spawn('ffmpeg', [
-      '-f', 'image2pipe',
-      '-framerate', '15',
-      '-i', FIFO_PATH,
-      '-c:v', 'h264_rkmpp',
-      '-pix_fmt', 'yuv420p',
-      '-f', 'flv',
-      SCREENSHOT_VIDEO
-    ], {
-      detached: true,
-      stdio: ['ignore', 'inherit', 'inherit'],
-    });
-
+    // Créer le FIFO seulement si le navigateur est activé
     if (this.enableBrowser) {
-      this.startBrowserCapture().catch((error) => {
-        logger.error('Failed to start browser capture:', error.message);
-      });
+      try {
+        execSync(`mkfifo ${FIFO_PATH}`)
+      } catch (error) {
+        console.error('Failed to create FIFO:', error)
+        throw error
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      console.log('Browser capture enabled.')
+      this.startBrowserCapture().catch((error) => {
+        logger.error('Failed to start browser capture:', error.message)
+      })
+
+      await new Promise((resolve) => setTimeout(resolve, 5000))
     }
 
     const inputParameters = [
       '-re',
       '-hwaccel', 'rkmpp',
       '-probesize', '10M',
-      '-analyzeduration', '10M',
+      '-analyzeduration','10M',
+    ]
+
+    inputParameters.push(
       '-stream_loop', this.loop ? '-1' : '0',
-      '-protocol_whitelist', 'file,concat,http,https,tcp,tls,crypto',
-      '-f', 'concat',
-      '-safe', '0',
-      '-i', this.timelinePath,
-      '-r', this.fps.toString(),
-    ];
+      '-protocol_whitelist',
+      'file,concat,http,https,tcp,tls,crypto',
+      '-f',
+      'concat',
+      '-safe',
+      '0',
+      '-i',
+      this.timelinePath,
+      '-r',
+      this.fps.toString(),
+    )
+
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'flv',
-        '-i', SCREENSHOT_VIDEO // Use the video stream generated from screenshots
-      );
+        '-f', 'webp_pipe',
+        '-thread_queue_size', '1024',
+        '-i', FIFO_PATH,
+      )
     }
 
     if (this.showWatermark) {
-      inputParameters.push('-i', app.publicPath('watermark/watermark.png'));
+      inputParameters.push('-i', app.publicPath('watermark/watermark.png'))
     }
-
     let filterComplex: string[] = [];
 
     if (this.showWatermark) {
@@ -107,6 +106,7 @@ export default class FFMPEGStream {
       const logoPosition = '(main_w-overlay_w)/2:10';
 
       if (this.enableBrowser) {
+        // Handle browser overlay + watermark
         filterComplex.push(
           `[0:v]scale=${this.resolution}[main];` +
           `[1:v]${logoScale}[logo];` +
@@ -115,6 +115,7 @@ export default class FFMPEGStream {
           `[composite]fps=fps=${this.fps}[vout]`
         );
       } else {
+        // Handle only watermark
         filterComplex.push(
           `[1:v]${logoScale}[logo];` +
           `[0:v][logo]overlay=${logoPosition}[vout]`
@@ -122,133 +123,162 @@ export default class FFMPEGStream {
       }
     } else {
       if (this.enableBrowser) {
+        // Handle only browser overlay
         filterComplex.push(
           `[0:v]scale=${this.resolution}[main];` +
           `[main][1:v]overlay=0:0[composite];` +
           `[composite]fps=fps=${this.fps}[vout]`
         );
       } else {
+        // No watermark or browser overlay, just the main video
         filterComplex.push(`[0:v]fps=fps=${this.fps}[vout]`);
       }
     }
 
+
     const encodingParameters = [
-      '-filter_complex', filterComplex.join(''),
-      '-map', '[vout]',
-      '-map', '0:a?',
-      '-s', this.resolution,
-      '-c:a', 'aac',
-      '-c:v', 'h264_rkmpp',
-      '-rc_mode', 'CBR',
-      '-b:v', this.bitrate,
-      '-maxrate', this.bitrate,
-      '-bufsize', `${Number.parseInt(this.bitrate) * 2}k`,
-      '-flags', 'low_delay',
-      '-pix_fmt', 'yuv420p',
+      '-filter_complex',
+      filterComplex.join(''),
+      '-map',
+      '[vout]',
+      '-map',
+      '0:a?',
+      '-s',
+      this.resolution,
+      '-c:a',
+      'aac',
+      '-c:v',
+      'h264_rkmpp',
+      '-rc_mode',
+      'CBR',
+      '-b:v',
+      this.bitrate,
+      '-maxrate',
+      this.bitrate,
+      '-bufsize',
+      `${Number.parseInt(this.bitrate) * 2}k`,
+      '-flags',
+      'low_delay',
+      '-pix_fmt',
+      'yuv420p',
     ];
 
+    // Gérer la sortie pour un ou plusieurs canaux
     if (this.channels.length === 1) {
-      const channel = this.channels[0];
-      const baseUrl = BASE_URLS[channel.type];
-      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
-      encodingParameters.push('-f', 'flv', outputUrl);
+      const channel = this.channels[0]
+      const baseUrl = BASE_URLS[channel.type]
+      const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+      encodingParameters.push('-f', 'flv', outputUrl)
     } else {
       const teeOutput = this.channels
         .map((channel) => {
-          const baseUrl = BASE_URLS[channel.type];
-          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`;
-          return `[f=flv]${outputUrl}`;
+          const baseUrl = BASE_URLS[channel.type]
+          const outputUrl = `${baseUrl}/${encryption.decrypt(channel.streamKey)}`
+          return `[f=flv]${outputUrl}`
         })
-        .join('|');
-      encodingParameters.push('-f', 'tee', teeOutput);
+        .join('|')
+      encodingParameters.push('-f', 'tee', teeOutput)
     }
 
-    this.isStopping = false;
+    this.isStopping = false
+    this.startTimeTracking()
 
-    // Démarrer le processus principal FFmpeg
-    console.log([...inputParameters, ...encodingParameters]);
+    // Démarrer le processus FFmpeg
+    console.log([...inputParameters, ...encodingParameters])
     this.instance = spawn('ffmpeg', [...inputParameters, ...encodingParameters], {
       detached: true,
       stdio: ['ignore', 'inherit', 'inherit'],
-    });
+    })
 
     this.instance.on('error', (error) => {
-      console.error(`FFmpeg process error: ${error.message}`);
-    });
+      console.error(`FFmpeg process error: ${error.message}`)
+    })
 
     this.instance.on('close', (code, signal) => {
-      console.log(`FFmpeg process closed with code ${code} and signal ${signal}`);
-    });
+      console.log(`FFmpeg process closed with code ${code} and signal ${signal}`)
+    })
 
     this.instance.on('exit', (code) => {
-      console.log(`FFmpeg process exited with code ${code}`);
+      console.log(`FFmpeg process exited with code ${code}`)
       if (code !== 0 && !this.isStopping) {
-        console.log('FFmpeg exited unexpectedly.');
-        this.isStopping = true;
+        console.log('FFmpeg exited unexpectedly. Stopping retry due to explicit stop request.');
+        this.isStopping = true; // Prevent further restart attempts
       }
-    });
+    })
 
-    const pid = this.instance.pid;
-    console.log(`FFmpeg process started with PID ${pid}`);
+    const pid = this.instance.pid
+    console.log(`FFmpeg process started with PID ${pid}`)
     await redis.set(`stream:${this.streamId}:pid`, pid.toString());
-    console.log(`Stream ${this.streamId} started with PID ${pid}`);
+    console.log(`Stream ${this.streamId} started with PID ${pid}`)
   }
 
   private async startBrowserCapture() {
-    const browser = await webkit.launch({
+    const browser = await chromium.launch({
       args: [
-        '--disable-gpu', '--no-sandbox', '--disable-setuid-sandbox',
-        '--disable-accelerated-2d-canvas', '--disable-web-security',
-        '--disable-extensions', '--disable-background-networking',
-        '--disable-background-timer-throttling', '--mute-audio',
+        '--disable-gpu',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-accelerated-2d-canvas',
+        '--disable-web-security',
+        '--disable-extensions',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
       ],
       headless: true,
     });
 
     const [width, height] = this.resolution.split('x').map(Number);
-    const page = await browser.newPage({ viewport: { width, height } });
 
-    await page.goto(this.webpageUrl, { waitUntil: 'networkidle', timeout: 10000 });
-    logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
+    const page = await browser.newPage({
+      viewport: { width, height },
+    });
 
-    const screenshotFifo = fs.createWriteStream(FIFO_PATH);
-    while (this.enableBrowser) {
-      const screenshotBuffer = await page.screenshot({ type: 'png', omitBackground: true });
-      const compressedBuffer = await sharp(screenshotBuffer)
-        .png({ compressionLevel: 9, adaptiveFiltering: true })
-        .toBuffer();
-      screenshotFifo.write(compressedBuffer);
-      await new Promise((resolve) => setTimeout(resolve, 1000 / 15));
+    try {
+      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
+      logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
+    } catch (error) {
+      logger.error(`Failed to load webpage: ${error.message}`);
+      await browser.close(); // Close the browser if navigation fails
+      return;
     }
-    await screenshotFifo.close();
-    await page.close();
-    await browser.close();
+
+    // Open the FIFO for writing
+    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH);
+
+    this.captureAndStreamScreenshots(page).catch((error) => {
+      logger.error('Error in capture process:', error.message);
+    });
   }
+
 
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
+        // Start logging before taking a screenshot
+        logger.info('Attempting to capture screenshot...');
+
         const screenshotBuffer = await page.screenshot({
-          type: 'png',
-          omitBackground: true,
+          type: 'jpeg',       // Use 'webp' for efficient compression
+          quality: 50,        // Lower quality for smaller size and faster processing
         });
 
-        // Compress the PNG using sharp
-        const compressedBuffer = await sharp(screenshotBuffer)
-          .png({ compressionLevel: 7, adaptiveFiltering: true })
-          .toBuffer();
+        logger.info(`Captured screenshot of size: ${screenshotBuffer.length} bytes`);
 
         // Check if FIFO stream is open before writing
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
-          this.fifoWriteStream.write(compressedBuffer);
+          this.fifoWriteStream.write(screenshotBuffer);
+          logger.info('Successfully wrote screenshot to FIFO.');
         } else {
           logger.error('FIFO write stream is not writable. Skipping this capture.');
           break; // Stop capturing if FIFO is not working
         }
+
+        // Log after the delay
         await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
+        logger.info('Screenshot capture cycle completed.');
       }
     } catch (error) {
-      logger.error('Error capturing or compressing screenshot:', error.message);
+      logger.error('Error capturing screenshot:', error.message);
       this.enableBrowser = false;
     } finally {
       // Close FIFO and clean up
@@ -262,6 +292,8 @@ export default class FFMPEGStream {
       logger.info('Closed browser context.');
     }
   }
+
+
 
   stopStream = async (pid: number) => {
     this.isStopping = true
