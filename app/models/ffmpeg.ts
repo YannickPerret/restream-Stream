@@ -254,8 +254,6 @@ export default class FFMPEGStream {
   private async captureAndStreamScreenshots(page: any) {
     try {
       while (this.enableBrowser) {
-        logger.info('Attempting to capture screenshot...');
-
         const screenshotBuffer = await page.screenshot({
           type: 'jpeg',
           quality: 50,
@@ -263,7 +261,6 @@ export default class FFMPEGStream {
 
         if (this.fifoWriteStream && this.fifoWriteStream.writable) {
           this.fifoWriteStream.write(screenshotBuffer);
-          logger.info('Successfully wrote screenshot to FIFO.');
         } else {
           logger.error('FIFO write stream is not writable. Skipping this capture.');
           break;
