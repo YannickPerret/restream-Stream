@@ -90,10 +90,12 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'image2pipe',
         '-thread_queue_size', '1024',
-        '-i', FIFO_PATH,
-      )
+        '-framerate', '14',
+        '-f', 'image2pipe',
+        '-c:v', 'png',
+        '-i', FIFO_PATH
+      );
     }
 
     if (this.showWatermark) {
@@ -234,7 +236,7 @@ export default class FFMPEGStream {
     });
 
     try {
-      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 10000 });
+      await page.goto(this.webpageUrl, { waitUntil: 'load', timeout: 7000 });
       logger.info(`Browser navigated to ${this.webpageUrl} successfully.`);
     } catch (error) {
       logger.error(`Failed to load webpage: ${error.message}`);
@@ -243,7 +245,7 @@ export default class FFMPEGStream {
     }
 
     // Open the FIFO for writing
-    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH);
+    this.fifoWriteStream = fs.createWriteStream(FIFO_PATH, { highWaterMark: 0 });
 
     this.captureAndStreamScreenshots(page).catch((error) => {
       logger.error('Error in capture process:', error.message);
@@ -255,14 +257,19 @@ export default class FFMPEGStream {
     try {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
-          type: 'jpeg',
+          type: 'png',
           quality: 50,
         });
 
-        if (this.fifoWriteStream && this.fifoWriteStream.writable) {
-          this.fifoWriteStream.write(screenshotBuffer);
+        if (this.fifoWriteStream && !this.fifoWriteStream.destroyed) {
+          this.fifoWriteStream.write(screenshotBuffer, (err) => {
+            if (err) {
+              logger.error('Error writing to FIFO:', err.message);
+              // Gérer l'erreur si nécessaire
+            }
+          });
         } else {
-          logger.error('FIFO write stream is not writable. Skipping this capture.');
+          logger.error('FIFO write stream is not writable or has been destroyed.');
           break;
         }
         await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
