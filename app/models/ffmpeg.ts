@@ -258,7 +258,6 @@ export default class FFMPEGStream {
       while (this.enableBrowser) {
         const screenshotBuffer = await page.screenshot({
           type: 'png',
-          quality: 50,
         });
 
         if (this.fifoWriteStream && !this.fifoWriteStream.destroyed) {
@@ -275,7 +274,7 @@ export default class FFMPEGStream {
         await new Promise((resolve) => setTimeout(resolve, 1000 / 14));
       }
     } catch (error) {
-      logger.error('Error capturing screenshot:', error.message);
+      logger.error('Error capturing screenshot:', error); // Loguer l'objet d'erreur complet
       this.enableBrowser = false;
     } finally {
       // Close FIFO and clean up
@@ -284,13 +283,9 @@ export default class FFMPEGStream {
         logger.info('Closed FIFO write stream.');
       }
       await page.close();
-      logger.info('Closed browser page.');
       await page.context().browser().close();
-      logger.info('Closed browser context.');
     }
   }
-
-
 
   stopStream = async (pid: number) => {
     this.isStopping = true
