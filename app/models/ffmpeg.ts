@@ -90,7 +90,7 @@ export default class FFMPEGStream {
 
     if (this.enableBrowser) {
       inputParameters.push(
-        '-f', 'webp_pipe',
+        '-f', 'image2pipe',
         '-thread_queue_size', '1024',
         '-i', FIFO_PATH,
       )
