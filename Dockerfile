@@ -1,65 +1,40 @@
-# Utiliser une image de base officielle de Node.js
-FROM node:18-alpine AS base
-LABEL authors="tchoune"
+# Base image avec FFmpeg, Python et yt-dlp
+FROM node:20.12.2-alpine3.18 AS base
 
 # Installer pnpm
 RUN npm install -g pnpm
 
-# Installer les dépendances seulement quand c'est nécessaire
+# Installer FFmpeg, Python, et le binaire yt-dlp directement depuis GitHub
+RUN apk update && \
+    apk add --no-cache ffmpeg python3 py3-pip wget && \
+    wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp && \
+    chmod a+rx /usr/local/bin/yt-dlp
+
+# Stage pour les dépendances
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copier package.json et pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
-# Installer les dépendances
-RUN pnpm i --frozen-lockfile
-
-# Rebuild the source code only when needed
-FROM base AS builder
+# Stage pour les dépendances de production uniquement
+FROM base AS production-deps
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --prod --no-optional
+
+# Stage pour la construction de l'application
+FROM base AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules /app/node_modules
 COPY . .
+RUN pnpm run build --ignore-ts-errors
 
-# Copier les fichiers de polices et autres fichiers publics
-COPY public /app/public
-
-# Désactiver la télémétrie pendant la construction
-ENV NEXT_TELEMETRY_DISABLED=1
-
-# Construire l'application
-ARG NEXT_PUBLIC_SITE_NAME
-ARG NEXT_PUBLIC_BASE_URL
-ARG NEXT_PUBLIC_TWITCH_CLIENT_ID
-ARG NEXT_PUBLIC_TWITCH_CLIENT_SECRET
-ENV NEXT_PUBLIC_SITE_NAME=Coffee-Stream
-ENV NEXT_PUBLIC_BASE_URL=https://beyondspeedrun.com
-ENV NEXT_PUBLIC_TWITCH_CLIENT_ID=5f2rol52paw8p9ci6zlklozgv154u5
-ENV NEXT_PUBLIC_TWITCH_CLIENT_SECRET=rnnsux585itsthxeicxmyk4omydm41
-
-RUN pnpm run build
-
-# Production image, copy all the files and run next
-FROM base AS runner
+# Stage de production
+FROM base AS production
+ENV NODE_ENV=production
 WORKDIR /app
+COPY --from=production-deps /app/node_modules /app/node_modules
+COPY --from=build /app/build /app/build
 
-# Ajouter l'utilisateur nextjs
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Copier les fichiers nécessaires depuis l'étape de construction
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
+EXPOSE 3333
+CMD ["node", "build/bin/server.js"]
