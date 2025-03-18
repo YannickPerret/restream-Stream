@@ -28,3 +28,5 @@ yarn-error.log
 ../backend
 ../frontend
 ../helps
+
+.pnpm-store
